@@ -5,8 +5,7 @@
 		A form package for Laravel 4 built on top of Laravel 3's Form class with many improvements
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on January 17, 2013
-		version 0.3
+		last updated on January 18, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -358,7 +357,6 @@ class Formation {
 	 */
 	protected static function name($name)
 	{
-		//var_dump($name); exit;
 		$nameArray = explode('.', $name);
 		if (count($nameArray) < 2) return $name;
 
