@@ -3,7 +3,7 @@ Formation
 
 **A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.**
 
-Formation makes it really easy to set populate/re-populate form fields with default values and to build a form with powerful form field building methods that automatically add an "error" class to labels and form fields and provides the ability to validate specific arrays in the POST array.
+Formation makes it really easy to populate form fields with default values and to build a form with powerful form field building methods that automatically add an "error" class to labels and form fields and provides the ability to validate specific arrays in the POST array.
 
 	<input name="user[name]" value="" />
 	<input name="user[email]" value="" />
@@ -12,9 +12,9 @@ Formation makes it really easy to set populate/re-populate form fields with defa
 
 With this form, we can validate just the fields in the user array with `Form::validated('user')`, the final field with `Form::validated('root')`, or all of the fields in the form with `Form::validated()`.
 
-This and other things are what makes Formation a useful addition to any Laravel 4 project that makes any reasonable use of forms.
+This and many other features make Formation a useful addition to any Laravel 4 project that makes any reasonable use of forms and a great aid in transitioning a web application from Laravel 3 to Laravel 4.
 
-	> You may notice much of this documentation is borrowed from Taylor Otwell's Laravel 3 documentation. This is because Formation was built with Laravel 3's Form class as a starting point. If you are familiar with Form for Laravel 3, you indoubtedly adapt to Formation very easily. This makes Formation a great solution for transitioning a website or web application from Laravel 3 to 4.
+> You may notice much of this documentation is borrowed from Taylor Otwell's Laravel 3 documentation. This is because Formation was built with Laravel 3's Form class as a starting point. If you are familiar with the Form class for Laravel 3, you will adapt to Formation very easily.
 
 - [Installation](#installation)
 
@@ -101,7 +101,7 @@ Laravel provides an easy method of protecting your application from cross-site r
 
 	$token = Session::token();
 
-	> **Note:** You must specify a session driver before using the Laravel CSRF protection facilities. Please see the L4 docs for this.
+> **Note:** You must specify a session driver before using the Laravel CSRF protection facilities. Please see the L4 docs for this.
 
 <a name="labels"></a>
 ## Labels
@@ -116,7 +116,7 @@ If you do not pass a label for the second argument, it will be inferred from the
 
 	echo Form::label('email', 'E-Mail Address', array('class' => 'awesome'));
 
-	> **Note:** After creating a label, any form element you create with a name matching the label name will automatically receive an ID matching the label name as well.
+> **Note:** After creating a label, any form element you create with a name matching the label name will automatically receive an ID matching the label name as well.
 
 <a name="basic-fields"></a>
 ## Text, Text Area, Password & Hidden Fields
@@ -131,7 +131,7 @@ If you do not pass a label for the second argument, it will be inferred from the
 
 By using `Form::setDefaults()`, you will not need to pass a default value and can instead pass a `null` value or none at all as the second argument to let the field take advantage of the preset default value.
 
-	> **Note:** When a form is posted, the values in the POST array will be used instead unless `Form::resetDefaults()` is used.
+> **Note:** When a form is posted, the values in the POST array will be used instead unless `Form::resetDefaults()` is used.
 
 **Generating a password input element:**
 
