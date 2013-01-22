@@ -268,8 +268,8 @@ The first argument is the starting number, the second is the ending number, and 
 
 **Using field macro for a set of radio buttons:**
 
-	echo Form::field('dinosaur', 'Favorite Dinosaur', 'radio-set', Form::simpleOptions(array('T-Rex', 'Parasaurolophus', 'Triceratops'))) }}
-
+	$options = Form::simpleOptions(array('T-Rex', 'Parasaurolophus', 'Triceratops'));
+	echo Form::field('dinosaur', 'Favorite Dinosaur', 'radio-set', $options);
 
 <a name="file-input"></a>
 ## File Input
