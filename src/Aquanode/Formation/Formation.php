@@ -10,6 +10,7 @@
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 
@@ -244,7 +245,11 @@ class Formation {
 			$append = static::hidden(Request::spoofer, $method);
 		}
 
-		return '<form'.static::attributes($attributes).'>'.$append;
+		$html = '<form'.static::attributes($attributes).'>'.$append . "\n";
+		if (Config::get('formation::autoCsrfToken')) {
+			$html .= static::token();
+		}
+		return $html;
 	}
 
 	/**
@@ -333,7 +338,7 @@ class Formation {
 	 */
 	public static function token()
 	{
-		return static::input('hidden', Session::csrf_token, Session::getToken());
+		return static::input('hidden', Config::get('formation::csrfToken'), Session::getToken());
 	}
 
 	/**
@@ -500,7 +505,7 @@ class Formation {
 	{
 		if (is_null($label)) $label = static::nameToLabel($name);
 
-		$html = '<div class="field">' . "\n";
+		$html = '<'.Config::get('formation::fieldContainer').' class="'.Config::get('formation::fieldContainerClass').'">' . "\n";
 		switch ($type) {
 			case "text":
 				$html .= static::label($name, $label) . "\n";

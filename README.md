@@ -294,13 +294,17 @@ If you do not set the first argument, "Submit" will be used as the label.
 
 You may use the built-in `Form::field()` macro to turn this:
 
-	echo Form::label('user.email');
-	echo Form::text('user.email');
-	echo Form::error('user.email');
+	<div class="field">
+		<?php echo Form::label('user.email');
+		echo Form::text('user.email');
+		echo Form::error('user.email'); ?>
+	</div>
 
 Into this:
 
 	echo Form::field('user.email');
+
+The field container element can be changed from a div to another HTML element and the "field" class can be changed as well in `config.php`.
 
 **Using field macro for a drop-down select box:**
 
