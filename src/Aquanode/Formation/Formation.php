@@ -2,10 +2,10 @@
 
 /*----------------------------------------------------------------------------------------------------------
 	Formation
-		A form package for Laravel 4 built on top of Laravel 3's Form class with many improvements
+		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on January 18, 2013
+		last updated on January 21, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -78,9 +78,15 @@ class Formation {
 	 */
 	public static function setDefaults($defaults = array())
 	{
+		//turn Eloquent instances into an array
+		if (isset($defaults) && isset($defaults->table) && isset($defaults->timestamps)) $defaults = $defaults->toArray();
+
+		//turn object into array
 		if (is_object($defaults)) $defaults = (array) $defaults;
-		if (isset($defaults['attributes']) && is_array($defaults['attributes'])) $defaults = $defaults['attributes']; //turn Eloquent object into standard array
+
 		static::$defaults = $defaults;
+
+		return static::$defaults;
 	}
 
 	/**
@@ -91,7 +97,7 @@ class Formation {
 	 */
 	public static function resetDefaults($defaults = array())
 	{
-		if (!empty($defaults)) static::initialize($defaults); //if new defaults are set, pass them to initialize function
+		if (!empty($defaults)) static::setDefaults($defaults); //if new defaults are set, pass them to static::$defaults
 		static::$reset = true;
 	}
 
@@ -999,9 +1005,15 @@ class Formation {
 	public static function prepOptions($options = array(), $vars = array())
 	{
 		$optionsFormatted = array();
+
+		//turn Eloquent instances into an array
+		if (isset($options[0]) && isset($options[0]->table) && isset($options[0]->timestamps)) $options = $options->toArray();
+
 		if (is_string($vars) || (is_array($vars) && count($vars) > 0)) {
 			foreach ($options as $option) {
+				//turn object into array
 				if (is_object($option)) $option = (array) $option;
+
 				if (is_string($vars)) {
 					$label = false;
 					$value = $vars;
