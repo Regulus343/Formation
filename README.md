@@ -77,11 +77,11 @@ You may use 'Formation', or another alias, but 'Form' is recommended for the sak
 
 **Opening a form that accepts file uploads:**
 
-	echo Form::open_for_files('users/profile');
+	echo Form::openForFiles('users/profile');
 
 **Opening a form that accepts file uploads and uses HTTPS:**
 
-	echo Form::open_secure_for_files('users/profile');
+	echo Form::openSecureForFiles('users/profile');
 
 **Closing a form:**
 

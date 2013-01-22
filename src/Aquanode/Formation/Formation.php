@@ -313,7 +313,7 @@ class Formation {
 	 */
 	public static function openSecureForFiles($action = null, $method = 'POST', $attributes = array())
 	{
-		return static::open_for_files($action, $method, $attributes, true);
+		return static::openForFiles($action, $method, $attributes, true);
 	}
 
 	/**
