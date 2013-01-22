@@ -267,7 +267,7 @@ class Formation {
 	 * @param  bool     $https
 	 * @return string
 	 */
-	protected static function action($action, $https)
+	protected static function action($action = null, $https = false)
 	{
 		$uri = (is_null($action)) ? URI::current() : $action;
 
@@ -333,7 +333,7 @@ class Formation {
 	 */
 	public static function token()
 	{
-		return static::input('hidden', Session::csrf_token, Session::token());
+		return static::input('hidden', Session::csrf_token, Session::getToken());
 	}
 
 	/**

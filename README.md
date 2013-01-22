@@ -69,7 +69,7 @@ You may use 'Formation', or another alias, but 'Form' is recommended for the sak
 
 **Opening a Form that POSTS to an HTTPS URL:**
 
-	echo Form::open_secure('user/profile');
+	echo Form::openSecure('user/profile');
 
 **Specifying extra HTML attributes on a form open tag:**
 
