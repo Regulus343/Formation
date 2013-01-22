@@ -120,7 +120,7 @@ class Formation {
 	 * @param  array    $rules
 	 * @return array
 	 */
-	public static function setValidation($rules = array())
+	public static function setValidationRules($rules = array())
 	{
 		$rulesFormatted = array();
 		foreach ($rules as $name=>$rulesItem) {
@@ -189,7 +189,7 @@ class Formation {
 		}
 
 		static::setLabels($labels);
-		static::setValidation($rules);
+		static::setValidationRules($rules);
 		static::setDefaults($defaults);
 
 		return static::$validation;
