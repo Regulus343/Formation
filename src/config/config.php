@@ -6,6 +6,6 @@ return array(
 	'fieldContainerClass' => 'field',		//the class applied to the field container
 
 	'csrfToken' =>           'csrfToken',	//the name of the CSRF token
-	'autoCsrfToken' =>       true, 			//automatically add a CSRF token to forms
+	'autoCsrfToken' =>       true,			//automatically add a CSRF token to forms
 
 );

@@ -258,7 +258,7 @@ Of course, you may use `Form::setDefaults()` to populate select boxes without th
 
 	echo Form::select('animal', Form::offsetOptions(array('Tiger', 'Zebra', 'Elephant')), 'Select an animal');
 
-**Turn a simple array into a simple options array with numeric values that do start at one instead of zero:**
+**Turn a simple array into a simple options array with numeric values that start at one instead of zero:**
 
 	echo Form::select('number', Form::numberOptions(0, 180, 10));
 
@@ -312,7 +312,8 @@ The field container element can be changed from a div to another HTML element an
 
 **Using field macro for a set of radio buttons:**
 
-	echo Form::field('dinosaur', 'Favorite Dinosaur', 'radio-set', Form::simpleOptions(array('T-Rex', 'Parasaurolophus', 'Triceratops'))) }}
+	$options = Form::simpleOptions(array('T-Rex', 'Parasaurolophus', 'Triceratops'));
+	echo Form::field('dinosaur', 'Favorite Dinosaur', 'radio-set', $options) }}
 
 **Using field macro for a set of checkboxes:**
 
