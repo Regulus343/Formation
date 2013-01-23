@@ -313,7 +313,7 @@ The field container element can be changed from a div to another HTML element an
 **Using field macro for a set of radio buttons:**
 
 	$options = Form::simpleOptions(array('T-Rex', 'Parasaurolophus', 'Triceratops'));
-	echo Form::field('dinosaur', 'Favorite Dinosaur', 'radio-set', $options) }}
+	echo Form::field('dinosaur', 'Favorite Dinosaur', 'radio-set', $options);
 
 **Using field macro for a set of checkboxes:**
 
