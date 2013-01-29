@@ -98,7 +98,7 @@ Laravel provides an easy method of protecting your application from cross-site r
 
 	Route::post('profile', array('before' => 'csrf', function()
 	{
-    	//
+		//
 	}));
 
 **Retrieving the CSRF token string:**
