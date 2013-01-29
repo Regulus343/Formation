@@ -491,7 +491,7 @@ class Formation {
 	 */
 	public static function entities($value)
 	{
-		return htmlentities($value, ENT_QUOTES, static::encoding(), false);
+		return htmlentities($value, ENT_QUOTES, Config::get('formation::encoding'), false);
 	}
 
 	/**

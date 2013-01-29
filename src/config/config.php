@@ -2,6 +2,8 @@
 
 return array(
 
+	'encoding' =>            'UTF-8',
+
 	'fieldContainer' =>      'div',			//the field container HTML element type (generally 'div' or 'li')
 	'fieldContainerClass' => 'field',		//the class applied to the field container
 

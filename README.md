@@ -17,8 +17,6 @@ This and many other features make Formation a useful addition to any Laravel 4 p
 > You may notice much of this documentation is borrowed from Taylor Otwell's Laravel 3 documentation. This is because Formation was built with Laravel 3's Form class as a starting point. If you are familiar with the Form class for Laravel 3, you will adapt to Formation very easily.
 
 - [Installation](#installation)
-
-
 - [Opening a Form](#opening-form)
 - [CSRF Protection](#csrf-protection)
 - [Default Form Values](#default-values)
@@ -235,13 +233,13 @@ You may append "_container" to add attributes to the container for radio button 
 
 	echo Form::select('size', array('L' => 'Large', 'S' => 'Small'));
 
-**Using a label with a null value as the first option:**
+**Using a label with a null value as the first option in the list:**
 
 	echo Form::select('size', array('L' => 'Large', 'S' => 'Small'), 'Select a size');
 
 **Generating a drop-down list with an item selected by default:**
 
-	echo Form::select('size', array('L' => 'Large', 'S' => 'Small'), 'S');
+	echo Form::select('size', array('L' => 'Large', 'S' => 'Small'), 'Select a size', 'S');
 
 Of course, you may use `Form::setDefaults()` to populate select boxes without the need for the third argument.
 
