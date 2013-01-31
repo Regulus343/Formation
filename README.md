@@ -118,7 +118,7 @@ One of the most useful features of Formation is its ability to take an array, ob
 
 > **Note:** If you want to use array fields names instead, use, for example, `user.name` and `user.email` instead of `name` and `email`.
 
-**Forcing defaults values even after form POST:**
+**Forcing default values even after form POST:**
 
 	Form::resetDefaults();
 
@@ -206,7 +206,7 @@ Please keep in mind that once again you will not need the third argument if you 
 
 **Creating a set of checkboxes:**
 
-	$checkboxes = array('rain', 'thunder', 'lightning')
+	$checkboxes = array('rain', 'thunder', 'lightning');
 	echo Form::checkboxSet($checkboxes);
 
 **Adding a prefix to the name of each checkbox:**
