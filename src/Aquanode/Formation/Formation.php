@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on January 28, 2013
+		last updated on February 3, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -1029,7 +1029,7 @@ class Formation {
 		$optionsFormatted = array();
 
 		//turn Eloquent instances into an array
-		if (isset($options[0]) && isset($options[0]->table) && isset($options[0]->timestamps)) $options = $options->toArray();
+		if (isset($options[0]) && isset($options[0]->incrementing) && isset($options[0]->timestamps)) $options = $options->toArray();
 
 		if (is_string($vars) || (is_array($vars) && count($vars) > 0)) {
 			foreach ($options as $option) {
