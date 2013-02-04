@@ -498,53 +498,63 @@ class Formation {
 	 * Create a field along with a label and error message (if one is set).
 	 *
 	 * @param  string  $name
+	 * @param  mixed   $label
 	 * @param  string  $type
+	 * @param  array   $options
+	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function field($name, $label = null, $type = 'text', $options = array())
+	public static function field($name, $label = null, $type = 'text', $options = array(), $attributes = array())
 	{
 		if (is_null($label)) $label = static::nameToLabel($name);
 
 		$html = '<'.Config::get('formation::fieldContainer').' class="'.Config::get('formation::fieldContainerClass').'">' . "\n";
 		switch ($type) {
 			case "text":
-				$html .= static::label($name, $label) . "\n";
-				$html .= static::text($name) . "\n";
+				$html .= static::label($name, $label, $attributes) . "\n";
+				$html .= static::text($name, null, $attributes) . "\n";
 				break;
 			case "password":
-				$html .= static::label($name, $label) . "\n";
-				$html .= static::password($name) . "\n";
+				$html .= static::label($name, $label, $attributes) . "\n";
+				$html .= static::password($name, $attributes) . "\n";
 				break;
 			case "textarea":
-				$html .= static::label($name, $label) . "\n";
-				$html .= static::textarea($name) . "\n";
+				$html .= static::label($name, $label, $attributes) . "\n";
+				$html .= static::textarea($name, null, $attributes) . "\n";
 				break;
 			case "select":
-				$html .= static::label($name, $label) . "\n";
-				$html .= static::select($name, $options) . "\n";
+				$html .= static::label($name, $label, $attributes) . "\n";
+
+				$default = null;
+				if (isset($attributes['default'])) { //allow the default "Select a ..." null value to be set via attributes array
+					$default = $attributes['default'];
+					unset($attributes['default']);
+				}
+				$html .= static::select($name, $options, $default, null, $attributes) . "\n";
 				break;
 			case "checkbox":
-				$html .= static::checkbox($name) . "\n";
-				$html .= static::label($name, $label) . "\n";
+				$html .= static::checkbox($name, 1, false, $attributes) . "\n";
+				$html .= static::label($name, $label, $attributes) . "\n";
 				break;
 			case "radio":
-				$html .= static::radio($name) . "\n";
-				$html .= static::label($name, $label) . "\n";
+				$html .= static::radio($name, null, false, $attributes) . "\n";
+				$html .= static::label($name, $label, $attributes) . "\n";
 				break;
 			case "checkbox-set":
 				//for checkbox set, use options as array of checkbox names
-				$html .= static::label(null, $label) . "\n";
-				$html .= static::checkboxSet($options, $name) . "\n";
+				$html .= static::label(null, $label, $attributes) . "\n";
+				$html .= static::checkboxSet($options, $name, $attributes) . "\n";
 				break;
 			case "radio-set":
-				$html .= static::label(null, $label) . "\n";
-				$html .= static::radioSet($name, $options) . "\n";
+				$html .= static::label(null, $label, $attributes) . "\n";
+				$html .= static::radioSet($name, $options, null, $attributes) . "\n";
 				break;
 			case "submit":
-				$html .= static::submit($label) . "\n";
+				$html .= static::submit($label, $attributes) . "\n";
 				break;
 		}
 		$html .= static::error($name) . "\n";
+		if (Config::get('formation::fieldContainerClear')) $html .= '<div class="clear"></div>' . "\n";
 		$html .= '</div>' . "\n";
 		return $html;
 	}
@@ -567,7 +577,7 @@ class Formation {
 	 * @return string
 	 */
 	public static function input($type, $name, $value = null, $attributes = array())
-	{ 
+	{
 		$name = (isset($attributes['name'])) ? $attributes['name'] : $name;
 		$attributes = static::addErrorClass($name, $attributes);
 
@@ -1277,7 +1287,7 @@ class Formation {
 		if ($useAbbrev) {
 			return $states;
 		} else {
-			return explode(',', implode(',', $states)); //remove abbreviation keys
+			return static::simpleOptions(explode(',', implode(',', $states))); //remove abbreviation keys
 		}
 	}
 
@@ -1294,7 +1304,7 @@ class Formation {
 		if ($useAbbrev) {
 			return $provinces;
 		} else {
-			return explode(',', implode(',', $provinces)); //remove abbreviation keys
+			return static::simpleOptions(explode(',', implode(',', $provinces))); //remove abbreviation keys
 		}
 	}
 
@@ -1305,7 +1315,7 @@ class Formation {
 	 */
 	public static function countries()
 	{
-		return array('Canada','United States','Afghanistan','Albania','Algeria','American Samoa','Andorra','Angola','Anguilla','Antarctica','Antigua And Barbuda','Argentina','Armenia','Aruba',
+		return static::simpleOptions(array('Canada','United States','Afghanistan','Albania','Algeria','American Samoa','Andorra','Angola','Anguilla','Antarctica','Antigua And Barbuda','Argentina','Armenia','Aruba',
 					 'Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bermuda','Bhutan','Bolivia','Bosnia And Herzegowina',
 				 	 'Botswana','Bouvet Island','Brazil','British Indian Ocean Territory','Brunei Darussalam','Bulgaria','Burkina Faso','Burundi','Cambodia','Cameroon','Cape Verde','Cayman Islands',
 				 	 'Central African Republic','Chad','Chile','China','Christmas Island','Cocos (Keeling) Islands','Colombia','Comoros','Congo','Congo, The Democratic Republic Of The','Cook Islands',
@@ -1323,7 +1333,7 @@ class Formation {
 				 	 'South Africa','South Georgia, South Sandwich Islands','Spain','Sri Lanka','St. Helena','St. Pierre And Miquelon','Sudan','Suriname','Svalbard And Jan Mayen Islands','Swaziland',
 				 	 'Sweden','Switzerland','Syrian Arab Republic','Taiwan','Tajikistan','Tanzania, United Republic Of','Thailand','Togo','Tokelau','Tonga','Trinidad And Tobago','Tunisia','Turkey',
 				 	 'Turkmenistan','Turks And Caicos Islands','Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States Minor Outlying Islands','Uruguay','Uzbekistan',
-				 	 'Vanuatu','Venezuela','Viet Nam','Virgin Islands (British)','Virgin Islands (U.S.)','Wallis And Futuna Islands','Western Sahara','Yemen','Yugoslavia','Zambia','Zimbabwe');
+				 	 'Vanuatu','Venezuela','Viet Nam','Virgin Islands (British)','Virgin Islands (U.S.)','Wallis And Futuna Islands','Western Sahara','Yemen','Yugoslavia','Zambia','Zimbabwe'));
 	}
 
 	/**
