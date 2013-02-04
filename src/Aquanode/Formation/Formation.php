@@ -80,7 +80,7 @@ class Formation {
 	public static function setDefaults($defaults = array())
 	{
 		//turn Eloquent instances into an array
-		if (isset($defaults) && isset($defaults->table) && isset($defaults->timestamps)) $defaults = $defaults->toArray();
+		if (isset($defaults) && isset($defaults->incrementing) && isset($defaults->timestamps)) $defaults = $defaults->toArray();
 
 		//turn object into array
 		if (is_object($defaults)) $defaults = (array) $defaults;
