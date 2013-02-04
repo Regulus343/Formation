@@ -511,6 +511,10 @@ class Formation {
 				$html .= static::label($name, $label) . "\n";
 				$html .= static::text($name) . "\n";
 				break;
+			case "password":
+				$html .= static::label($name, $label) . "\n";
+				$html .= static::password($name) . "\n";
+				break;
 			case "textarea":
 				$html .= static::label($name, $label) . "\n";
 				$html .= static::textarea($name) . "\n";
@@ -535,6 +539,9 @@ class Formation {
 			case "radio-set":
 				$html .= static::label(null, $label) . "\n";
 				$html .= static::radioSet($name, $options) . "\n";
+				break;
+			case "submit":
+				$html .= static::submit($label) . "\n";
 				break;
 		}
 		$html .= static::error($name) . "\n";
