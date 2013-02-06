@@ -38,7 +38,7 @@ This and many other features make Formation a useful addition to any Laravel 4 p
 <a name="installation"></a>
 ## Installation
 
-To install Formation, make sure "aquanode/formation" has been added to Laravel 4's config.json file.
+To install Formation, make sure "aquanode/formation" has been added to Laravel 4's `composer.json` file.
 
 	"require": {
 		"aquanode/formation": "dev-master"
