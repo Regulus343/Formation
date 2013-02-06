@@ -320,8 +320,11 @@ The field container element can be changed from a div to another HTML element an
 
 You will notice that the third parameter, `attributes`, has some options for special attributes such as `label` and `options` that don't work like any other attribute declaration. The combination of these into the attributes array makes sense because of the generic, many-use nature of the field macro. This prevents simple fields from requiring a bunch of `null` parameters. In addition to `label` and `options`, you can use `nullOption` for a prepended null option for a select box. Lastly, `value` can be used to manually set the value of the field. This is unnecessary if you are using the `setDefaults()` or `setup` methods to pre-populate your form with data.
 
-	$attr = array(;class' => 'numbers', options' => Form::numberOptions(1, 10), 'nullOption' => 'Select a number', 'value' => 3);
-	echo Form::field('numbers', 'select', $attr);
+	$attributes = array('class'      => 'select-number',
+				  		'options'    => Form::numberOptions(1, 10),
+				  		'nullOption' => 'Select a number',
+				  		'value'      => 3);
+	echo Form::field('number', 'select', $attributes);
 
 <a name="custom-macros"></a>
 ## Custom Macros
