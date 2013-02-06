@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on February 3, 2013
+		last updated on February 5, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -498,21 +498,49 @@ class Formation {
 	 * Create a field along with a label and error message (if one is set).
 	 *
 	 * @param  string  $name
-	 * @param  mixed   $label
 	 * @param  string  $type
-	 * @param  array   $options
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function field($name, $label = null, $type = 'text', $options = array(), $attributes = array())
+	public static function field($name, $type = 'text', $attributes = array())
 	{
 		if (is_null($label)) $label = static::nameToLabel($name);
 
-		$html = '<'.Config::get('formation::fieldContainer').' class="'.Config::get('formation::fieldContainerClass').'">' . "\n";
+		//allow label to be set via attributes array (defaults to labels array and then to a label derived from the field's name)
+		$label = static::nameToLabel($name);
+		if (isset($attributes['label'])) {
+			$label = $attributes['label'];
+			unset($attributes['label']);
+		}
+
+		//allow options for select, radio-set, and checkbox-set to be set via attributes array
+		$options = array();
+		if (isset($attributes['options'])) {
+			$options = $attributes['options'];
+			unset($attributes['options']);
+		}
+
+		///allow the default "Select a ..." null value for a select field to be set via attributes array
+		$default = null;
+		if (isset($attributes['default'])) {
+			$default = $attributes['default'];
+			unset($attributes['default']);
+		}
+
+		///allow the field's value to be set via attributes array
+		$value = null;
+		if (isset($attributes['value'])) {
+			$value = $attributes['value'];
+			unset($attributes['value']);
+		}
+
+		$classes = Config::get('formation::fieldContainerClass');
+		if ($type == "hidden") $classes .= ' hidden';
+		$html = '<'.Config::get('formation::fieldContainer').' class="'.$classes.'">' . "\n";
 		switch ($type) {
 			case "text":
 				$html .= static::label($name, $label, $attributes) . "\n";
-				$html .= static::text($name, null, $attributes) . "\n";
+				$html .= static::text($name, $value, $attributes) . "\n";
 				break;
 			case "password":
 				$html .= static::label($name, $label, $attributes) . "\n";
@@ -520,24 +548,22 @@ class Formation {
 				break;
 			case "textarea":
 				$html .= static::label($name, $label, $attributes) . "\n";
-				$html .= static::textarea($name, null, $attributes) . "\n";
+				$html .= static::textarea($name, $value, $attributes) . "\n";
+				break;
+			case "hidden":
+				$html .= static::hidden($name, $value, $attributes) . "\n";
 				break;
 			case "select":
 				$html .= static::label($name, $label, $attributes) . "\n";
-
-				$default = null;
-				if (isset($attributes['default'])) { //allow the default "Select a ..." null value to be set via attributes array
-					$default = $attributes['default'];
-					unset($attributes['default']);
-				}
-				$html .= static::select($name, $options, $default, null, $attributes) . "\n";
+				$html .= static::select($name, $options, $default, $value, $attributes) . "\n";
 				break;
 			case "checkbox":
-				$html .= static::checkbox($name, 1, false, $attributes) . "\n";
+				if (is_null($value)) $value = 1;
+				$html .= static::checkbox($name, $value, false, $attributes) . "\n";
 				$html .= static::label($name, $label, $attributes) . "\n";
 				break;
 			case "radio":
-				$html .= static::radio($name, null, false, $attributes) . "\n";
+				$html .= static::radio($name, $value, false, $attributes) . "\n";
 				$html .= static::label($name, $label, $attributes) . "\n";
 				break;
 			case "checkbox-set":
@@ -555,7 +581,7 @@ class Formation {
 		}
 		$html .= static::error($name) . "\n";
 		if (Config::get('formation::fieldContainerClear')) $html .= '<div class="clear"></div>' . "\n";
-		$html .= '</div>' . "\n";
+		$html .= '</'.Config::get('formation::fieldContainer').'>' . "\n";
 		return $html;
 	}
 
@@ -839,13 +865,13 @@ class Formation {
 			$containerAttributes = array('class'=> 'checkbox-set');
 			foreach ($attributes as $attribute => $value) {
 
-				//appending "_container" to attributes means they apply to the
+				//appending "-container" to attributes means they apply to the
 				//"checkbox-set" container rather than to the checkboxes themselves
-				if (substr($attribute, -10) == "_container") {
-					if (str_replace('_container', '', $attribute) == "class") {
+				if (substr($attribute, -10) == "-container") {
+					if (str_replace('-container', '', $attribute) == "class") {
 						$containerAttributes['class'] .= ' '.$value;
 					} else {
-						$containerAttributes[str_replace('_container', '', $attribute)] = $value;
+						$containerAttributes[str_replace('-container', '', $attribute)] = $value;
 					}
 					unset($attributes[$attribute]);
 				}
@@ -903,6 +929,7 @@ class Formation {
 	{
 		if ($value == static::value($name)) $checked = true;
 
+		if (!isset($attributes['id'])) $attributes['id'] = static::id($name, $attributes);
 		$name = static::name($name);
 
 		return static::checkable('checkbox', $name, $value, $checked, $attributes);
@@ -923,14 +950,14 @@ class Formation {
 			$containerAttributes = array('class'=> 'radio-set');
 			foreach ($attributes as $attribute => $value) {
 
-				//appending "_container" to attributes means they apply to the
+				//appending "-container" to attributes means they apply to the
 				//"radio-set" container rather than to the checkboxes themselves
-				if (substr($attribute, -10) == "_container") {
+				if (substr($attribute, -10) == "-container") {
 
-					if (str_replace('_container', '', $attribute) == "class") {
+					if (str_replace('-container', '', $attribute) == "class") {
 						$containerAttributes['class'] .= ' '.$value;
 					} else {
-						$containerAttributes[str_replace('_container', '', $attribute)] = $value;
+						$containerAttributes[str_replace('-container', '', $attribute)] = $value;
 					}
 					unset($attributes[$attribute]);
 				}
@@ -991,13 +1018,14 @@ class Formation {
 		if (is_null($value)) $value = $name;
 		if ($value == static::value($name)) $checked = true;
 
+		if (!isset($attributes['id'])) $attributes['id'] = static::id($name.'-'.strtolower($value), $attributes);
 		$name = static::name($name);
 
 		return static::checkable('radio', $name, $value, $checked, $attributes);
 	}
 
 	/**
-	 * Create a checkable input element.
+	 * Create a checkable (checkbox or radio button) input element.
 	 *
 	 * @param  string  $type
 	 * @param  string  $name
@@ -1009,9 +1037,6 @@ class Formation {
 	protected static function checkable($type, $name, $value, $checked, $attributes)
 	{
 		if ($checked) $attributes['checked'] = 'checked';
-
-		$attributes['id'] = static::id($name, $attributes);
-		if (is_null($attributes['id'])) $attributes['id'] = str_replace('_', '-', $name);
 
 		return static::input($type, $name, $value, $attributes);
 	}

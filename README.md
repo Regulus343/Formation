@@ -206,7 +206,7 @@ Please keep in mind that once again you will not need the third argument if you 
 
 **Creating a set of checkboxes:**
 
-	$checkboxes = array('rain', 'thunder', 'lightning');
+	$checkboxes = Form::simpleOptions(array('Rain', 'Thunder', 'Lightning'));
 	echo Form::checkboxSet($checkboxes);
 
 **Adding a prefix to the name of each checkbox:**
@@ -215,16 +215,17 @@ Please keep in mind that once again you will not need the third argument if you 
 
 **Adding attributes to checkboxes and/or unordered list container for checkboxes:
 
-	echo Form::checkboxSet($checkboxes, null, array('class' => 'awesome', 'id_container' => 'checkbox-set-weather'));
+	echo Form::checkboxSet($checkboxes, null, array('class' => 'awesome', 'id-container' => 'checkbox-set-weather'));
 
-> **Note:** Attributes ending with "_container" will be added to the container itself rather than to each of the checkboxes.
+> **Note:** Attributes ending with "-container" will be added to the container itself rather than to each of the checkboxes.
 
 **Creating a set of radio buttons:**
 
-	$options = array('rain', 'thunder', 'lightning');
-	echo Form::radioSet('weather', $options);
+	echo Form::radioSet('weather', Form::simpleOptions(array('Rain', 'Thunder', 'Lightning')));
 
-You may append "_container" to add attributes to the container for radio button sets as well.
+> **Note:** The `simpleOptions()` method is just used in the above example to have the radio buttons' labels used also as the actual form field values instead of using the numerical indexes of the array items. `simpleOptions()` and some other methods for building options are further described in the upcoming **Drop-Down Lists** section of the documentation.
+
+You may append "-container" to attribute names to assign them to the container element for radio button sets as well. The default container classes for radio buttons and checkboxes are `radio-set` and `checkbox-set`.
 
 <a name="drop-down-lists"></a>
 ## Drop-Down Lists
@@ -306,16 +307,21 @@ The field container element can be changed from a div to another HTML element an
 
 **Using field macro for a drop-down select box:**
 
-	echo Form::field('animal', null, 'select', Form::simpleOptions(array('Tiger', 'Zebra', 'Elephant')));
+	echo Form::field('animal', 'select', array('options' => Form::simpleOptions(array('Tiger', 'Zebra', 'Elephant'))));
 
 **Using field macro for a set of radio buttons:**
 
 	$options = Form::simpleOptions(array('T-Rex', 'Parasaurolophus', 'Triceratops'));
-	echo Form::field('dinosaur', 'Favorite Dinosaur', 'radio-set', $options);
+	echo Form::field('dinosaur', 'radio-set', array('label' => 'Favorite Dinosaur', 'options' => $options));
 
 **Using field macro for a set of checkboxes:**
 
-	echo Form::field('number.', null, 'checkbox-set', Form::offsetOptions(array('One', 'II', '3.0')));
+	echo Form::field('number.', 'checkbox-set', array('options' => Form::offsetOptions(array('One', 'II', '3.0'))));
+
+You will notice that the third parameter, `attributes`, has some options for special attributes such as `label` and `options` that don't work like any other attribute declaration. The combination of these into the attributes array makes sense because of the generic, many-use nature of the field macro. This prevents simple fields from requiring a bunch of `null` parameters. In addition to `label` and `options`, you can use `nullOption` for a prepended null option for a select box. Lastly, `value` can be used to manually set the value of the field. This is unnecessary if you are using the `setDefaults()` or `setup` methods to pre-populate your form with data.
+
+	$attr = array(;class' => 'numbers', options' => Form::numberOptions(1, 10), 'nullOption' => 'Select a number', 'value' => 3);
+	echo Form::field('numbers', 'select', $attr);
 
 <a name="custom-macros"></a>
 ## Custom Macros
