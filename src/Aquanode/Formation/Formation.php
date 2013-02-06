@@ -502,9 +502,15 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function field($name, $type = 'text', $attributes = array())
+	public static function field($name, $type = null, $attributes = array())
 	{
-		if (is_null($label)) $label = static::nameToLabel($name);
+		//set any field named "submit" to a "submit" field automatically and set it's type to attributes to
+		//to simplify creation of "submit" fields with field() macro
+		if ($name == "submit" && is_array($type)) {
+			$name = null;
+			$attributes = $type;
+			$type = "submit";
+		}
 
 		//allow label to be set via attributes array (defaults to labels array and then to a label derived from the field's name)
 		$label = static::nameToLabel($name);
@@ -520,11 +526,11 @@ class Formation {
 			unset($attributes['options']);
 		}
 
-		///allow the default "Select a ..." null value for a select field to be set via attributes array
-		$default = null;
-		if (isset($attributes['default'])) {
-			$default = $attributes['default'];
-			unset($attributes['default']);
+		///allow the null option ("Select a ...") for a select field to be set via attributes array
+		$nullOption = null;
+		if (isset($attributes['nullOption'])) {
+			$nullOption = $attributes['nullOption'];
+			unset($attributes['nullOption']);
 		}
 
 		///allow the field's value to be set via attributes array
@@ -533,6 +539,12 @@ class Formation {
 			$value = $attributes['value'];
 			unset($attributes['value']);
 		}
+
+		//set any field named "password" to a "password" field automatically; no type declaration required
+		if ($name == "password" && is_null($type)) $type = "password";
+
+		//if type is still null, assume it to be a regular "text" field
+		if (is_null($type)) $type = "text";
 
 		$classes = Config::get('formation::fieldContainerClass');
 		if ($type == "hidden") $classes .= ' hidden';
@@ -555,7 +567,7 @@ class Formation {
 				break;
 			case "select":
 				$html .= static::label($name, $label, $attributes) . "\n";
-				$html .= static::select($name, $options, $default, $value, $attributes) . "\n";
+				$html .= static::select($name, $options, $nullOption, $value, $attributes) . "\n";
 				break;
 			case "checkbox":
 				if (is_null($value)) $value = 1;
@@ -783,12 +795,12 @@ class Formation {
 	 *
 	 * @param  string  $name
 	 * @param  array   $options
-	 * @param  string  $default
+	 * @param  string  $nullOption
 	 * @param  string  $selected
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function select($name, $options = array(), $default = null, $selected = null, $attributes = array())
+	public static function select($name, $options = array(), $nullOption = null, $selected = null, $attributes = array())
 	{
 		if (!isset($attributes['id'])) $attributes['id'] = static::id($name, $attributes);
 		$attributes['name'] = $name;
@@ -797,8 +809,7 @@ class Formation {
 		if (is_null($selected)) $selected = static::value($name);
 
 		$html = array();
-
-		if (!is_null($default)) $html[] = static::option('', $default, $selected);
+		if (!is_null($nullOption)) $html[] = static::option('', $nullOption, $selected);
 		foreach ($options as $value => $display) {
 			if (is_array($display)) {
 				$html[] = static::optgroup($display, $value, $selected);
