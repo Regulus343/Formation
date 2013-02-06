@@ -225,7 +225,7 @@ Please keep in mind that once again you will not need the third argument if you 
 
 > **Note:** The `simpleOptions()` method is just used in the above example to have the radio buttons' labels used also as the actual form field values instead of using the numerical indexes of the array items. `simpleOptions()` and some other methods for building options are further described in the upcoming **Drop-Down Lists** section of the documentation.
 
-You may append "-container" to attribute names to assign them to the container element for radio button sets as well. The default container classes for radio buttons and checkboxes are `radio-set` and `checkbox-set`.
+You may append "-container" to attribute names to assign them to the container element for radio button sets as well. The default container classes for radio buttons and checkboxes are `radio-set` and `checkbox-set`. The containers are unordered list elements and each item in the set is a list item in the list.
 
 <a name="drop-down-lists"></a>
 ## Drop-Down Lists
