@@ -10,6 +10,7 @@
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
@@ -274,7 +275,7 @@ class Formation {
 	 */
 	protected static function action($action = null, $https = false)
 	{
-		$uri = (is_null($action)) ? URI::current() : $action;
+		$uri = (is_null($action)) ? Request::fullUrl() : $action;
 
 		return static::entities(URL::to($uri, $https));
 	}
