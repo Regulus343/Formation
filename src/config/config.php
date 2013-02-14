@@ -9,6 +9,6 @@ return array(
 	'fieldContainerClear' => true,         //add a div to the end of the field container with class "clear"
 
 	'csrfToken'           => 'csrf_token', //the name of the CSRF token
-	'autoCsrfToken' =>       true,         //automatically add a CSRF token to forms
+	'autoCsrfToken'       => true,         //automatically add a CSRF token to forms
 
 );
