@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on February 5, 2013
+		last updated on February 13, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -52,6 +52,13 @@ class Formation {
 	 * @var array
 	 */
 	public static $macros = array();
+
+	/**
+	 * The request spoofer.
+	 *
+	 * @var string
+	 */
+	public static $spoofer = '_method';
 
 	/**
 	 * Cache application encoding locally to save expensive calls to config::get().
@@ -233,7 +240,7 @@ class Formation {
 		// file for the "accept-charset" attribute.
 		if ( ! array_key_exists('accept-charset', $attributes))
 		{
-			$attributes['accept-charset'] = Config::get('application.encoding');
+			$attributes['accept-charset'] = static::$encoding;
 		}
 
 		$append = '';
@@ -243,7 +250,7 @@ class Formation {
 		// and set the actual request method variable to POST.
 		if ($method == 'PUT' or $method == 'DELETE')
 		{
-			$append = static::hidden(Request::spoofer, $method);
+			$append = static::hidden(static::$spoofer, $method);
 		}
 
 		$html = '<form'.static::attributes($attributes).'>'.$append . "\n";
@@ -281,7 +288,7 @@ class Formation {
 	}
 
 	/**
-	 * Open an HTML form with a HTTPS action URI.
+	 * Open an HTML form with an HTTPS action URI.
 	 *
 	 * @param  string  $action
 	 * @param  string  $method
@@ -310,7 +317,7 @@ class Formation {
 	}
 
 	/**
-	 * Open an HTML form that accepts file uploads with a HTTPS action URI.
+	 * Open an HTML form that accepts file uploads with an HTTPS action URI.
 	 *
 	 * @param  string  $action
 	 * @param  string  $method
@@ -320,6 +327,70 @@ class Formation {
 	public static function openSecureForFiles($action = null, $method = 'POST', $attributes = array())
 	{
 		return static::openForFiles($action, $method, $attributes, true);
+	}
+
+	/**
+	 * Open an HTML form that automatically corrects the action for a resource controller.
+	 *
+	 * @param  string  $action
+	 * @param  array   $attributes
+	 * @param  bool    $https
+	 * @return string
+	 */
+	public static function openResource($action = null, $attributes = array(), $https = null)
+	{
+		$action = static::action($action, $https);
+
+		//set method based on action
+		$method = "POST";
+		$actionArray = explode('/', $action);
+		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
+		if (is_numeric($actionLastSegment) || $actionLastSegment == "edit") $method = "PUT";
+
+		//remove "create" and "edit" suffixes from action
+		$action = str_replace('/create', '', str_replace('/edit', '', $action));
+
+		return static::open($action, $method, $attributes, $https);
+	}
+
+	/**
+	 * Open an HTML form for a resource controller with an HTTPS action URI.
+	 *
+	 * @param  string  $action
+	 * @param  array   $attributes
+	 * @return string
+	 */
+	public static function openResourceSecure($action = null, $attributes = array())
+	{
+		$action = str_replace('/create', '', str_replace('/edit', '', $action));
+		return static::openResource($action, $method, $attributes, true);
+	}
+
+	/**
+	 * Open an HTML form for a resource controller that accepts file uploads.
+	 *
+	 * @param  string  $action
+	 * @param  array   $attributes
+	 * @param  bool    $https
+	 * @return string
+	 */
+	public static function openResourceForFiles($action = null, $attributes = array(), $https = null)
+	{
+		$attributes['enctype'] = 'multipart/form-data';
+
+		return static::open($action, $method, $attributes, $https);
+	}
+
+	/**
+	 * Open an HTML form for a resource controller that accepts file uploads with an HTTPS action URI.
+	 *
+	 * @param  string  $action
+	 * @param  array   $attributes
+	 * @return string
+	 */
+	public static function openResourceSecureForFiles($action = null, $attributes = array())
+	{
+		return static::openResourceForFiles($action, $method, $attributes, true);
 	}
 
 	/**

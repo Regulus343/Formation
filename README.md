@@ -81,6 +81,12 @@ You may use 'Formation', or another alias, but 'Form' is recommended for the sak
 
 	echo Form::openSecureForFiles('users/profile');
 
+**Opening a form for a resource controller:**
+
+	echo Form::openResource();
+
+> **Note:** This method automatically removes `/create` and `/edit` from the action. For resource editing, it will also use `PUT` for the form's method attribute. This is based on the last URI segment being either numeric or the word "edit". You can use this with all the previous form opening methods for secure and file uploading forms. The other methods are `openResourceSecure()`, `openResourceForFiles()`, and `openResourceSecureForFiles()`.
+
 **Closing a form:**
 
 	echo Form::close();
