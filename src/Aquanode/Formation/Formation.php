@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on February 13, 2013
+		last updated on February 15, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -440,6 +440,9 @@ class Formation {
 	 */
 	protected static function name($name)
 	{
+		//remove index number from between round brackets
+		if (preg_match("/\((.*)\)/i", $name, $match)) $name = str_replace($match[0], '', $name);
+
 		$nameArray = explode('.', $name);
 		if (count($nameArray) < 2) return $name;
 
@@ -520,11 +523,16 @@ class Formation {
 		// use that ID. Otherwise, we will look for an ID in the array of
 		// label names so labels and their elements have the same ID.
 		if (array_key_exists('id', $attributes)) {
-			return $attributes['id'];
+			$id = $attributes['id'];
 		} else {
 			//replace array denoting periods and underscores with dashes
-			return str_replace('.', '-', str_replace('_', '-', $name));
+			$id = str_replace('.', '-', str_replace('_', '-', $name));
 		}
+
+		//remove round brackets that are used to prevent index number from appearing in field name
+		$id = str_replace('(', '', str_replace(')', '', $id));
+
+		return $id;
 	}
 
 	/**

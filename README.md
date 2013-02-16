@@ -184,9 +184,21 @@ Setting up labels, validation rules, and default values all at once:
 
 	echo Form::text('email', 'example@gmail.com');
 
+*Setting attributes for a text field:**
+
+	echo Form::text('user.first_name', null, array('class' => 'short'));
+
 By using `Form::setDefaults()`, you will not need to pass a default value and can instead pass a `null` value or none at all as the second argument to let the field take advantage of the preset default value. When a form is posted, the values in the POST array will be used instead unless `Form::resetDefaults()` is used.
 
 > **Note:** A field with a name attribute "first_name" is automatically given an ID of "first-name". Underscores in names are always replaced with dashes in a field's ID.
+
+*Naming a text field with an unspecified array index while retaining a unique ID:**
+
+	echo Form::text('user.(0).username');
+
+The above example will create a text field with a name of `user[][username]` and an ID of `user-0-username`. If you wish to explicitly specify the index for the name, simply leave out the round brackets:
+
+	echo Form::text('user.0.username');
 
 **Generating a password input element:**
 
