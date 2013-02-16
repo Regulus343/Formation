@@ -3,7 +3,27 @@ Formation
 
 **A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.**
 
-Formation makes it really easy to populate form fields with default values and to build a form with powerful form field building methods that automatically add an "error" class to labels and form fields and provides the ability to validate specific arrays in the POST array.
+Formation makes it really easy to build a form with form building methods that automatically:
+
+- populate forms with data (both default values and data provided by the POST array)
+- add an `error` class to labels and form fields
+- add IDs to form fields based on their names and add matching `for` attributes to the fields' labels
+- provides the ability to validate specific arrays in the POST array as well as the entire form
+
+All of this can be achieved with a minimal amount of code:
+
+	<?php
+	echo Form::field('username');
+	echo Form::field('password');
+	echo Form::field('user.item', 'select', array('options' => Form::prepOptions(Item::all(), array('id', 'name'))));
+
+	echo Form::label('email'); ?>
+	<div class="field">
+		<?php echo Form::text('email');
+		echo Form::error('email'); ?>
+	</div>
+
+The above code is an example of how simple and versatile Formation is. The top 3 fields make use of Formation's simplified `field()` macro while the final field shows the long way to achieve the same markup as the first two text fields. All of the fields will be automatically repopulated when form data is posted to the page.
 
 	<input name="user[name]" value="" />
 	<input name="user[email]" value="" />
