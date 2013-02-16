@@ -190,7 +190,7 @@ Setting up labels, validation rules, and default values all at once:
 
 By using `Form::setDefaults()`, you will not need to pass a default value and can instead pass a `null` value or none at all as the second argument to let the field take advantage of the preset default value. When a form is posted, the values in the POST array will be used instead unless `Form::resetDefaults()` is used.
 
-> **Note:** A field with a name attribute "first_name" is automatically given an ID of "first-name". Underscores in names are always replaced with dashes in a field's ID.
+> **Note:** A field with a name attribute `first_name` is automatically given an ID of `first-name`. Underscores in names are always replaced with dashes in a field's ID.
 
 **Naming a text field with an unspecified array index while retaining a unique ID:**
 
