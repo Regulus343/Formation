@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on February 15, 2013
+		last updated on February 18, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -132,16 +132,17 @@ class Formation {
 	public static function setValidationRules($rules = array())
 	{
 		$rulesFormatted = array();
-		foreach ($rules as $name=>$rulesItem) {
+		foreach ($rules as $name => $rulesItem) {
 			$rulesArray = explode('.', $name);
+			$last = $rulesArray[(count($rulesArray) - 1)];
 			if (count($rulesArray) < 2) {
-				$rulesFormatted['root'][$rulesArray[(count($rulesArray) - 1)]] = $rulesItem;
+				$rulesFormatted['root'][$last] = $rulesItem;
 			} else {
-				$rulesFormatted[$rulesArray[(count($rulesArray) - 2)]][$rulesArray[(count($rulesArray) - 1)]] = $rulesItem;
+				$rulesFormatted[str_replace('.'.$last, '', $name)][$last] = $rulesItem;
 			}
 		}
 
-		foreach ($rulesFormatted as $name=>$rules) {
+		foreach ($rulesFormatted as $name => $rules) {
 			if ($name == "root") {
 				static::$validation['root'] = Validator::make(Input::all(), $rules);
 			} else {
@@ -423,6 +424,7 @@ class Formation {
 	 */
 	public static function value($name, $type = 'standard')
 	{
+		$name = str_replace('(', '', str_replace(')', '', $name));
 		$value = "";
 		if (isset(static::$defaults[$name]))	$value = static::$defaults[$name];
 		if ($_POST && !static::$reset)			$value = Input::get($name);
@@ -464,23 +466,25 @@ class Formation {
 	 * @param  string  $name
 	 * @param  string  $value
 	 * @param  array   $attributes
+	 * @param  boolean $save
 	 * @return string
 	 */
-	public static function label($name = null, $label = null, $attributes = array())
+	public static function label($name = null, $label = null, $attributes = array(), $save = true)
 	{
 		$attributes = static::addErrorClass($name, $attributes);
 
 		if (!is_null($name) && $name != "") {
 			if (is_null($label)) $label = static::nameToLabel($name);
-
-			//save label in labels array
-			static::$labels[$name] = $label;
-
-			$name = static::id($name); //get ID of field for label's "for" attribute
-			$attributes['for'] = $name;
 		} else {
 			if (is_null($label)) $label = "";
 		}
+
+		//save label in labels array if a label string contains any characters and $save is true
+		if ($label != "" && $save) static::$labels[$name] = $label;
+
+		//get ID of field for label's "for" attribute
+		$name = static::id($name);
+		$attributes['for'] = $name;
 
 		$attributes = static::attributes($attributes);
 
@@ -988,7 +992,7 @@ class Formation {
 				$name = static::name($name);
 
 				$li .= static::checkbox($name, $value, $checked, $attributes);
-				$li .= static::label($attributes['id'], $display);
+				$li .= static::label($name, $display);
 
 				$li .= '</li>';
 				$html .= $li;
@@ -1056,7 +1060,7 @@ class Formation {
 			$containerAttributes = static::addErrorClass($name, $containerAttributes);
 			$html = '<ul'.static::attributes($containerAttributes).'>';
 
-			$label = static::label($name, $name); //set dummy label so ID can be created in line below
+			$label = static::label($name); //set dummy label so ID can be created in line below
 			$idPrefix = static::id($name, $attributes);
 
 			if (is_null($selected)) $selected = static::value($name);
@@ -1076,7 +1080,7 @@ class Formation {
 				$attributes['id'] = $idPrefix.'-'.str_replace(' ', '-', str_replace('_', '-', strtolower($value)));
 
 				$li .= static::radio($name, $value, $checked, $attributes);
-				$li .= static::label($attributes['id'], $display);
+				$li .= static::label($name.'.'.strtolower($value), $display, array(), false);
 
 				$li .= '</li>';
 				$html .= $li;
@@ -1287,15 +1291,18 @@ class Formation {
 	 * Get validation error message if it exists for specified form field. Modified to work with array fields.
 	 *
 	 * @param  string  $name
+	 * @param  boolean $lowercaseFieldName
 	 * @return string
 	 */
-	public static function errorMessage($name)
+	public static function errorMessage($name, $lowercaseFieldName = false)
 	{
 		//replace field name in error message with label if it exists
+		$name = str_replace('(', '', str_replace(')', '', $name));
 		$nameFormatted = $name;
 		if (isset(static::$labels[$name]) && static::$labels[$name] != "") {
 			$nameFormatted = static::$labels[$name];
 		}
+		if ($lowercaseFieldName) $nameFormatted = strtolower($nameFormatted);
 
 		//cycle through all validation instances to allow the ability to get error messages in root fields
 		//as well as field arrays like "field[array]" (passed to errorMessage in the form of "field.array")
@@ -1307,12 +1314,18 @@ class Formation {
 				$nameArray = explode('.', $name);
 				if (count($nameArray) < 2) {
 					if ($_POST && $fieldName == "root" && $messages->first($name) != "")
-						return str_replace($name, $nameFormatted, $messages->first($name));
+						return str_replace(str_replace('_', ' ', $name), $nameFormatted, $messages->first($name));
 				} else {
-					$index = 	$nameArray[(count($nameArray) - 2)];
-					$index2 =	$nameArray[(count($nameArray) - 1)];
-					if ($_POST && $fieldName == $index && $messages->first($index2) != "")
-						return str_replace($index2, $nameFormatted, $messages->first($index2));
+					$last =	$nameArray[(count($nameArray) - 1)];
+					$first = str_replace('.'.$nameArray[(count($nameArray) - 1)], '', $name);
+
+					if ($nameFormatted == $name) {
+						$nameFormatted = static::entities(ucwords($last));
+						if ($lowercaseFieldName) $nameFormatted = strtolower($nameFormatted);
+					}
+
+					if ($_POST && $fieldName == $first && $messages->first($last) != "")
+						return str_replace(str_replace('_', ' ', $last), $nameFormatted, $messages->first($last));
 				}
 			}
 		}
