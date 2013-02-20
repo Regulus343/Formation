@@ -18,21 +18,28 @@ use Illuminate\Support\Facades\Validator;
 class Formation {
 
 	/**
-	 * All of the default values for form fields.
+	 * The default values for form fields.
 	 *
 	 * @var array
 	 */
 	public static $defaults = array();
 
 	/**
-	 * All of the labels for form fields.
+	 * The labels for form fields.
 	 *
 	 * @var array
 	 */
 	public static $labels = array();
 
 	/**
-	 * All of the validation rules (routed through Formation's validation() method to Validator library to allow
+	 * The access keys for form fields.
+	 *
+	 * @var array
+	 */
+	public static $accessKeys = array();
+
+	/**
+	 * The validation rules (routed through Formation's validation() method to Validator library to allow
 	 * automatic addition of error classes to labels and fields).
 	 *
 	 * @var array
@@ -486,9 +493,15 @@ class Formation {
 		$name = static::id($name);
 		$attributes['for'] = $name;
 
-		$attributes = static::attributes($attributes);
-
 		$label = static::entities($label);
+
+		$attributes = static::addAccessKey($name, $attributes, false);
+		if (is_array($attributes) && isset($attributes['accesskey'])) {
+			$label = preg_replace('/'.$attributes['accesskey'].'/i', '<span class="access">'.$attributes['accesskey'].'</span>', $label, 1);
+			unset($attributes['accesskey']);
+		}
+
+		$attributes = static::attributes($attributes);
 
 		return '<label'.$attributes.'>'.$label.'</label>' . "\n";
 	}
@@ -721,9 +734,42 @@ class Formation {
 
 		$name = static::name($name);
 
+		if ($type != "hidden") $attributes = static::addAccessKey($name, $attributes);
+
 		$attributes = array_merge($attributes, compact('type', 'name', 'value', 'id'));
 
 		return '<input'.static::attributes($attributes).'>' . "\n";
+	}
+
+	/**
+	 * Add an accesskey attribute to a field based on its name.
+	 *
+	 * @param  string  $name
+	 * @param  array   $attributes
+	 * @param  boolean $returnLowercase
+	 * @return array
+	 */
+	public static function addAccessKey($name, $attributes = array(), $returnLowercase = true)
+	{
+		if (!isset($attributes['accesskey'])) {
+			$accessKey = false;
+			$label = static::nameToLabel($name);
+			for ($l=0; $l < strlen($label); $l++) {
+				if (!$accessKey) {
+					if (!isset(static::$accessKeys[$label[$l]])) {
+						static::$accessKeys[$label[$l]] = $name;
+						$accessKey = $label[$l];
+					} else {
+						if (static::$accessKeys[$label[$l]] == $name) $accessKey = $label[$l];
+					}
+				}
+			}
+			if ($accessKey) {
+				$attributes['accesskey'] = $accessKey;
+				if ($returnLowercase) $attributes['accesskey'] = strtolower($attributes['accesskey']);
+			}
+		}
+		return $attributes;
 	}
 
 	/**
@@ -874,6 +920,8 @@ class Formation {
 
 		$attributes['name'] = static::name($attributes['name']);
 
+		$attributes = static::addAccessKey($name, $attributes);
+
 		return '<textarea'.static::attributes($attributes).'>'.static::entities($value).'</textarea>' . "\n";
 	}
 
@@ -914,6 +962,8 @@ class Formation {
 		}
 
 		$attributes['name'] = static::name($attributes['name']);
+
+		$attributes = static::addAccessKey($name, $attributes);
 
 		return '<select'.static::attributes($attributes).'>'.implode("\n", $html). "\n" .'</select>' . "\n";
 	}
