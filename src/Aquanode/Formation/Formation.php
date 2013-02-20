@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on February 18, 2013
+		last updated on February 19, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -590,18 +590,29 @@ class Formation {
 	{
 		//set any field named "submit" to a "submit" field automatically and set it's type to attributes to
 		//to simplify creation of "submit" fields with field() macro
-		if ($name == "submit" && is_array($type)) {
-			$name = null;
-			$attributes = $type;
-			$type = "submit";
+		if ($name == "submit") {
+			if (is_array($type)) {
+				$name = null;
+				$attributes = $type;
+				$type = "submit";
+			}
+
+			$types = array('text', 'password', 'textarea', 'hidden', 'select', 'checkbox', 'radio', 'checkbox-set', 'radio-set', 'submit');
+			if (!is_array($type) && !in_array($type, array($types))) {
+				$name = $type;
+				$type = "submit";
+				$attributes = array();
+			}
 		}
 
 		//allow label to be set via attributes array (defaults to labels array and then to a label derived from the field's name)
 		$label = static::nameToLabel($name);
-		if (isset($attributes['label'])) {
+		if (is_array($attributes) && isset($attributes['label'])) {
 			$label = $attributes['label'];
 			unset($attributes['label']);
 		}
+
+		if (!is_array($attributes)) $attributes = array();
 
 		//allow options for select, radio-set, and checkbox-set to be set via attributes array
 		$options = array();
