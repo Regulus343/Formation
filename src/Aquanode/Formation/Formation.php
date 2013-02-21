@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on February 19, 2013
+		last updated on February 20, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -490,14 +490,19 @@ class Formation {
 		if ($label != "" && $save) static::$labels[$name] = $label;
 
 		//get ID of field for label's "for" attribute
-		$name = static::id($name);
-		$attributes['for'] = $name;
+		$id = static::id($name);
+		$attributes['for'] = $id;
 
+		$attributes = static::addAccessKey($name, $label, $attributes, false);
 		$label = static::entities($label);
-
-		$attributes = static::addAccessKey($name, $attributes, false);
 		if (is_array($attributes) && isset($attributes['accesskey'])) {
-			$label = preg_replace('/'.$attributes['accesskey'].'/i', '<span class="access">'.$attributes['accesskey'].'</span>', $label, 1);
+			if (is_string($attributes['accesskey'])) {
+				$newLabel = preg_replace('/'.strtoupper($attributes['accesskey']).'/', '<span class="access">'.strtoupper($attributes['accesskey']).'</span>', $label, 1);
+				if ($newLabel == $label) { //if nothing changed with replace, try lowercase
+					$newLabel = preg_replace('/'.$attributes['accesskey'].'/', '<span class="access">'.$attributes['accesskey'].'</span>', $label, 1);
+				}
+				$label = $newLabel;
+			}
 			unset($attributes['accesskey']);
 		}
 
@@ -525,6 +530,56 @@ class Formation {
 		} else { //if field is an array, create label from last array index
 			return ucwords(str_replace('_', ' ', $nameArray[(count($nameArray) - 1)]));
 		}
+	}
+
+	/**
+	 * Add an accesskey attribute to a field based on its name.
+	 *
+	 * @param  string  $name
+	 * @param  string  $label
+	 * @param  array   $attributes
+	 * @param  boolean $returnLowercase
+	 * @return array
+	 */
+	public static function addAccessKey($name, $label = null, $attributes = array(), $returnLowercase = true)
+	{
+		if (!isset($attributes['accesskey']) || (!is_string($attributes['accesskey']) && $attributes['accesskey'] === true)) {
+			$accessKey = false;
+			if (is_null($label)) {
+				if (isset(static::$labels[$name])) {
+					$label = static::$labels[$name];
+				} else {
+					$label = static::nameToLabel($name);
+				}
+			}
+
+			$label = strtr($label, 'Ã Ã¡Ã¢Ã£Ã¤Ã§Ã¨Ã©ÃªÃ«Ã¬Ã­Ã®Ã¯Ã±Ã²Ã³Ã´ÃµÃ¶Ã¹ÃºÃ»Ã¼Ã½Ã¿Ã€ÃÃ‚ÃƒÃ„Ã‡ÃˆÃ‰ÃŠÃ‹ÃŒÃÃŽÃÃ‘Ã’Ã“Ã”Ã•Ã–Ã™ÃšÃ›ÃœÃ', 'aaaaaceeeeiiiinooooouuuuyyAAAAACEEEEIIIINOOOOOUUUUY');
+			$ignoreCharacters = array(' ', '/', '!', '@', '#', '$', '%', '^', '*', '(', ')', '-', '_', '+', '=', '\\', '~', '?');
+
+			//first check to see if an accesskey is already set for this field
+			foreach (static::$accessKeys as $character => $nameAccessKey) {
+				if ($nameAccessKey == $name) $accessKey = $character;
+			}
+
+			//if no accesskey is set, loop through the field name's characters and set one
+			for ($l=0; $l < strlen($label); $l++) {
+				if (!$accessKey) {
+					$character = strtolower($label[$l]);
+					if (!isset(static::$accessKeys[$character]) && !in_array($character, $ignoreCharacters)) {
+						static::$accessKeys[$character] = $name;
+						$accessKey = $character;
+					}
+				}
+			}
+
+			if ($accessKey) {
+				$attributes['accesskey'] = $accessKey;
+				if ($returnLowercase) $attributes['accesskey'] = strtolower($attributes['accesskey']);
+			}
+		} else {
+			if ($attributes['accesskey'] === false) unset($attributes['accesskey']); //allow ability to prevent accesskey by setting it to false
+		}
+		return $attributes;
 	}
 
 	/**
@@ -654,49 +709,69 @@ class Formation {
 		//if type is still null, assume it to be a regular "text" field
 		if (is_null($type)) $type = "text";
 
+		//set attributes up for label and field (remove element-specific attributes from label and vice versa)
+		$attributesLabel = array();
+		foreach ($attributes as $key => $attribute) {
+			if (substr($key, -6) != "-field" && substr($key, -10) != "-container") {
+				$key = str_replace('-label', '', $key);
+				$attributesLabel[$key] = $attribute;
+			}
+			if ($key == "id-field" && !isset($attributes['for'])) {
+				$attributesLabel['for'] = $attribute;
+			}
+		}
+
+		$attributesField = array();
+		foreach ($attributes as $key => $attribute) {
+			if (substr($key, -6) != "-label") {
+				$key = str_replace('-field', '', $key);
+				$attributesField[$key] = $attribute;
+			}
+		}
+
 		$classes = Config::get('formation::fieldContainerClass');
 		if ($type == "hidden") $classes .= ' hidden';
 		$html = '<'.Config::get('formation::fieldContainer').' class="'.$classes.'">' . "\n";
 		switch ($type) {
 			case "text":
-				$html .= static::label($name, $label, $attributes) . "\n";
-				$html .= static::text($name, $value, $attributes) . "\n";
+				$html .= static::label($name, $label, $attributesLabel) . "\n";
+				$html .= static::text($name, $value, $attributesField) . "\n";
 				break;
 			case "password":
-				$html .= static::label($name, $label, $attributes) . "\n";
-				$html .= static::password($name, $attributes) . "\n";
+				$html .= static::label($name, $label, $attributesLabel) . "\n";
+				$html .= static::password($name, $attributesField) . "\n";
 				break;
 			case "textarea":
-				$html .= static::label($name, $label, $attributes) . "\n";
-				$html .= static::textarea($name, $value, $attributes) . "\n";
+				$html .= static::label($name, $label, $attributesLabel) . "\n";
+				$html .= static::textarea($name, $value, $attributesField) . "\n";
 				break;
 			case "hidden":
-				$html .= static::hidden($name, $value, $attributes) . "\n";
+				$html .= static::hidden($name, $value, $attributesField) . "\n";
 				break;
 			case "select":
-				$html .= static::label($name, $label, $attributes) . "\n";
-				$html .= static::select($name, $options, $nullOption, $value, $attributes) . "\n";
+				$html .= static::label($name, $label, $attributesLabel) . "\n";
+				$html .= static::select($name, $options, $nullOption, $value, $attributesField) . "\n";
 				break;
 			case "checkbox":
 				if (is_null($value)) $value = 1;
-				$html .= static::checkbox($name, $value, false, $attributes) . "\n";
-				$html .= static::label($name, $label, $attributes) . "\n";
+				$html .= static::checkbox($name, $value, false, $attributesField) . "\n";
+				$html .= static::label($name, $label, $attributesLabel) . "\n";
 				break;
 			case "radio":
-				$html .= static::radio($name, $value, false, $attributes) . "\n";
-				$html .= static::label($name, $label, $attributes) . "\n";
+				$html .= static::radio($name, $value, false, $attributesField) . "\n";
+				$html .= static::label($name, $label, $attributesLabel) . "\n";
 				break;
 			case "checkbox-set":
 				//for checkbox set, use options as array of checkbox names
-				$html .= static::label(null, $label, $attributes) . "\n";
-				$html .= static::checkboxSet($options, $name, $attributes) . "\n";
+				$html .= static::label(null, $label, $attributesLabel) . "\n";
+				$html .= static::checkboxSet($options, $name, $attributesField) . "\n";
 				break;
 			case "radio-set":
-				$html .= static::label(null, $label, $attributes) . "\n";
-				$html .= static::radioSet($name, $options, null, $attributes) . "\n";
+				$html .= static::label(null, $label, $attributesLabel) . "\n";
+				$html .= static::radioSet($name, $options, null, $attributesField) . "\n";
 				break;
 			case "submit":
-				$html .= static::submit($label, $attributes) . "\n";
+				$html .= static::submit($label, $attributesField) . "\n";
 				break;
 		}
 		$html .= static::error($name) . "\n";
@@ -734,42 +809,11 @@ class Formation {
 
 		$name = static::name($name);
 
-		if ($type != "hidden") $attributes = static::addAccessKey($name, $attributes);
+		if ($type != "hidden") $attributes = static::addAccessKey($name, null, $attributes);
 
 		$attributes = array_merge($attributes, compact('type', 'name', 'value', 'id'));
 
 		return '<input'.static::attributes($attributes).'>' . "\n";
-	}
-
-	/**
-	 * Add an accesskey attribute to a field based on its name.
-	 *
-	 * @param  string  $name
-	 * @param  array   $attributes
-	 * @param  boolean $returnLowercase
-	 * @return array
-	 */
-	public static function addAccessKey($name, $attributes = array(), $returnLowercase = true)
-	{
-		if (!isset($attributes['accesskey'])) {
-			$accessKey = false;
-			$label = static::nameToLabel($name);
-			for ($l=0; $l < strlen($label); $l++) {
-				if (!$accessKey) {
-					if (!isset(static::$accessKeys[$label[$l]])) {
-						static::$accessKeys[$label[$l]] = $name;
-						$accessKey = $label[$l];
-					} else {
-						if (static::$accessKeys[$label[$l]] == $name) $accessKey = $label[$l];
-					}
-				}
-			}
-			if ($accessKey) {
-				$attributes['accesskey'] = $accessKey;
-				if ($returnLowercase) $attributes['accesskey'] = strtolower($attributes['accesskey']);
-			}
-		}
-		return $attributes;
 	}
 
 	/**
@@ -920,7 +964,7 @@ class Formation {
 
 		$attributes['name'] = static::name($attributes['name']);
 
-		$attributes = static::addAccessKey($name, $attributes);
+		$attributes = static::addAccessKey($name, null, $attributes);
 
 		return '<textarea'.static::attributes($attributes).'>'.static::entities($value).'</textarea>' . "\n";
 	}
@@ -963,7 +1007,7 @@ class Formation {
 
 		$attributes['name'] = static::name($attributes['name']);
 
-		$attributes = static::addAccessKey($name, $attributes);
+		$attributes = static::addAccessKey($name, null, $attributes);
 
 		return '<select'.static::attributes($attributes).'>'.implode("\n", $html). "\n" .'</select>' . "\n";
 	}
@@ -1034,7 +1078,13 @@ class Formation {
 			}
 			$html = '<ul'.static::attributes($containerAttributes).'>';
 
-			foreach ($names as $name=>$display) {
+			foreach ($names as $name => $display) {
+				//if a simple array is used, automatically create the label from the name
+				if (is_numeric($name)) {
+					$name = $display;
+					$display = static::nameToLabel($name);
+				}
+
 				if (!is_null($name_prefix)) $name = $name_prefix . $name;
 
 				$value = 1;
@@ -1053,7 +1103,7 @@ class Formation {
 				$name = static::name($name);
 
 				$li .= static::checkbox($name, $value, $checked, $attributes);
-				$li .= static::label($name, $display);
+				$li .= static::label($name, $display, array('accesskey' => false));
 
 				$li .= '</li>';
 				$html .= $li;
@@ -1141,7 +1191,7 @@ class Formation {
 				$attributes['id'] = $idPrefix.'-'.str_replace(' ', '-', str_replace('_', '-', strtolower($value)));
 
 				$li .= static::radio($name, $value, $checked, $attributes);
-				$li .= static::label($name.'.'.strtolower($value), $display, array(), false);
+				$li .= static::label($name.'.'.strtolower($value), $display, array('accesskey' => false), false);
 
 				$li .= '</li>';
 				$html .= $li;
