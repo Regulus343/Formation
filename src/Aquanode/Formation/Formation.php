@@ -490,8 +490,10 @@ class Formation {
 		if ($label != "" && $save) static::$labels[$name] = $label;
 
 		//get ID of field for label's "for" attribute
-		$id = static::id($name);
-		$attributes['for'] = $id;
+		if (!isset($attributes['for'])) {
+			$id = static::id($name);
+			$attributes['for'] = $id;
+		}
 
 		$attributes = static::addAccessKey($name, $label, $attributes, false);
 		$label = static::entities($label);
@@ -712,11 +714,11 @@ class Formation {
 		//set attributes up for label and field (remove element-specific attributes from label and vice versa)
 		$attributesLabel = array();
 		foreach ($attributes as $key => $attribute) {
-			if (substr($key, -6) != "-field" && substr($key, -10) != "-container") {
+			if (substr($key, -6) != "-field" && substr($key, -10) != "-container" && $key != "id") {
 				$key = str_replace('-label', '', $key);
 				$attributesLabel[$key] = $attribute;
 			}
-			if ($key == "id-field" && !isset($attributes['for'])) {
+			if (($key == "id" || $key == "id-field") && !isset($attributes['for'])) {
 				$attributesLabel['for'] = $attribute;
 			}
 		}
