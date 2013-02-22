@@ -495,6 +495,9 @@ class Formation {
 			$attributes['for'] = $id;
 		}
 
+		//if any "{" characters are used, do not add "access" class for accesskey; Handlebars.js may be being used in field name or label
+		if (preg_match('/\{/', $name)) $attributes['accesskey'] = false;
+
 		$attributes = static::addAccessKey($name, $label, $attributes, false);
 		$label = static::entities($label);
 		if (is_array($attributes) && isset($attributes['accesskey'])) {
@@ -556,7 +559,7 @@ class Formation {
 			}
 
 			$label = strtr($label, 'Ã Ã¡Ã¢Ã£Ã¤Ã§Ã¨Ã©ÃªÃ«Ã¬Ã­Ã®Ã¯Ã±Ã²Ã³Ã´ÃµÃ¶Ã¹ÃºÃ»Ã¼Ã½Ã¿Ã€ÃÃ‚ÃƒÃ„Ã‡ÃˆÃ‰ÃŠÃ‹ÃŒÃÃŽÃÃ‘Ã’Ã“Ã”Ã•Ã–Ã™ÃšÃ›ÃœÃ', 'aaaaaceeeeiiiinooooouuuuyyAAAAACEEEEIIIINOOOOOUUUUY');
-			$ignoreCharacters = array(' ', '/', '!', '@', '#', '$', '%', '^', '*', '(', ')', '-', '_', '+', '=', '\\', '~', '?');
+			$ignoreCharacters = array(' ', '/', '!', '@', '#', '$', '%', '^', '*', '(', ')', '-', '_', '+', '=', '\\', '~', '?', '{', '}', '[', ']', '.');
 
 			//first check to see if an accesskey is already set for this field
 			foreach (static::$accessKeys as $character => $nameAccessKey) {
