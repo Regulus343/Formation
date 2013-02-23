@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on February 20, 2013
+		last updated on February 22, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -176,10 +176,18 @@ class Formation {
 				if ($validation->fails()) return false;
 			}
 		} else {
-			if (isset(static::$validation[$index])) {
-				if (static::$validation[$index]->fails()) return false;
+			if (substr($index, -1) == ".") { //index ends in "."; validate all fields that start with that index
+				foreach (static::$validation as $fieldName => $validation) {
+					if (substr($fieldName, 0, strlen($index)) == $index) {
+						if ($validation->fails()) return false;
+					}
+				}
 			} else {
-				return false;
+				if (isset(static::$validation[$index])) {
+					if (static::$validation[$index]->fails()) return false;
+				} else {
+					return false;
+				}
 			}
 		}
 		return true;
