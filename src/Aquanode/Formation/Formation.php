@@ -1113,7 +1113,6 @@ class Formation {
 				$li = '<li'.static::attributes($listItemAttributes).'>';
 
 				$attributes['id'] = static::id($name);
-				$name = static::name($name);
 
 				$li .= static::checkbox($name, $value, $checked, $attributes);
 				$li .= static::label($name, $display, array('accesskey' => false));
