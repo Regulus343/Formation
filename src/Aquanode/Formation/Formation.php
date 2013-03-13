@@ -678,7 +678,7 @@ class Formation {
 				$type = "submit";
 			}
 
-			$types = array('text', 'password', 'textarea', 'hidden', 'select', 'checkbox', 'radio', 'checkbox-set', 'radio-set', 'submit');
+			$types = array('text', 'search', 'password', 'textarea', 'hidden', 'select', 'checkbox', 'radio', 'checkbox-set', 'radio-set', 'submit', 'button');
 			if (!is_array($type) && !in_array($type, array($types))) {
 				$name = $type;
 				$type = "submit";
@@ -762,6 +762,10 @@ class Formation {
 				$html .= static::label($name, $label, $attributesLabel) . "\n";
 				$html .= static::text($name, $value, $attributesField) . "\n";
 				break;
+			case "search":
+				$html .= static::label($name, $label, $attributesLabel) . "\n";
+				$html .= static::search($name, $value, $attributesField) . "\n";
+				break;
 			case "password":
 				$html .= static::label($name, $label, $attributesLabel) . "\n";
 				$html .= static::password($name, $attributesField) . "\n";
@@ -794,6 +798,9 @@ class Formation {
 			case "radio-set":
 				$html .= static::label(null, $label, $attributesLabel) . "\n";
 				$html .= static::radioSet($name, $options, null, $attributesField) . "\n";
+				break;
+			case "button":
+				$html .= static::button($label, $attributesField) . "\n";
 				break;
 			case "submit":
 				$html .= static::submit($label, $attributesField) . "\n";
