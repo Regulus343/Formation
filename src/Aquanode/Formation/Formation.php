@@ -704,9 +704,9 @@ class Formation {
 
 		///allow the null option ("Select a ...") for a select field to be set via attributes array
 		$nullOption = null;
-		if (isset($attributes['nullOption'])) {
-			$nullOption = $attributes['nullOption'];
-			unset($attributes['nullOption']);
+		if (isset($attributes['null-option'])) {
+			$nullOption = $attributes['null-option'];
+			unset($attributes['null-option']);
 		}
 
 		///allow the field's value to be set via attributes array
