@@ -736,15 +736,27 @@ class Formation {
 
 		$attributesField = array();
 		foreach ($attributes as $key => $attribute) {
-			if (substr($key, -6) != "-label") {
+			if (substr($key, -6) != "-label" && substr($key, -16) != "-field-container") {
 				$key = str_replace('-field', '', $key);
 				$attributesField[$key] = $attribute;
 			}
 		}
 
-		$classes = Config::get('formation::fieldContainerClass');
-		if ($type == "hidden") $classes .= ' hidden';
-		$html = '<'.Config::get('formation::fieldContainer').' class="'.$classes.'">' . "\n";
+		$attributesFieldContainer = array();
+		foreach ($attributes as $key => $attribute) {
+			if (substr($key, -16) == "-field-container") {
+				$key = str_replace('-field-container', '', $key);
+				$attributesFieldContainer[$key] = $attribute;
+			}
+		}
+		if (!isset($attributesFieldContainer['class'])) {
+			$attributesFieldContainer['class'] = Config::get('formation::fieldContainerClass');
+		} else {
+			$attributesFieldContainer['class'] .= ' '.Config::get('formation::fieldContainerClass');
+		}
+		if ($type == "hidden") $attributesFieldContainer['class'] .= ' hidden';
+
+		$html = '<'.Config::get('formation::fieldContainer').static::attributes($attributesFieldContainer).'>' . "\n";
 		switch ($type) {
 			case "text":
 				$html .= static::label($name, $label, $attributesLabel) . "\n";
