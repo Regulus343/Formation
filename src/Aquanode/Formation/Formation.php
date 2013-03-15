@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on March 12, 2013
+		last updated on March 13, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -1190,7 +1190,6 @@ class Formation {
 				//appending "-container" to attributes means they apply to the
 				//"radio-set" container rather than to the checkboxes themselves
 				if (substr($attribute, -10) == "-container") {
-
 					if (str_replace('-container', '', $attribute) == "class") {
 						$containerAttributes['class'] .= ' '.$value;
 					} else {
@@ -1207,7 +1206,7 @@ class Formation {
 
 			if (is_null($selected)) $selected = static::value($name);
 			foreach ($options as $value => $display) {
-				if ($selected == $value) {
+				if ($selected === (string) $value) {
 					$checked = true;
 				} else {
 					$checked = false;
@@ -1253,7 +1252,7 @@ class Formation {
 	public static function radio($name, $value = null, $checked = false, $attributes = array())
 	{
 		if (is_null($value)) $value = $name;
-		if ($value == static::value($name)) $checked = true;
+		if ((string) $value === static::value($name)) $checked = true;
 
 		if (!isset($attributes['id'])) $attributes['id'] = static::id($name.'-'.strtolower($value), $attributes);
 		$name = static::name($name);
