@@ -1,5 +1,5 @@
 {
-    "hash": "02ca6ff3e9d62a72702bd9adecfcf051",
+    "hash": "855aab0ed705bb62bb9354da4c2172fb",
     "packages": [
         {
             "name": "illuminate/support",
@@ -7,19 +7,23 @@
             "target-dir": "Illuminate/Support",
             "source": {
                 "type": "git",
-                "url": "http://github.com/illuminate/support",
-                "reference": "5caf15fab229a52f3d864bbfe8c5150e5764a56b"
+                "url": "https://github.com/illuminate/support.git",
+                "reference": "f30bce49f7dc8e57684ac079f94cea70f3eb47f5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://github.com/illuminate/support/archive/5caf15fab229a52f3d864bbfe8c5150e5764a56b.zip",
-                "reference": "5caf15fab229a52f3d864bbfe8c5150e5764a56b",
+                "url": "https://api.github.com/repos/illuminate/support/zipball/f30bce49f7dc8e57684ac079f94cea70f3eb47f5",
+                "reference": "f30bce49f7dc8e57684ac079f94cea70f3eb47f5",
                 "shasum": ""
             },
             "require": {
                 "php": ">=5.3.0"
             },
-            "time": "2013-01-11 17:19:12",
+            "require-dev": {
+                "mockery/mockery": "0.7.2",
+                "patchwork/utf8": "1.0.*",
+                "phpunit/phpunit": "3.7.*"
+            },
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -41,7 +45,8 @@
                     "email": "taylorotwell@gmail.com"
                 }
             ],
-            "description": "Various utilities and support functions."
+            "description": "Various utilities and support functions.",
+            "time": "2013-03-29 21:32:25"
         }
     ],
     "packages-dev": [
@@ -52,6 +57,12 @@
     ],
     "minimum-stability": "dev",
     "stability-flags": [
+
+    ],
+    "platform": {
+        "php": ">=5.3.0"
+    },
+    "platform-dev": [
 
     ]
 }

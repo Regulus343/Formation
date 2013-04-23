@@ -506,8 +506,15 @@ class Formation {
 		//if any "{" characters are used, do not add "access" class for accesskey; Handlebars.js may be being used in field name or label
 		if (preg_match('/\{/', $name)) $attributes['accesskey'] = false;
 
+		//also do not add accesskey depiction if label already contains HTML
+		if ($label != strip_tags($label)) {
+			$attributes['accesskey'] = false;
+		} else {
+			$label = static::entities($label); //since there is no HTML present in label, convert entities to HTML special characters
+		}
+
 		$attributes = static::addAccessKey($name, $label, $attributes, false);
-		$label = static::entities($label);
+
 		if (is_array($attributes) && isset($attributes['accesskey'])) {
 			if (is_string($attributes['accesskey'])) {
 				$newLabel = preg_replace('/'.strtoupper($attributes['accesskey']).'/', '<span class="access">'.strtoupper($attributes['accesskey']).'</span>', $label, 1);
