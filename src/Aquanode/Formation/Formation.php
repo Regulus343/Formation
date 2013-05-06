@@ -515,6 +515,9 @@ class Formation {
 
 		$attributes = static::addAccessKey($name, $label, $attributes, false);
 
+		//add non-breakable space if label is empty
+		if ($label == "") $label = "&nbsp;";
+
 		if (is_array($attributes) && isset($attributes['accesskey'])) {
 			if (is_string($attributes['accesskey'])) {
 				$newLabel = preg_replace('/'.strtoupper($attributes['accesskey']).'/', '<span class="access">'.strtoupper($attributes['accesskey']).'</span>', $label, 1);
