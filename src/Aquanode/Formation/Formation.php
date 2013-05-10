@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on May 2, 2013
+		last updated on May 8, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -1231,7 +1231,7 @@ class Formation {
 				$attributes['id'] = $idPrefix.'-'.str_replace(' ', '-', str_replace('_', '-', strtolower($value)));
 
 				$li .= static::radio($name, $value, $checked, $attributes);
-				$li .= static::label($name.'.'.strtolower($value), $display, array('accesskey' => false), false);
+				$li .= static::label($name.'.'.strtolower(str_replace(' ', '-', $value)), $display, array('accesskey' => false), false);
 
 				$li .= '</li>';
 				$html .= $li;
@@ -1398,6 +1398,32 @@ class Formation {
 			}
 		}
 		return $options;
+	}
+
+	/**
+	 * Create a set of boolean options (Yes/No, On/Off, Up/Down...)
+	 * You may pass a string like "Yes/No" or an array with just two options.
+	 *
+	 * @param  mixed   $options
+	 * @param  boolean $startWithOne
+	 * @return array
+	 */
+	public static function booleanOptions($options = array('Yes', 'No'), $startWithOne = true)
+	{
+		if (is_string($options)) $options = explode('/', $options); //allow options to be set as a string like "Yes/No"
+		if (!isset($options[1])) $options[1] = "";
+
+		if ($startWithOne) {
+			return array(
+				1 => $options[0],
+				0 => $options[1],
+			);
+		} else {
+			return array(
+				0 => $options[0],
+				1 => $options[1],
+			);
+		}
 	}
 
 	/**
