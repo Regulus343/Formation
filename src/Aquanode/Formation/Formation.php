@@ -793,10 +793,20 @@ class Formation {
 				break;
 			case "checkbox":
 				if (is_null($value)) $value = 1;
+				if (isset($attributesLabel['class'])) {
+					$attributesLabel['class'] .= " checkbox";
+				} else {
+					$attributesLabel['class']  = "checkbox";
+				}
 				$html .= static::checkbox($name, $value, false, $attributesField) . "\n";
 				$html .= static::label($name, $label, $attributesLabel) . "\n";
 				break;
 			case "radio":
+				if (isset($attributesLabel['class'])) {
+					$attributesLabel['class'] .= " radio";
+				} else {
+					$attributesLabel['class']  = "radio";
+				}
 				$html .= static::radio($name, $value, false, $attributesField) . "\n";
 				$html .= static::label($name, $label, $attributesLabel) . "\n";
 				break;
