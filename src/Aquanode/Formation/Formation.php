@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on May 8, 2013
+		last updated on June 11, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -1408,6 +1408,110 @@ class Formation {
 			}
 		}
 		return $options;
+	}
+
+	/**
+	 * Create an options array of months. You may use an integer to go a number of months back from your start month
+	 * or you may use a date to go back or forward to a specific date. If the end month is later than the start month,
+	 * the select options will go from earliest to latest. If the end month is earlier than the start month, the select
+	 * options will go from latest to earliest. If an integer is used as the end month, use a negative number to go back
+	 * from the start month. Setting $endDate to true will use the last day of the month instead of the first day.
+	 *
+	 * @param  mixed   $start
+	 * @param  mixed   $end
+	 * @param  boolean $endDate
+	 * @param  string  $format
+	 * @return array
+	 */
+	public static function monthOptions($start = 'current', $end = -12, $endDate = false, $format = 'F Y')
+	{
+		//prepare start & end months
+		if ($start == "current" || is_null($start) || !is_string($start)) $start = date('Y-m-01');
+		if (is_int($end)) {
+			$startMid = date('Y-m-15', strtotime($start)); //get mid-day of month to prevent long months or short months from producing incorrect month values
+			if ($end > 0) {
+				$ascending = true;
+				$end       = date('Y-m-01', strtotime($startMid.' +'.$end.' months'));
+			} else {
+				$ascending = false;
+				$end       = date('Y-m-01', strtotime($startMid.' -'.abs($end).' months'));
+			}
+		} else {
+			if ($end == "current") $end = date('Y-m-01');
+			if (strtotime($end) > strtotime($start)) {
+				$ascending = true;
+			} else {
+				$ascending = false;
+			}
+		}
+
+		//create list of months
+		$options = array();
+		$month   = $start;
+		if ($ascending) {
+			while (strtotime($month) <= strtotime($end)) {
+				$monthMid = date('Y-m-15', strtotime($month));
+				if ($endDate) {
+					$date = static::lastDayOfMonth($month);
+				} else {
+					$date = $month;
+				}
+
+				$options[$date] = date($format, strtotime($date));
+				$month = date('Y-m-01', strtotime($monthMid.' +1 month'));
+			}
+		} else {
+			while (strtotime($month) >= strtotime($end)) {
+				$monthMid = date('Y-m-15', strtotime($month));
+				if ($endDate) {
+					$date = static::lastDayOfMonth($month);
+				} else {
+					$date = $month;
+				}
+
+				$options[$date] = date($format, strtotime($date));
+				$month = date('Y-m-01', strtotime($monthMid.' -1 month'));
+			}
+		}
+		return $options;
+	}
+
+	/**
+	 * Get the last day of the month. You can use the second argument to format the date (example: "F j, Y").
+	 *
+	 * @param  string  $date
+	 * @return string
+	 */
+	private static function lastDayOfMonth($date = 'current')
+	{
+		if ($date == "current") {
+			$date = date('Y-m-d');
+		} else {
+			$date = date('Y-m-d', strtotime($date));
+			$originalMonth = substr($date, 5, 2);
+		}
+		$year = substr($date, 0, 4); $month = substr($date, 5, 2); $day = substr($date, 8, 2); $result = "";
+		if (isset($originalMonth) && $month != $originalMonth) $month = $originalMonth; //prevent invalid dates having wrong month assigned (June 31 = July, etc...)
+		if ($month == "01" || $month == "03" || $month == "05" || $month == "07" || $month == "08" || $month == "10" || $month == "12") {
+			$result = $year.'-'.$month.'-31';
+		} else if ($month == "04" || $month == "06" || $month == "09" || $month == "11") {
+			$result = $year.'-'.$month.'-30';
+		} else if ($month == "02") {
+			if (($year/4) == round($year/4)) {
+				if (($year/100) == round($year/100)) {
+					if (($year/400) == round($year/400)) {
+						$result = $year.'-'.$month.'-29';
+					} else {
+						$result = $year.'-'.$month.'-28';
+					}
+				} else {
+					$result = $year.'-'.$month.'-29';
+				}
+			} else {
+				$result = $year.'-'.$month.'-28';
+			}
+		}
+		return $result;
 	}
 
 	/**
