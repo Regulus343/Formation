@@ -339,7 +339,7 @@ The first argument is the starting number, the second is the ending number, and 
 	echo Form::select('month_start', Form::monthOptions(true, -12, false, 'M Y'));
 	echo Form::select('month_end', Form::monthOptions(true, -12, true, 'M Y'));
 
-The first argument is your start month. You can use `true`, `false`, `null`, or "current" as your first argument to use the current month. The second argument can have an integer, positive or negative to count up or down a specific number of months, or it can have a date string to count up or down months until a specific date. If the third argument, `endDate`, is set to true, the dates used for the options values will use the last day of the year instead of the first. Lastly, you can specify a date format for the options label as your fourth argument. The default is "F Y".
+The first argument is your start month. You can use `true`, `false`, `null`, or "current" to use the current month. The second argument can have a positive or negative integer to count up or down a specific number of months, or it can have a date string to count up or down months until a specific date. If the third argument, `endDate`, is set to true, the dates used for the options values will use the last day of the year instead of the first. Lastly, you can specify a date format for the options label as your fourth argument. The default is "F Y".
 
 > **Note:** All of the above options array building functions can also be used for checkbox sets and radio buttons sets.
 
