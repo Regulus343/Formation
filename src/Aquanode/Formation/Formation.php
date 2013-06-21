@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on June 11, 2013
+		last updated on June 21, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -100,9 +100,38 @@ class Formation {
 		//turn object into array
 		if (is_object($defaults)) $defaults = (array) $defaults;
 
+		//format default values for times
+		$defaults = static::formatDefaults($defaults);
+
 		static::$defaults = $defaults;
 
 		return static::$defaults;
+	}
+
+	/**
+	 * Format default values for times.
+	 *
+	 * @param  array    $defaults
+	 * @return void
+	 */
+	private static function formatDefaults($defaults = array())
+	{
+		foreach ($defaults as $field => $value) {
+			$fieldArray = explode('.', $field);
+			if (substr(end($fieldArray), 0, 4) == "time") {
+				$valueArray = explode(':', $value);
+				if (count($valueArray) >= 2) {
+					$defaults[$field.'_hour']     = $valueArray[0];
+					$defaults[$field.'_minutes']  = $valueArray[1];
+					$defaults[$field.'_meridiem'] = "am";
+					if ($valueArray[0] >= 12) {
+						$defaults[$field.'_hour']     -= 12;
+						$defaults[$field.'_meridiem']  = "pm";
+					}
+				}
+			}
+		}
+		return $defaults;
 	}
 
 	/**
@@ -206,10 +235,10 @@ class Formation {
 		$defaults = array();
 
 		if (is_object($form)) $form = (array) $form;
-		foreach ($form as $name=>$field) {
+		foreach ($form as $name => $field) {
 			if (is_object($field)) $field = (array) $field;
-			if (isset($field[0]) && !is_null($field[0]) && $field[0] != "") $labels[$name] = $field[0];
-			if (isset($field[1]) && !is_null($field[1]) && $field[1] != "") $rules[$name] = $field[1];
+			if (isset($field[0]) && !is_null($field[0]) && $field[0] != "") $labels[$name]   = $field[0];
+			if (isset($field[1]) && !is_null($field[1]) && $field[1] != "") $rules[$name]    = $field[1];
 			if (isset($field[2]) && !is_null($field[2]) && $field[2] != "") $defaults[$name] = $field[2];
 		}
 
@@ -431,7 +460,7 @@ class Formation {
 
 	/**
 	 * Get the value of the form field. If no POST data exists or reinitialize() has been called, default value
-	 * will be used. Otherwise, POST value will be used. Using "checkbox" type ensures a boolean return value
+	 * will be used. Otherwise, POST value will be used. Using "checkbox" type ensures a boolean return value.
 	 *
 	 * @param  string  $name
 	 * @param  string  $type
@@ -447,6 +476,30 @@ class Formation {
 		if ($type == "checkbox" && is_null($value)) $value = 0; //if type is "checkbox", use 0 for null values - this helps when using Form::value() to add values to an insert or update query
 
 		return $value;
+	}
+
+	/**
+	 * Get the time value from 3 individual fields created from the selectTime() method.
+	 *
+	 * @param  string  $name
+	 * @param  string  $type
+	 * @return mixed
+	 */
+	public static function valueTime($name)
+	{
+		if (substr($name, -1) != "_") $name .= "_";
+
+		$hour     = Input::get($name.'hour');
+		$minutes  = Input::get($name.'minutes');
+		$meridiem = Input::get($name.'meridiem');
+
+		if ($hour == 12)
+			$hour = 0;
+
+		if ($meridiem == "pm")
+			$hour += 12;
+
+		return sprintf('%02d', $hour).':'.sprintf('%02d', $minutes).':00';
 	}
 
 	/**
@@ -1050,6 +1103,8 @@ class Formation {
 		$html = array();
 		if (!is_null($nullOption)) $html[] = static::option('', $nullOption, $selected);
 		foreach ($options as $value => $display) {
+			$value = str_replace('[DUPLICATE]', '', $value); //allow the possibility of the same value appearing in the options array twice by appending "[DUPLICATE]" to its key
+
 			if (is_array($display)) {
 				$html[] = static::optgroup($display, $value, $selected);
 			} else {
@@ -1104,14 +1159,77 @@ class Formation {
 	}
 
 	/**
-	 * Create a set of HTML checkboxes.
+	 * Create a set of select boxes for times.
 	 *
-	 * @param  array   $names
-	 * @param  string  $name_prefix
+	 * @param  string  $name
+	 * @param  array   $options
+	 * @param  string  $nullOption
+	 * @param  string  $selected
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function checkboxSet($names = array(), $name_prefix = null, $attributes = array())
+	public static function selectTime($namePrefix = 'time', $selected = null, $attributes = array())
+	{
+		$html = "";
+		if ($namePrefix != "" && substr($namePrefix, -1) != "_") $namePrefix .= "_";
+
+		//create hour field
+		$hoursOptions = array();
+		for ($h=0; $h <= 12; $h++) {
+			$hour = sprintf('%02d', $h);
+			if ($hour == 12) {
+				$hoursOptions[$hour.'[DUPLICATE]'] = $hour;
+			} else {
+				if ($h == 0) $hour = 12;
+				$hoursOptions[$hour] = $hour;
+			}
+		}
+		$attributesHour = $attributes;
+		if (isset($attributesHour['class'])) {
+			$attributesHour['class'] .= " time time-hour";
+		} else {
+			$attributesHour['class'] = "time time-hour";
+		}
+		$html .= static::select($namePrefix.'hour', $hoursOptions, null, null, $attributesHour);
+
+		$html .= '<span class="time-hour-minutes-separator">:</span>' . "\n";
+
+		//create minutes field
+		$minutesOptions = array();
+		for ($m=0; $m < 60; $m++) {
+			$minute = sprintf('%02d', $m);
+			$minutesOptions[$minute] = $minute;
+		}
+		$attributesMinutes = $attributes;
+		if (isset($attributesMinutes['class'])) {
+			$attributesMinutes['class'] .= " time time-minutes";
+		} else {
+			$attributesMinutes['class'] = "time time-minutes";
+		}
+		$html .= static::select($namePrefix.'minutes', $minutesOptions, null, null, $attributesMinutes);
+
+		//create meridiem field
+		$meridiemOptions = static::simpleOptions(array('am', 'pm'));
+		$attributesMeridiem = $attributes;
+		if (isset($attributesMeridiem['class'])) {
+			$attributesMeridiem['class'] .= " time time-meridiem";
+		} else {
+			$attributesMeridiem['class'] = "time time-meridiem";
+		}
+		$html .= static::select($namePrefix.'meridiem', $meridiemOptions, null, null, $attributesMeridiem);
+
+		return $html;
+	}
+
+	/**
+	 * Create a set of HTML checkboxes.
+	 *
+	 * @param  array   $names
+	 * @param  string  $namePrefix
+	 * @param  array   $attributes
+	 * @return string
+	 */
+	public static function checkboxSet($names = array(), $namePrefix = null, $attributes = array())
 	{
 		if (!empty($names) && is_array($names)) {
 			$containerAttributes = array('class'=> 'checkbox-set');
@@ -1137,7 +1255,7 @@ class Formation {
 					$display = static::nameToLabel($name);
 				}
 
-				if (!is_null($name_prefix)) $name = $name_prefix . $name;
+				if (!is_null($namePrefix)) $name = $namePrefix . $name;
 
 				$value = 1;
 				if ($value == static::value($name)) {
@@ -1408,6 +1526,119 @@ class Formation {
 			}
 		}
 		return $options;
+	}
+
+	/**
+	 * Get an options array of countries.
+	 *
+	 * @return array
+	 */
+	public static function countryOptions()
+	{
+		return static::simpleOptions(array(
+			'Canada', 'United States', 'Afghanistan', 'Albania', 'Algeria', 'American Samoa', 'Andorra', 'Angola', 'Anguilla', 'Antarctica', 'Antigua And Barbuda', 'Argentina', 'Armenia', 'Aruba',
+			'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bermuda', 'Bhutan', 'Bolivia', 'Bosnia And Herzegowina',
+		 	'Botswana', 'Bouvet Island', 'Brazil', 'British Indian Ocean Territory', 'Brunei Darussalam', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Cape Verde', 'Cayman Islands',
+		 	'Central African Republic', 'Chad', 'Chile', 'China', 'Christmas Island', 'Cocos (Keeling) Islands', 'Colombia', 'Comoros', 'Congo', 'Congo, The Democratic Republic Of The', 'Cook Islands',
+		 	'Costa Rica', 'Cote D\'Ivoire', 'Croatia (Local Name: Hrvatska)', 'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'East Timor', 'Ecuador','Egypt',
+			'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Ethiopia', 'Falkland Islands (Malvinas)', 'Faroe Islands', 'Fiji', 'Finland', 'France', 'France, Metropolitan', 'French Guiana',
+		 	'French Polynesia', 'French Southern Territories', 'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Gibraltar', 'Greece', 'Greenland', 'Grenada', 'Guadeloupe', 'Guam', 'Guatemala','Guinea',
+		 	'Guinea-Bissau', 'Guyana', 'Haiti', 'Heard And Mc Donald Islands', 'Holy See (Vatican City State)', 'Honduras', 'Hong Kong', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland',
+		 	'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati', 'Korea, Democratic People\'S Republic Of', 'Korea, Republic Of', 'Kuwait', 'Kyrgyzstan',
+		 	'Lao People\'S Democratic Republic', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libyan Arab Jamahiriya', 'Liechtenstein', 'Lithuania', 'Luxembourg', 'Macau',
+		 	'Macedonia, Former Yugoslav Republic Of', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Martinique', 'Mauritania', 'Mauritius', 'Mayotte', 'Mexico',
+		 	'Micronesia, Federated States Of', 'Moldova, Republic Of', 'Monaco', 'Mongolia', 'Montserrat', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nauru', 'Nepal', 'Netherlands',
+		 	'Netherlands Antilles', 'New Caledonia', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'Niue', 'Norfolk Island', 'Northern Mariana Islands', 'Norway', 'Oman', 'Pakistan', 'Palau', 'Panama',
+		 	'Papua New Guinea', 'Paraguay', 'Peru','Philippines', 'Pitcairn', 'Poland', 'Portugal', 'Puerto Rico', 'Qatar', 'Reunion', 'Romania', 'Russian Federation', 'Rwanda', 'Saint Kitts And Nevis',
+		 	'Saint Lucia','Saint Vincent And The Grenadines', 'Samoa', 'San Marino', 'Sao Tome And Principe', 'Saudi Arabia', 'Senegal', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia (Slovak Republic)',
+		 	'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Georgia, South Sandwich Islands', 'Spain', 'Sri Lanka', 'St. Helena', 'St. Pierre And Miquelon', 'Sudan', 'Suriname',
+		 	'Svalbard And Jan Mayen Islands', 'Swaziland', 'Sweden', 'Switzerland', 'Syrian Arab Republic', 'Taiwan', 'Tajikistan', 'Tanzania, United Republic Of', 'Thailand', 'Togo', 'Tokelau', 'Tonga',
+		 	'Trinidad And Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Turks And Caicos Islands', 'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom',
+		 	'United States Minor Outlying Islands', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Venezuela', 'Viet Nam', 'Virgin Islands (British)', 'Virgin Islands (U.S.)', 'Wallis And Futuna Islands',
+		 	'Western Sahara', 'Yemen', 'Yugoslavia', 'Zambia', 'Zimbabwe'
+		));
+	}
+
+	/**
+	 * Get an options array of Canadian provinces.
+	 *
+	 * @param  bool    $useAbbrev
+	 * @return array
+	 */
+	public static function provinceOptions($useAbbrev = true)
+	{
+		$provinces = array(
+			'AB' => 'Alberta', 'BC' => 'British Columbia', 'MB' => 'Manitoba', 'NB' => 'New Brunswick', 'NL' => 'Newfoundland', 'NT' => 'Northwest Territories', 'NS' => 'Nova Scotia',
+			'NU' => 'Nunavut', 'ON' => 'Ontario', 'PE' => 'Prince Edward Island', 'QC' => 'Quebec', 'SK' => 'Saskatchewan', 'YT' => 'Yukon Territory'
+		);
+		if ($useAbbrev) {
+			return $provinces;
+		} else {
+			return static::simpleOptions(array_values($provinces)); //remove abbreviation keys
+		}
+	}
+
+	/**
+	 * Get an options array of US states.
+	 *
+	 * @param  bool    $useAbbrev
+	 * @return array
+	 */
+	public static function stateOptions($useAbbrev = true)
+	{
+		$states = array(
+			'AL' => 'Alabama', 'AK' => 'Alaska', 'AZ' => 'Arizona', 'AR' => 'Arkansas', 'CA' => 'California', 'CO' => 'Colorado', 'CT' => 'Connecticut', 'DE' => 'Delaware', 'DC' => 'District of Columbia',
+			'FL' => 'Florida', 'GA' => 'Georgia', 'HI' => 'Hawaii', 'ID' => 'Idaho', 'IL' => 'Illinois', 'IN' => 'Indiana', 'IA' => 'Iowa', 'KS' => 'Kansas', 'KY' => 'Kentucky', 'LA' => 'Louisiana', 'ME' => 'Maine',
+			'MD' => 'Maryland', 'MA' => 'Massachusetts', 'MI' => 'Michigan', 'MN' => 'Minnesota', 'MS' => 'Mississippi', 'MO' => 'Missouri', 'MT' => 'Montana', 'NE' => 'Nebraska', 'NV' => 'Nevada',
+			'NH' => 'New Hampshire', 'NJ' => 'New Jersey', 'NM' => 'New Mexico', 'NY' => 'New York', 'NC' => 'North Carolina', 'ND' => 'North Dakota', 'OH' => 'Ohio', 'OK' => 'Oklahoma', 'OR' => 'Oregon',
+			'PA' => 'Pennsylvania', 'PR' => 'Puerto Rico', 'RI' => 'Rhode Island', 'SC' => 'South Carolina', 'SD' => 'South Dakota', 'TN' => 'Tennessee', 'TX' => 'Texas', 'UT' => 'Utah', 'VT' => 'Vermont',
+			'VA' => 'Virginia', 'VI' => 'Virgin Islands', 'WA' => 'Washington', 'WV' => 'West Virginia', 'WI' => 'Wisconsin', 'WY' => 'Wyoming'
+		);
+		if ($useAbbrev) {
+			return $states;
+		} else {
+			return static::simpleOptions(array_values($states)); //remove abbreviation keys
+		}
+	}
+
+	/**
+	 * Get an options array of times.
+	 *
+	 * @param  string  $minutes
+	 * @param  bool    $useAbbrev
+	 * @return array
+	 */
+	public static function timeOptions($minutes = 'half')
+	{
+		$times = array();
+		$minutesOptions = array('00');
+		switch ($minutes) {
+			case "full":
+				$minutesOptions = array('00'); break;
+			case "half":
+				$minutesOptions = array('00', '30'); break;
+			case "quarter":
+				$minutesOptions = array('00', '15', '30', '45'); break;
+			case "all":
+				$minutesOptions = array();
+				for ($m=0; $m < 60; $m++) {
+					$minutesOptions[] = sprintf('%02d', $m);
+				}
+				break;
+		}
+
+		for ($h=0; $h < 24; $h++) {
+			$hour = sprintf('%02d', $h);
+			if ($h < 12) { $meridiem = "am"; } else { $meridiem = "pm"; }
+			if ($h == 0) $hour = 12;
+			if ($h > 12) {
+				$hour = sprintf('%02d', ($hour - 12));
+			}
+			foreach ($minutesOptions as $minutes) {
+				$times[sprintf('%02d', $h).':'.$minutes.':00'] = $hour.':'.$minutes.$meridiem;
+			}
+		}
+		return $times;
 	}
 
 	/**
@@ -1688,118 +1919,6 @@ class Formation {
 	protected static function encoding()
 	{
 		return static::$encoding ?: static::$encoding = Config::get('site.encoding');
-	}
-
-	/**
-	 * Get an options array of US states.
-	 *
-	 * @param  bool    $useAbbrev
-	 * @return array
-	 */
-	public static function states($useAbbrev = true)
-	{
-		$states = array(
-			'AL'=>'Alabama', 'AK'=>'Alaska', 'AZ'=>'Arizona', 'AR'=>'Arkansas', 'CA'=>'California', 'CO'=>'Colorado', 'CT'=>'Connecticut', 'DE'=>'Delaware', 'DC'=>'District of Columbia',
-			'FL'=>'Florida', 'GA'=>'Georgia', 'HI'=>'Hawaii', 'ID'=>'Idaho', 'IL'=>'Illinois', 'IN'=>'Indiana', 'IA'=>'Iowa', 'KS'=>'Kansas', 'KY'=>'Kentucky', 'LA'=>'Louisiana', 'ME'=>'Maine',
-			'MD'=>'Maryland', 'MA'=>'Massachusetts', 'MI'=>'Michigan', 'MN'=>'Minnesota', 'MS'=>'Mississippi', 'MO'=>'Missouri', 'MT'=>'Montana', 'NE'=>'Nebraska', 'NV'=>'Nevada',
-			'NH'=>'New Hampshire', 'NJ'=>'New Jersey', 'NM'=>'New Mexico', 'NY'=>'New York', 'NC'=>'North Carolina', 'ND'=>'North Dakota', 'OH'=>'Ohio', 'OK'=>'Oklahoma', 'OR'=>'Oregon',
-			'PA'=>'Pennsylvania', 'PR'=>'Puerto Rico', 'RI'=>'Rhode Island', 'SC'=>'South Carolina', 'SD'=>'South Dakota', 'TN'=>'Tennessee', 'TX'=>'Texas', 'UT'=>'Utah', 'VT'=>'Vermont',
-			'VA'=>'Virginia', 'VI'=>'Virgin Islands', 'WA'=>'Washington', 'WV'=>'West Virginia', 'WI'=>'Wisconsin', 'WY'=>'Wyoming'
-		);
-		if ($useAbbrev) {
-			return $states;
-		} else {
-			return static::simpleOptions(explode(',', implode(',', $states))); //remove abbreviation keys
-		}
-	}
-
-	/**
-	 * Get an options array of Canadian provinces.
-	 *
-	 * @param  bool    $useAbbrev
-	 * @return array
-	 */
-	public static function provinces($useAbbrev = true)
-	{
-		$provinces = array(
-			'AB'=>'Alberta', 'BC'=>'British Columbia', 'MB'=>'Manitoba', 'NB'=>'New Brunswick', 'NL'=>'Newfoundland', 'NT'=>'Northwest Territories', 'NS'=>'Nova Scotia',
-			'NU'=>'Nunavut', 'ON'=>'Ontario', 'PE'=>'Prince Edward Island', 'QC'=>'Quebec', 'SK'=>'Saskatchewan', 'YT'=>'Yukon Territory'
-		);
-		if ($useAbbrev) {
-			return $provinces;
-		} else {
-			return static::simpleOptions(explode(',', implode(',', $provinces))); //remove abbreviation keys
-		}
-	}
-
-	/**
-	 * Get an options array of countries.
-	 *
-	 * @return array
-	 */
-	public static function countries()
-	{
-		return static::simpleOptions(array(
-			'Canada','United States','Afghanistan','Albania','Algeria','American Samoa','Andorra','Angola','Anguilla','Antarctica','Antigua And Barbuda','Argentina','Armenia','Aruba',
-			'Australia','Austria','Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bermuda','Bhutan','Bolivia','Bosnia And Herzegowina',
-		 	'Botswana','Bouvet Island','Brazil','British Indian Ocean Territory','Brunei Darussalam','Bulgaria','Burkina Faso','Burundi','Cambodia','Cameroon','Cape Verde','Cayman Islands',
-		 	'Central African Republic','Chad','Chile','China','Christmas Island','Cocos (Keeling) Islands','Colombia','Comoros','Congo','Congo, The Democratic Republic Of The','Cook Islands',
-		 	'Costa Rica','Cote D\'Ivoire','Croatia (Local Name: Hrvatska)','Cuba','Cyprus','Czech Republic','Denmark','Djibouti','Dominica','Dominican Republic','East Timor','Ecuador','Egypt',
-			'El Salvador','Equatorial Guinea','Eritrea','Estonia','Ethiopia','Falkland Islands (Malvinas)','Faroe Islands','Fiji','Finland','France','France, Metropolitan','French Guiana',
-		 	'French Polynesia','French Southern Territories','Gabon','Gambia','Georgia','Germany','Ghana','Gibraltar','Greece','Greenland','Grenada','Guadeloupe','Guam','Guatemala','Guinea',
-		 	'Guinea-Bissau','Guyana','Haiti','Heard And Mc Donald Islands','Holy See (Vatican City State)','Honduras','Hong Kong','Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland',
-		 	'Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan','Kenya','Kiribati','Korea, Democratic People\'S Republic Of','Korea, Republic Of','Kuwait','Kyrgyzstan',
-		 	'Lao People\'S Democratic Republic','Latvia','Lebanon','Lesotho','Liberia','Libyan Arab Jamahiriya','Liechtenstein','Lithuania','Luxembourg','Macau','Macedonia, Former Yugoslav Republic Of',
-		 	'Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Martinique','Mauritania','Mauritius','Mayotte','Mexico','Micronesia, Federated States Of',
-		 	'Moldova, Republic Of','Monaco','Mongolia','Montserrat','Morocco','Mozambique','Myanmar','Namibia','Nauru','Nepal','Netherlands','Netherlands Antilles','New Caledonia','New Zealand',
-		 	'Nicaragua','Niger','Nigeria','Niue','Norfolk Island','Northern Mariana Islands','Norway','Oman','Pakistan','Palau','Panama','Papua New Guinea','Paraguay','Peru','Philippines',
-		 	'Pitcairn','Poland','Portugal','Puerto Rico','Qatar','Reunion','Romania','Russian Federation','Rwanda','Saint Kitts And Nevis','Saint Lucia','Saint Vincent And The Grenadines',
-		 	'Samoa','San Marino','Sao Tome And Principe','Saudi Arabia','Senegal','Seychelles','Sierra Leone','Singapore','Slovakia (Slovak Republic)','Slovenia','Solomon Islands','Somalia',
-		 	'South Africa','South Georgia, South Sandwich Islands','Spain','Sri Lanka','St. Helena','St. Pierre And Miquelon','Sudan','Suriname','Svalbard And Jan Mayen Islands','Swaziland',
-		 	'Sweden','Switzerland','Syrian Arab Republic','Taiwan','Tajikistan','Tanzania, United Republic Of','Thailand','Togo','Tokelau','Tonga','Trinidad And Tobago','Tunisia','Turkey',
-		 	'Turkmenistan','Turks And Caicos Islands','Tuvalu','Uganda','Ukraine','United Arab Emirates','United Kingdom','United States Minor Outlying Islands','Uruguay','Uzbekistan',
-		 	'Vanuatu','Venezuela','Viet Nam','Virgin Islands (British)','Virgin Islands (U.S.)','Wallis And Futuna Islands','Western Sahara','Yemen','Yugoslavia','Zambia','Zimbabwe'
-		));
-	}
-
-	/**
-	 * Get an options array of times.
-	 *
-	 * @param  string  $minutes
-	 * @param  bool    $useAbbrev
-	 * @return array
-	 */
-	public static function times($minutes = 'half')
-	{
-		$times = array();
-		$minutesOptions = array('00');
-		switch ($minutes) {
-			case "full":
-				$minutesOptions = array('00'); break;
-			case "half":
-				$minutesOptions = array('00', '30'); break;
-			case "quarter":
-				$minutesOptions = array('00', '15', '30', '45'); break;
-			case "all":
-				$minutesOptions = array();
-				for ($m=0; $m < 60; $m++) {
-					$minutesOptions[] = sprintf('%02d', $m);
-				}
-				break;
-		}
-
-		for ($h=0; $h < 24; $h++) {
-			$hour = sprintf('%02d', $h);
-			if ($h < 12) { $meridiem = "am"; } else { $meridiem = "pm"; }
-			if ($h == 0) $hour = 12;
-			if ($h > 12) {
-				$hour = sprintf('%02d', ($hour - 12));
-			}
-			foreach ($minutesOptions as $minutes) {
-				$times[sprintf('%02d', $h).':'.$minutes.':00'] = $hour.':'.$minutes.$meridiem;
-			}
-		}
-		return $times;
 	}
 
 	/**
