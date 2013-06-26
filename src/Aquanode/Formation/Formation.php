@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on June 21, 2013
+		last updated on June 25, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -1250,7 +1250,15 @@ class Formation {
 
 			foreach ($names as $name => $display) {
 				//if a simple array is used, automatically create the label from the name
-				if (is_numeric($name)) {
+				$associativeArray = true;
+				if (isset($attributes['associative'])) {
+					if (!$attributes['associative'])
+						$associativeArray = false;
+				} else {
+					if (is_numeric($name))
+						$associativeArray = false;
+				}
+				if (!$associativeArray) {
 					$name = $display;
 					$display = static::nameToLabel($name);
 				}
@@ -1269,9 +1277,11 @@ class Formation {
 				if ($checked) $listItemAttributes['class'] = "selected";
 				$li = '<li'.static::attributes($listItemAttributes).'>';
 
-				$attributes['id'] = static::id($name);
+				$checkboxAttributes = $attributes;
+				$checkboxAttributes['id'] = static::id($name);
+				if (isset($checkboxAttributes['associative'])) unset($checkboxAttributes['associative']);
 
-				$li .= static::checkbox($name, $value, $checked, $attributes);
+				$li .= static::checkbox($name, $value, $checked, $checkboxAttributes);
 				$li .= static::label($name, $display, array('accesskey' => false));
 
 				$li .= '</li>';
