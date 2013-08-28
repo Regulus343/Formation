@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on June 25, 2013
+		last updated on July 25, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -407,7 +407,17 @@ class Formation {
 	 */
 	public static function openResourceSecure($action = null, $attributes = array())
 	{
+		$action = static::action($action, true);
+
+		//set method based on action
+		$method = "POST";
+		$actionArray = explode('/', $action);
+		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
+		if (is_numeric($actionLastSegment) || $actionLastSegment == "edit") $method = "PUT";
+
+		//remove "create" and "edit" suffixes from action
 		$action = str_replace('/create', '', str_replace('/edit', '', $action));
+
 		return static::openResource($action, $method, $attributes, true);
 	}
 
@@ -421,7 +431,18 @@ class Formation {
 	 */
 	public static function openResourceForFiles($action = null, $attributes = array(), $https = null)
 	{
+		$action = static::action($action, $https);
+
 		$attributes['enctype'] = 'multipart/form-data';
+
+		//set method based on action
+		$method = "POST";
+		$actionArray = explode('/', $action);
+		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
+		if (is_numeric($actionLastSegment) || $actionLastSegment == "edit") $method = "PUT";
+
+		//remove "create" and "edit" suffixes from action
+		$action = str_replace('/create', '', str_replace('/edit', '', $action));
 
 		return static::open($action, $method, $attributes, $https);
 	}
@@ -435,6 +456,18 @@ class Formation {
 	 */
 	public static function openResourceSecureForFiles($action = null, $attributes = array())
 	{
+		$action = static::action($action, false);
+
+		$attributes['enctype'] = 'multipart/form-data';
+
+		//set method based on action
+		$method = "POST";
+		$actionArray = explode('/', $action);
+		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
+
+		//remove "create" and "edit" suffixes from action
+		$action = str_replace('/create', '', str_replace('/edit', '', $action));
+
 		return static::openResourceForFiles($action, $method, $attributes, true);
 	}
 
@@ -1366,10 +1399,12 @@ class Formation {
 				$li = '<li'.static::attributes($listItemAttributes).'>';
 
 				//append radio button value to the end of ID to prevent all radio buttons from having the same ID
-				$attributes['id'] = $idPrefix.'-'.str_replace(' ', '-', str_replace('_', '-', strtolower($value)));
+				$idSuffix = str_replace('.', '-', str_replace(' ', '-', str_replace('_', '-', strtolower($value))));
+				if ($idSuffix == "") $idSuffix = "blank";
+				$attributes['id'] = $idPrefix.'-'.$idSuffix;
 
 				$li .= static::radio($name, $value, $checked, $attributes);
-				$li .= static::label($name.'.'.strtolower(str_replace(' ', '-', $value)), $display, array('accesskey' => false), false);
+				$li .= static::label($name.'.'.strtolower(str_replace(' ', '-', $value)), $display, array('for' => $attributes['id'], 'accesskey' => false), false);
 
 				$li .= '</li>';
 				$html .= $li;
@@ -1804,14 +1839,17 @@ class Formation {
 	 * Create error div for validation error if it exists for specified form field.
 	 *
 	 * @param  string  $name
-	 * @param  bool    $alwaysExists
+	 * @param  boolean $alwaysExists
+	 * @param  mixed   $replacementFieldName
 	 * @return string
 	 */
-	public static function error($name, $alwaysExists = false)
+	public static function error($name, $alwaysExists = false, $replacementFieldName = false)
 	{
 		$attr = "";
 		if ($alwaysExists) $attr = ' id="'.str_replace('_', '-', $name).'-error"';
-		$message = static::errorMessage($name);
+
+		$message = static::errorMessage($name, $replacementFieldName);
+
 		if ($message && $message != "") {
 			return '<div class="error"'.$attr.'>'.$message.'</div>';
 		} else {
@@ -1823,18 +1861,27 @@ class Formation {
 	 * Get validation error message if it exists for specified form field. Modified to work with array fields.
 	 *
 	 * @param  string  $name
-	 * @param  boolean $lowercaseFieldName
+	 * @param  mixed   $replacementFieldName
 	 * @return string
 	 */
-	public static function errorMessage($name, $lowercaseFieldName = false)
+	public static function errorMessage($name, $replacementFieldName = false)
 	{
 		//replace field name in error message with label if it exists
 		$name = str_replace('(', '', str_replace(')', '', $name));
 		$nameFormatted = $name;
-		if (isset(static::$labels[$name]) && static::$labels[$name] != "") {
-			$nameFormatted = static::$labels[$name];
+
+		if ($replacementFieldName && is_string($replacementFieldName) && $replacementFieldName != "" && $replacementFieldName != "LOWERCASE") {
+			$nameFormatted = $replacementFieldName;
+		} else {
+			if (isset(static::$labels[$name]) && static::$labels[$name] != "")
+				$nameFormatted = static::$labels[$name];
+
+			if (substr($nameFormatted, -1) == ":")
+				$nameFormatted = substr($nameFormatted, 0, (strlen($nameFormatted) - 1));
+
+			if ($replacementFieldName == "LOWERCASE")
+				$nameFormatted = strtolower($nameFormatted);
 		}
-		if ($lowercaseFieldName) $nameFormatted = strtolower($nameFormatted);
 
 		//cycle through all validation instances to allow the ability to get error messages in root fields
 		//as well as field arrays like "field[array]" (passed to errorMessage in the form of "field.array")
@@ -1847,13 +1894,22 @@ class Formation {
 				if (count($nameArray) < 2) {
 					if ($_POST && $fieldName == "root" && $messages->first($name) != "")
 						return str_replace(str_replace('_', ' ', $name), $nameFormatted, $messages->first($name));
+
 				} else {
 					$last =	$nameArray[(count($nameArray) - 1)];
 					$first = str_replace('.'.$nameArray[(count($nameArray) - 1)], '', $name);
 
-					if ($nameFormatted == $name) {
-						$nameFormatted = static::entities(ucwords($last));
-						if ($lowercaseFieldName) $nameFormatted = strtolower($nameFormatted);
+					if ($replacementFieldName && is_string($replacementFieldName) && $replacementFieldName != "" && $replacementFieldName != "LOWERCASE") {
+						$nameFormatted = $replacementFieldName;
+					} else {
+						if ($nameFormatted == $name) {
+							$nameFormatted = static::entities(ucwords($last));
+						}
+						if (substr($nameFormatted, -1) == ":")
+							$nameFormatted = substr($nameFormatted, 0, (strlen($nameFormatted) - 2));
+
+						if ($replacementFieldName == "LOWERCASE")
+							$nameFormatted = strtolower($nameFormatted);
 					}
 
 					if ($_POST && $fieldName == $first && $messages->first($last) != "")
