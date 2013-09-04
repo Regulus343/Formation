@@ -937,6 +937,32 @@ class Formation {
 	 */
 	public static function input($type, $name, $value = null, $attributes = array())
 	{
+		$class = Config::get('formation::fieldClass');
+		if ($class != "") {
+			if (isset($attributes['class']) && $attributes['class'] != "") {
+				$attributes['class'] .= ' '.$class;
+			} else {
+				$attributes['class'] = $class;
+			}
+		}
+
+		//automatically set placeholder attribute if config option is set
+		$placeholder = Config::get('formation::setFieldPlaceholder');
+		if ($placeholder && !isset($attributes['placeholder'])) {
+			$namePlaceholder = $name;
+			if (isset(static::$labels[$name]) && static::$labels[$name] != "")
+				$namePlaceholder = static::$labels[$name];
+
+			if (substr($namePlaceholder, -1) == ":")
+				$namePlaceholder = substr($namePlaceholder, 0, (strlen($namePlaceholder) - 1));
+
+			$attributes['placeholder'] = $namePlaceholder;
+		}
+
+		//remove "placeholder" attribute if it is set to false
+		if (isset($attributes['placeholder']) && !$attributes['placeholder'])
+			unset($attributes['placeholder']);
+
 		$name = (isset($attributes['name'])) ? $attributes['name'] : $name;
 		$attributes = static::addErrorClass($name, $attributes);
 

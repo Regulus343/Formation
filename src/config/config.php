@@ -14,7 +14,20 @@ return array(
 	*/
 	'fieldContainer'      => 'div',
 	'fieldContainerClass' => 'form-group',
-	'fieldContainerClear' => true,
+	'fieldContainerClear' => false,
+
+	'fieldClass'          => 'form-control',
+
+	/*
+	|--------------------------------------------------------------------------
+	| Set Field Placeholder
+	|--------------------------------------------------------------------------
+	|
+	| Automatically set a "placeholder" attribute for the field according to
+	| the name of the field's label.
+	|
+	*/
+	'setFieldPlaceholder' => true,
 
 	/*
 	|--------------------------------------------------------------------------
