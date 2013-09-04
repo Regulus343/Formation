@@ -998,7 +998,7 @@ class Formation {
 	 */
 	public static function input($type, $name, $value = null, $attributes = array())
 	{
-		if (!in_array($type, array('checkbox', 'radio'))) {
+		if (!in_array($type, array('hidden', 'checkbox', 'radio'))) {
 			//add the field class if config option is set
 			$attributes = static::setFieldClass($name, $attributes);
 
@@ -2061,26 +2061,39 @@ class Formation {
 	 *
 	 * @param  mixed   $itemName
 	 * @param  mixed   $action
-	 * @param  bool    $https
 	 * @return string
 	 */
-	public static function submitResource($itemName = null, $action = null, $https = false)
+	public static function submitResource($itemName = null, $action = null)
 	{
-		$action = static::action($action, $https);
+		if (static::updateResource($action)) {
+			$label = "Update";
+		} else {
+			$label = "Create";
+		}
+		if (!is_null($itemName) && $itemName != "") {
+			$label .= ' '.$itemName;
+		}
+		return $label;
+	}
+
+	/**
+	 * Get the status create / update status from the resource controller URL.
+	 *
+	 * @param  mixed   $action
+	 * @return bool
+	 */
+	public static function updateResource($action = null)
+	{
+		$action = static::action($action);
 
 		//set method based on action
 		$actionArray = explode('/', $action);
 		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
 		if (is_numeric($actionLastSegment) || $actionLastSegment == "edit") {
-			$label = "Update";
+			return true;
 		} else {
-			$label = "Create";
+			return false;
 		}
-
-		if (!is_null($itemName) && $itemName != "") {
-			$label .= ' '.$itemName;
-		}
-		return $label;
 	}
 
 	/**
