@@ -898,7 +898,7 @@ class Formation {
 				$attributesFieldContainer[$key] = $attribute;
 			}
 		}
-		if (!isset($attributesFieldContainer['class'])) {
+		if (!isset($attributesFieldContainer['class']) || $attributesFieldContainer['class'] == "") {
 			$attributesFieldContainer['class'] = Config::get('formation::fieldContainerClass');
 		} else {
 			$attributesFieldContainer['class'] .= ' '.Config::get('formation::fieldContainerClass');
