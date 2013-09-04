@@ -321,7 +321,7 @@ class Formation {
 	 *
 	 * If no action is specified, the current request URI will be used.
 	 *
-	 * @param  string   $action
+	 * @param  mixed    $action
 	 * @param  bool     $https
 	 * @return string
 	 */
@@ -335,7 +335,7 @@ class Formation {
 	/**
 	 * Open an HTML form with an HTTPS action URI.
 	 *
-	 * @param  string  $action
+	 * @param  mixed   $action
 	 * @param  string  $method
 	 * @param  array   $attributes
 	 * @return string
@@ -348,7 +348,7 @@ class Formation {
 	/**
 	 * Open an HTML form that accepts file uploads.
 	 *
-	 * @param  string  $action
+	 * @param  mixed   $action
 	 * @param  string  $method
 	 * @param  array   $attributes
 	 * @param  bool    $https
@@ -364,7 +364,7 @@ class Formation {
 	/**
 	 * Open an HTML form that accepts file uploads with an HTTPS action URI.
 	 *
-	 * @param  string  $action
+	 * @param  mixed   $action
 	 * @param  string  $method
 	 * @param  array   $attributes
 	 * @return string
@@ -377,12 +377,12 @@ class Formation {
 	/**
 	 * Open an HTML form that automatically corrects the action for a resource controller.
 	 *
-	 * @param  string  $action
+	 * @param  mixed   $action
 	 * @param  array   $attributes
 	 * @param  bool    $https
 	 * @return string
 	 */
-	public static function openResource($action = null, $attributes = array(), $https = null)
+	public static function openResource($action = null, $attributes = array(), $https = false)
 	{
 		$action = static::action($action, $https);
 
@@ -401,7 +401,7 @@ class Formation {
 	/**
 	 * Open an HTML form for a resource controller with an HTTPS action URI.
 	 *
-	 * @param  string  $action
+	 * @param  mixed   $action
 	 * @param  array   $attributes
 	 * @return string
 	 */
@@ -424,12 +424,12 @@ class Formation {
 	/**
 	 * Open an HTML form for a resource controller that accepts file uploads.
 	 *
-	 * @param  string  $action
+	 * @param  mixed   $action
 	 * @param  array   $attributes
 	 * @param  bool    $https
 	 * @return string
 	 */
-	public static function openResourceForFiles($action = null, $attributes = array(), $https = null)
+	public static function openResourceForFiles($action = null, $attributes = array(), $https = false)
 	{
 		$action = static::action($action, $https);
 
@@ -450,7 +450,7 @@ class Formation {
 	/**
 	 * Open an HTML form for a resource controller that accepts file uploads with an HTTPS action URI.
 	 *
-	 * @param  string  $action
+	 * @param  mixed   $action
 	 * @param  array   $attributes
 	 * @return string
 	 */
@@ -783,7 +783,11 @@ class Formation {
 		}
 
 		//allow label to be set via attributes array (defaults to labels array and then to a label derived from the field's name)
-		$label = static::nameToLabel($name);
+		if (!is_null($name)) {
+			$label = static::nameToLabel($name);
+		} else {
+			$label = $name;
+		}
 		if (is_array($attributes) && isset($attributes['label'])) {
 			$label = $attributes['label'];
 			unset($attributes['label']);
@@ -850,7 +854,9 @@ class Formation {
 		} else {
 			$attributesFieldContainer['class'] .= ' '.Config::get('formation::fieldContainerClass');
 		}
-		if ($type == "hidden") $attributesFieldContainer['class'] .= ' hidden';
+		if ($type == "checkbox") $attributesFieldContainer['class'] .= ' checkbox';
+		if ($type == "radio")    $attributesFieldContainer['class'] .= ' radio';
+		if ($type == "hidden")   $attributesFieldContainer['class'] .= ' hidden';
 
 		$html = '<'.Config::get('formation::fieldContainer').static::attributes($attributesFieldContainer).'>' . "\n";
 		switch ($type) {
@@ -884,8 +890,7 @@ class Formation {
 				} else {
 					$attributesLabel['class']  = "checkbox";
 				}
-				$html .= static::checkbox($name, $value, false, $attributesField) . "\n";
-				$html .= static::label($name, $label, $attributesLabel) . "\n";
+				$html .= '<label>'.static::checkbox($name, $value, false, $attributesField).' '.$label.'</label>' . "\n";
 				break;
 			case "radio":
 				if (isset($attributesLabel['class'])) {
@@ -893,12 +898,13 @@ class Formation {
 				} else {
 					$attributesLabel['class']  = "radio";
 				}
-				$html .= static::radio($name, $value, false, $attributesField) . "\n";
-				$html .= static::label($name, $label, $attributesLabel) . "\n";
+				$html .= '<label>'.static::radio($name, $value, false, $attributesField).' '.$label.'</label>' . "\n";
 				break;
 			case "checkbox-set":
 				//for checkbox set, use options as array of checkbox names
-				$html .= static::label(null, $label, $attributesLabel) . "\n";
+				if (!is_null($label))
+					$html .= static::label(null, $label, $attributesLabel) . "\n";
+
 				$html .= static::checkboxSet($options, $name, $attributesField) . "\n";
 				break;
 			case "radio-set":
@@ -937,26 +943,29 @@ class Formation {
 	 */
 	public static function input($type, $name, $value = null, $attributes = array())
 	{
-		$class = Config::get('formation::fieldClass');
-		if ($class != "") {
-			if (isset($attributes['class']) && $attributes['class'] != "") {
-				$attributes['class'] .= ' '.$class;
-			} else {
-				$attributes['class'] = $class;
+		if (!in_array($type, array('checkbox', 'radio'))) {
+			//add the field class if it is set
+			$class = Config::get('formation::fieldClass');
+			if ($class != "") {
+				if (isset($attributes['class']) && $attributes['class'] != "") {
+					$attributes['class'] .= ' '.$class;
+				} else {
+					$attributes['class'] = $class;
+				}
 			}
-		}
 
-		//automatically set placeholder attribute if config option is set
-		$placeholder = Config::get('formation::setFieldPlaceholder');
-		if ($placeholder && !isset($attributes['placeholder'])) {
-			$namePlaceholder = $name;
-			if (isset(static::$labels[$name]) && static::$labels[$name] != "")
-				$namePlaceholder = static::$labels[$name];
+			//automatically set placeholder attribute if config option is set
+			$placeholder = Config::get('formation::setFieldPlaceholder');
+			if ($placeholder && !isset($attributes['placeholder'])) {
+				$namePlaceholder = $name;
+				if (isset(static::$labels[$name]) && static::$labels[$name] != "")
+					$namePlaceholder = static::$labels[$name];
 
-			if (substr($namePlaceholder, -1) == ":")
-				$namePlaceholder = substr($namePlaceholder, 0, (strlen($namePlaceholder) - 1));
+				if (substr($namePlaceholder, -1) == ":")
+					$namePlaceholder = substr($namePlaceholder, 0, (strlen($namePlaceholder) - 1));
 
-			$attributes['placeholder'] = $namePlaceholder;
+				$attributes['placeholder'] = $namePlaceholder;
+			}
 		}
 
 		//remove "placeholder" attribute if it is set to false
@@ -1121,6 +1130,7 @@ class Formation {
 		$attributes['name'] = $name;
 		$attributes['id'] = static::id($name, $attributes);
 
+		//add the field class if it is set
 		$class = Config::get('formation::fieldClass');
 		if ($class != "") {
 			if (isset($attributes['class']) && $attributes['class'] != "") {
@@ -1128,6 +1138,19 @@ class Formation {
 			} else {
 				$attributes['class'] = $class;
 			}
+		}
+
+		//automatically set placeholder attribute if config option is set
+		$placeholder = Config::get('formation::setFieldPlaceholder');
+		if ($placeholder && !isset($attributes['placeholder'])) {
+			$namePlaceholder = $name;
+			if (isset(static::$labels[$name]) && static::$labels[$name] != "")
+				$namePlaceholder = static::$labels[$name];
+
+			if (substr($namePlaceholder, -1) == ":")
+				$namePlaceholder = substr($namePlaceholder, 0, (strlen($namePlaceholder) - 1));
+
+			$attributes['placeholder'] = $namePlaceholder;
 		}
 
 		$attributes = static::addErrorClass($name, $attributes);
@@ -1314,7 +1337,7 @@ class Formation {
 					unset($attributes[$attribute]);
 				}
 			}
-			$html = '<ul'.static::attributes($containerAttributes).'>';
+			$html = '<div'.static::attributes($containerAttributes).'>';
 
 			foreach ($names as $name => $display) {
 				//if a simple array is used, automatically create the label from the name
@@ -1343,20 +1366,18 @@ class Formation {
 				//add selected class to list item if checkbox is checked to allow styling for selected checkboxes in set
 				$listItemAttributes = array();
 				if ($checked) $listItemAttributes['class'] = "selected";
-				$li = '<li'.static::attributes($listItemAttributes).'>';
 
 				$checkboxAttributes = $attributes;
 				$checkboxAttributes['id'] = static::id($name);
 				if (isset($checkboxAttributes['associative'])) unset($checkboxAttributes['associative']);
 
-				$li .= static::checkbox($name, $value, $checked, $checkboxAttributes);
-				$li .= static::label($name, $display, array('accesskey' => false));
-
-				$li .= '</li>';
-				$html .= $li;
+				$checkbox  = '<div class="checkbox"><label>';
+				$checkbox .= static::checkbox($name, $value, $checked, $checkboxAttributes).' '.$display;
+				$checkbox .='</label></div>' . "\n";
+				$html .= $checkbox;
 			}
 
-			$html .= '</ul>' . "\n";
+			$html .= '</div>' . "\n";
 			return $html;
 		}
 	}
@@ -1415,7 +1436,7 @@ class Formation {
 				}
 			}
 			$containerAttributes = static::addErrorClass($name, $containerAttributes);
-			$html = '<ul'.static::attributes($containerAttributes).'>';
+			$html = '<div'.static::attributes($containerAttributes).'>';
 
 			$label = static::label($name); //set dummy label so ID can be created in line below
 			$idPrefix = static::id($name, $attributes);
@@ -1428,24 +1449,21 @@ class Formation {
 					$checked = false;
 				}
 
-				//add selected class to list item if checkbox is checked to allow styling for selected checkboxes in set
-				$listItemAttributes = array();
-				if ($checked) $listItemAttributes['class'] = "selected";
-				$li = '<li'.static::attributes($listItemAttributes).'>';
+				//add selected class to list item if radio button is set to allow styling for selected radio buttons in set
+				$subContainerAttributes = array('class' => 'radio');
+				if ($checked) $subContainerAttributes['class'] .= ' selected';
+				$radioButton = '<div'.static::attributes($subContainerAttributes).'>';
 
 				//append radio button value to the end of ID to prevent all radio buttons from having the same ID
 				$idSuffix = str_replace('.', '-', str_replace(' ', '-', str_replace('_', '-', strtolower($value))));
 				if ($idSuffix == "") $idSuffix = "blank";
 				$attributes['id'] = $idPrefix.'-'.$idSuffix;
 
-				$li .= static::radio($name, $value, $checked, $attributes);
-				$li .= static::label($name.'.'.strtolower(str_replace(' ', '-', $value)), $display, array('for' => $attributes['id'], 'accesskey' => false), false);
-
-				$li .= '</li>';
-				$html .= $li;
+				$radioButton .= '<label>'.static::radio($name, $value, $checked, $attributes).' '.$display.'</label></div>' . "\n";
+				$html .= $radioButton;
 			}
 
-			$html .= '</ul>' . "\n";
+			$html .= '</div>' . "\n";
 			return $html;
 		}
 	}
@@ -2009,7 +2027,39 @@ class Formation {
 	 */
 	public static function button($value = null, $attributes = array())
 	{
+		if (!isset($attributes['class'])) {
+			$attributes['class'] = 'btn btn-default';
+		} else {
+			$attributes['class'] .= ' btn btn-default';
+		}
 		return '<button'.static::attributes($attributes).'>'.static::entities($value).'</button>' . "\n";
+	}
+
+	/**
+	 * Create a label for a submit function based on a resource controller URL.
+	 *
+	 * @param  mixed   $itemName
+	 * @param  mixed   $action
+	 * @param  bool    $https
+	 * @return string
+	 */
+	public static function submitResource($itemName = null, $action = null, $https = false)
+	{
+		$action = static::action($action, $https);
+
+		//set method based on action
+		$actionArray = explode('/', $action);
+		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
+		if (is_numeric($actionLastSegment) || $actionLastSegment == "edit") {
+			$label = "Update";
+		} else {
+			$label = "Create";
+		}
+
+		if (!is_null($itemName) && $itemName != "") {
+			$label .= ' '.$itemName;
+		}
+		return $label;
 	}
 
 	/**
