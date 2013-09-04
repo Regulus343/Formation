@@ -1121,6 +1121,15 @@ class Formation {
 		$attributes['name'] = $name;
 		$attributes['id'] = static::id($name, $attributes);
 
+		$class = Config::get('formation::fieldClass');
+		if ($class != "") {
+			if (isset($attributes['class']) && $attributes['class'] != "") {
+				$attributes['class'] .= ' '.$class;
+			} else {
+				$attributes['class'] = $class;
+			}
+		}
+
 		$attributes = static::addErrorClass($name, $attributes);
 
 		if (is_null($value)) $value = static::value($name);
