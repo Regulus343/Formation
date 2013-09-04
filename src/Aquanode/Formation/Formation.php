@@ -717,6 +717,52 @@ class Formation {
 	}
 
 	/**
+	 * Automatically set the field class for a field.
+	 *
+	 * @param  string  $name
+	 * @param  array   $attributes
+	 * @return array
+	 */
+	protected static function setFieldClass($name, $attributes = array())
+	{
+		$class = Config::get('formation::fieldClass');
+		if ($class != "") {
+			if (isset($attributes['class']) && $attributes['class'] != "") {
+				$attributes['class'] .= ' '.$class;
+			} else {
+				$attributes['class'] = $class;
+			}
+		}
+		return $attributes;
+	}
+
+	/**
+	 * Automatically set a "placeholder" attribute for a field.
+	 *
+	 * @param  string  $name
+	 * @param  array   $attributes
+	 * @return array
+	 */
+	protected static function setFieldPlaceholder($name, $attributes = array())
+	{
+		$placeholder = Config::get('formation::autoFieldPlaceholder');
+		if ($placeholder && !isset($attributes['placeholder'])) {
+			$namePlaceholder = $name;
+			if (isset(static::$labels[$name]) && static::$labels[$name] != "") {
+				$namePlaceholder = static::$labels[$name];
+			} else {
+				$namePlaceholder = static::nameToLabel($name);
+			}
+
+			if (substr($namePlaceholder, -1) == ":")
+				$namePlaceholder = substr($namePlaceholder, 0, (strlen($namePlaceholder) - 1));
+
+			$attributes['placeholder'] = $namePlaceholder;
+		}
+		return $attributes;
+	}
+
+	/**
 	 * Build a list of HTML attributes from an array.
 	 *
 	 * @param  array   $attributes
@@ -783,6 +829,7 @@ class Formation {
 		}
 
 		//allow label to be set via attributes array (defaults to labels array and then to a label derived from the field's name)
+		$fieldLabel = Config::get('formation::autoFieldLabel');
 		if (!is_null($name)) {
 			$label = static::nameToLabel($name);
 		} else {
@@ -791,7 +838,9 @@ class Formation {
 		if (is_array($attributes) && isset($attributes['label'])) {
 			$label = $attributes['label'];
 			unset($attributes['label']);
+			$fieldLabel = true;
 		}
+		if (is_null($label)) $fieldLabel = false;
 
 		if (!is_array($attributes)) $attributes = array();
 
@@ -861,27 +910,27 @@ class Formation {
 		$html = '<'.Config::get('formation::fieldContainer').static::attributes($attributesFieldContainer).'>' . "\n";
 		switch ($type) {
 			case "text":
-				$html .= static::label($name, $label, $attributesLabel) . "\n";
+				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
 				$html .= static::text($name, $value, $attributesField) . "\n";
 				break;
 			case "search":
-				$html .= static::label($name, $label, $attributesLabel) . "\n";
+				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
 				$html .= static::search($name, $value, $attributesField) . "\n";
 				break;
 			case "password":
-				$html .= static::label($name, $label, $attributesLabel) . "\n";
+				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
 				$html .= static::password($name, $attributesField) . "\n";
 				break;
 			case "textarea":
-				$html .= static::label($name, $label, $attributesLabel) . "\n";
-				$html .= static::textarea($name, $value, $attributesField) . "\n";
+				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
+				$html .= static::textarea($name, $value, $attributesField);
 				break;
 			case "hidden":
-				$html .= static::hidden($name, $value, $attributesField) . "\n";
+				$html .= static::hidden($name, $value, $attributesField);
 				break;
 			case "select":
-				$html .= static::label($name, $label, $attributesLabel) . "\n";
-				$html .= static::select($name, $options, $nullOption, $value, $attributesField) . "\n";
+				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
+				$html .= static::select($name, $options, $nullOption, $value, $attributesField);
 				break;
 			case "checkbox":
 				if (is_null($value)) $value = 1;
@@ -890,7 +939,7 @@ class Formation {
 				} else {
 					$attributesLabel['class']  = "checkbox";
 				}
-				$html .= '<label>'.static::checkbox($name, $value, false, $attributesField).' '.$label.'</label>' . "\n";
+				$html .= '<label>'.static::checkbox($name, $value, false, $attributesField).' '.$label.'</label>';
 				break;
 			case "radio":
 				if (isset($attributesLabel['class'])) {
@@ -898,24 +947,23 @@ class Formation {
 				} else {
 					$attributesLabel['class']  = "radio";
 				}
-				$html .= '<label>'.static::radio($name, $value, false, $attributesField).' '.$label.'</label>' . "\n";
+				$html .= '<label>'.static::radio($name, $value, false, $attributesField).' '.$label.'</label>';
 				break;
 			case "checkbox-set":
 				//for checkbox set, use options as array of checkbox names
-				if (!is_null($label))
-					$html .= static::label(null, $label, $attributesLabel) . "\n";
+				if ($fieldLabel) $html .= static::label(null, $label, $attributesLabel);
 
-				$html .= static::checkboxSet($options, $name, $attributesField) . "\n";
+				$html .= static::checkboxSet($options, $name, $attributesField);
 				break;
 			case "radio-set":
-				$html .= static::label(null, $label, $attributesLabel) . "\n";
-				$html .= static::radioSet($name, $options, null, $attributesField) . "\n";
+				if ($fieldLabel) $html .= static::label(null, $label, $attributesLabel);
+				$html .= static::radioSet($name, $options, null, $attributesField);
 				break;
 			case "button":
-				$html .= static::button($label, $attributesField) . "\n";
+				$html .= static::button($label, $attributesField);
 				break;
 			case "submit":
-				$html .= static::submit($label, $attributesField) . "\n";
+				$html .= static::submit($label, $attributesField);
 				break;
 		}
 		$html .= static::error($name) . "\n";
@@ -944,28 +992,11 @@ class Formation {
 	public static function input($type, $name, $value = null, $attributes = array())
 	{
 		if (!in_array($type, array('checkbox', 'radio'))) {
-			//add the field class if it is set
-			$class = Config::get('formation::fieldClass');
-			if ($class != "") {
-				if (isset($attributes['class']) && $attributes['class'] != "") {
-					$attributes['class'] .= ' '.$class;
-				} else {
-					$attributes['class'] = $class;
-				}
-			}
+			//add the field class if config option is set
+			$attributes = static::setFieldClass($name, $attributes);
 
 			//automatically set placeholder attribute if config option is set
-			$placeholder = Config::get('formation::setFieldPlaceholder');
-			if ($placeholder && !isset($attributes['placeholder'])) {
-				$namePlaceholder = $name;
-				if (isset(static::$labels[$name]) && static::$labels[$name] != "")
-					$namePlaceholder = static::$labels[$name];
-
-				if (substr($namePlaceholder, -1) == ":")
-					$namePlaceholder = substr($namePlaceholder, 0, (strlen($namePlaceholder) - 1));
-
-				$attributes['placeholder'] = $namePlaceholder;
-			}
+			$attributes = static::setFieldPlaceholder($name, $attributes);
 		}
 
 		//remove "placeholder" attribute if it is set to false
@@ -1130,28 +1161,11 @@ class Formation {
 		$attributes['name'] = $name;
 		$attributes['id'] = static::id($name, $attributes);
 
-		//add the field class if it is set
-		$class = Config::get('formation::fieldClass');
-		if ($class != "") {
-			if (isset($attributes['class']) && $attributes['class'] != "") {
-				$attributes['class'] .= ' '.$class;
-			} else {
-				$attributes['class'] = $class;
-			}
-		}
+		//add the field class if config option is set
+		$attributes = static::setFieldClass($name, $attributes);
 
 		//automatically set placeholder attribute if config option is set
-		$placeholder = Config::get('formation::setFieldPlaceholder');
-		if ($placeholder && !isset($attributes['placeholder'])) {
-			$namePlaceholder = $name;
-			if (isset(static::$labels[$name]) && static::$labels[$name] != "")
-				$namePlaceholder = static::$labels[$name];
-
-			if (substr($namePlaceholder, -1) == ":")
-				$namePlaceholder = substr($namePlaceholder, 0, (strlen($namePlaceholder) - 1));
-
-			$attributes['placeholder'] = $namePlaceholder;
-		}
+		$attributes = static::setFieldPlaceholder($name, $attributes);
 
 		$attributes = static::addErrorClass($name, $attributes);
 

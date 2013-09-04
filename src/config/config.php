@@ -4,7 +4,7 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
-	| Field Container
+	| Field Container and Field
 	|--------------------------------------------------------------------------
 	|
 	| The field container element, class, and clear setting which will append
@@ -20,14 +20,24 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
-	| Set Field Placeholder
+	| Automatic Field Labels
+	|--------------------------------------------------------------------------
+	|
+	| Automatically create a label in field() method.
+	|
+	*/
+	'autoFieldLabel' => true,
+
+	/*
+	|--------------------------------------------------------------------------
+	| Automatic Field Placeholder
 	|--------------------------------------------------------------------------
 	|
 	| Automatically set a "placeholder" attribute for the field according to
 	| the name of the field's label.
 	|
 	*/
-	'setFieldPlaceholder' => true,
+	'autoFieldPlaceholder' => true,
 
 	/*
 	|--------------------------------------------------------------------------
