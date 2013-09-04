@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on September 3, 2013
+		last updated on September 4, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -533,6 +533,17 @@ class Formation {
 			$hour += 12;
 
 		return sprintf('%02d', $hour).':'.sprintf('%02d', $minutes).':00';
+	}
+
+	/**
+	 * Check whether a checkbox is checked.
+	 *
+	 * @param  string  $name
+	 * @return boolean
+	 */
+	public static function checked($name)
+	{
+		return static::value($name, 'checkbox');
 	}
 
 	/**
