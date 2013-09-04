@@ -2,13 +2,40 @@
 
 return array(
 
-	'encoding'            => 'UTF-8',
+	/*
+	|--------------------------------------------------------------------------
+	| Field Container
+	|--------------------------------------------------------------------------
+	|
+	| The field container element, class, and clear setting which will append
+	| a <div> tag with a class of "clear" to the end of the form elements
+	| within the container.
+	|
+	*/
+	'fieldContainer'      => 'div',
+	'fieldContainerClass' => 'form-group',
+	'fieldContainerClear' => true,
 
-	'fieldContainer'      => 'div',        //the field container HTML element type (generally 'div' or 'li')
-	'fieldContainerClass' => 'field',      //the class applied to the field container
-	'fieldContainerClear' => true,         //add a div to the end of the field container with class "clear"
+	/*
+	|--------------------------------------------------------------------------
+	| CSRF Token
+	|--------------------------------------------------------------------------
+	|
+	| The name of the Cross-Site Request Forgery token for forms. Setting
+	| "Auto CSRF Token" will automatically add the CSRF token field to forms.
+	|
+	*/
+	'csrfToken'     => 'csrf_token',
+	'autoCsrfToken' => true,
 
-	'csrfToken'           => 'csrf_token', //the name of the CSRF token
-	'autoCsrfToken'       => true,         //automatically add a CSRF token to forms
+	/*
+	|--------------------------------------------------------------------------
+	| Encoding
+	|--------------------------------------------------------------------------
+	|
+	| The encoding for form fields.
+	|
+	*/
+	'encoding' => 'UTF-8',
 
 );
