@@ -707,7 +707,7 @@ class Formation {
 			$id = $attributes['id'];
 		} else {
 			//replace array denoting periods and underscores with dashes
-			$id = str_replace('.', '-', str_replace('_', '-', $name));
+			$id = strtolower(str_replace('.', '-', str_replace('_', '-', str_replace(' ', '-', $name))));
 		}
 
 		//remove round brackets that are used to prevent index number from appearing in field name
@@ -903,6 +903,13 @@ class Formation {
 		} else {
 			$attributesFieldContainer['class'] .= ' '.Config::get('formation::fieldContainerClass');
 		}
+		if (!isset($attributesFieldContainer['id'])) {
+			$attributesFieldContainer['id'] = static::id($name, $attributesFieldContainer).'-area';
+		} else {
+			if (is_null($attributesFieldContainer['id']) || !$attributesFieldContainer['id'])
+				unset($attributesFieldContainer['id']);
+		}
+
 		if ($type == "checkbox") $attributesFieldContainer['class'] .= ' checkbox';
 		if ($type == "radio")    $attributesFieldContainer['class'] .= ' radio';
 		if ($type == "hidden")   $attributesFieldContainer['class'] .= ' hidden';
