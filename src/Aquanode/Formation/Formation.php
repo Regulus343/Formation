@@ -318,6 +318,30 @@ class Formation {
 	}
 
 	/**
+	 * Determine the appropriate request method for a resource controller form.
+	 *
+	 * @param  mixed   $action
+	 * @param  mixed   $controller
+	 * @return string
+	 */
+	public static function methodResource($action = null, $controller = null)
+	{
+		$action = static::action($action);
+
+		$method = "POST";
+		$actionArray = explode('/', $action);
+		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
+
+		if (is_numeric($actionLastSegment) || $actionLastSegment == "edit")
+			$method = "PUT";
+
+		if (!is_null($controller) && $actionLastSegment != $controller && $actionLastSegment != "create")
+			$method = "PUT";
+
+		return $method;
+	}
+
+	/**
 	 * Determine the appropriate action parameter to use for a form.
 	 *
 	 * If no action is specified, the current request URI will be used.
@@ -380,18 +404,16 @@ class Formation {
 	 *
 	 * @param  mixed   $action
 	 * @param  array   $attributes
+	 * @param  mixed   $controller
 	 * @param  bool    $https
 	 * @return string
 	 */
-	public static function openResource($action = null, $attributes = array(), $https = false)
+	public static function openResource($action = null, $attributes = array(), $controller = null, $https = false)
 	{
 		$action = static::action($action, $https);
 
 		//set method based on action
-		$method = "POST";
-		$actionArray = explode('/', $action);
-		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
-		if (is_numeric($actionLastSegment) || $actionLastSegment == "edit") $method = "PUT";
+		$method = static::methodResource($action, $controller);
 
 		//remove "create" and "edit" suffixes from action
 		$action = str_replace('/create', '', str_replace('/edit', '', $action));
@@ -404,17 +426,15 @@ class Formation {
 	 *
 	 * @param  mixed   $action
 	 * @param  array   $attributes
+	 * @param  mixed   $controller
 	 * @return string
 	 */
-	public static function openResourceSecure($action = null, $attributes = array())
+	public static function openResourceSecure($action = null, $attributes = array(), $controller = null)
 	{
 		$action = static::action($action, true);
 
 		//set method based on action
-		$method = "POST";
-		$actionArray = explode('/', $action);
-		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
-		if (is_numeric($actionLastSegment) || $actionLastSegment == "edit") $method = "PUT";
+		$method = static::methodResource($action, $controller);
 
 		//remove "create" and "edit" suffixes from action
 		$action = str_replace('/create', '', str_replace('/edit', '', $action));
@@ -427,20 +447,18 @@ class Formation {
 	 *
 	 * @param  mixed   $action
 	 * @param  array   $attributes
+	 * @param  mixed   $controller
 	 * @param  bool    $https
 	 * @return string
 	 */
-	public static function openResourceForFiles($action = null, $attributes = array(), $https = false)
+	public static function openResourceForFiles($action = null, $attributes = array(), $controller = null, $https = false)
 	{
 		$action = static::action($action, $https);
 
 		$attributes['enctype'] = 'multipart/form-data';
 
 		//set method based on action
-		$method = "POST";
-		$actionArray = explode('/', $action);
-		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
-		if (is_numeric($actionLastSegment) || $actionLastSegment == "edit") $method = "PUT";
+		$method = static::methodResource($action, $controller);
 
 		//remove "create" and "edit" suffixes from action
 		$action = str_replace('/create', '', str_replace('/edit', '', $action));
@@ -453,18 +471,17 @@ class Formation {
 	 *
 	 * @param  mixed   $action
 	 * @param  array   $attributes
+	 * @param  mixed   $controller
 	 * @return string
 	 */
-	public static function openResourceSecureForFiles($action = null, $attributes = array())
+	public static function openResourceSecureForFiles($action = null, $attributes = array(), $controller = null)
 	{
 		$action = static::action($action, false);
 
 		$attributes['enctype'] = 'multipart/form-data';
 
 		//set method based on action
-		$method = "POST";
-		$actionArray = explode('/', $action);
-		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
+		$method = static::methodResource($action, $controller);
 
 		//remove "create" and "edit" suffixes from action
 		$action = str_replace('/create', '', str_replace('/edit', '', $action));
