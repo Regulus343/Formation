@@ -2,10 +2,10 @@
 
 /*----------------------------------------------------------------------------------------------------------
 	Formation
-		A powerful form creation composer package for Laravel 4 built on top of Laravel 3's Form class.
+		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on September 4, 2013
+		last updated on September 6, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -610,7 +610,18 @@ class Formation {
 			$label = static::entities($label); //since there is no HTML present in label, convert entities to HTML special characters
 		}
 
+		//add accesskey
 		$attributes = static::addAccessKey($name, $label, $attributes, false);
+
+		//add "control-label" class
+		if (!isset($attributes['control-label-class']) || $attributes['control-label-class']) {
+			if (isset($attributes['class']) && $attributes['class'] != "") {
+				$attributes['class'] .= ' control-label';
+			} else {
+				$attributes['class'] = 'control-label';
+			}
+		}
+		if (isset($attributes['control-label-class'])) unset($attributes['control-label-class']);
 
 		//add non-breakable space if label is empty
 		if ($label == "") $label = "&nbsp;";
@@ -924,6 +935,8 @@ class Formation {
 		if ($type == "checkbox") $attributesFieldContainer['class'] .= ' checkbox';
 		if ($type == "radio")    $attributesFieldContainer['class'] .= ' radio';
 		if ($type == "hidden")   $attributesFieldContainer['class'] .= ' hidden';
+
+		$attributesFieldContainer = static::addErrorClass($name, $attributesFieldContainer);
 
 		$html = '<'.Config::get('formation::fieldContainer').static::attributes($attributesFieldContainer).'>' . "\n";
 		switch ($type) {
@@ -1912,9 +1925,9 @@ class Formation {
 	{
 		if (static::errorMessage($name)) { //an error exists; add the error class
 			if (!isset($attributes['class'])) {
-				$attributes['class'] = "error";
+				$attributes['class'] = "has-error";
 			} else {
-				$attributes['class'] .= " error";
+				$attributes['class'] .= " has-error";
 			}
 		}
 		return $attributes;
