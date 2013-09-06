@@ -10,6 +10,7 @@
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Input;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
@@ -295,7 +296,7 @@ class Formation {
 		// and set the actual request method variable to POST.
 		if ($method == 'PUT' or $method == 'DELETE')
 		{
-			$append = static::hidden(static::$spoofer, $method);
+			$append = static::hidden(static::$spoofer, $method, array('id' => false, 'class' => 'form-method'));
 		}
 
 		$html = '<form'.static::attributes($attributes).'>'.$append . "\n";
@@ -1037,8 +1038,9 @@ class Formation {
 		$name = (isset($attributes['name'])) ? $attributes['name'] : $name;
 		$attributes = static::addErrorClass($name, $attributes);
 
-		$id = static::id($name, $attributes);
-		if ($type == "hidden" && $id == "" && !isset($attributes['id'])) $id = str_replace('_', '-', $name);
+		$attributes['id'] = static::id($name, $attributes);
+		if (isset($attributes['id']) && (!$attributes['id'] || $attributes['id'] == ""))
+			unset($attributes['id']);
 
 		if (is_null($value) && $type != "password") $value = static::value($name);
 
@@ -1046,7 +1048,7 @@ class Formation {
 
 		if ($type != "hidden") $attributes = static::addAccessKey($name, null, $attributes);
 
-		$attributes = array_merge($attributes, compact('type', 'name', 'value', 'id'));
+		$attributes = array_merge($attributes, compact('type', 'name', 'value'));
 
 		return '<input'.static::attributes($attributes).'>' . "\n";
 	}
@@ -2085,14 +2087,17 @@ class Formation {
 	 *
 	 * @param  mixed   $itemName
 	 * @param  mixed   $action
+	 * @param  mixed   $update
 	 * @return string
 	 */
-	public static function submitResource($itemName = null, $action = null)
+	public static function submitResource($itemName = null, $action = null, $update = null)
 	{
-		if (static::updateResource($action)) {
-			$label = "Update";
+		if (is_null($update))
+			$update = static::updateResource($action);
+		if ($update) {
+			$label = Lang::get('fractal::labels.update');
 		} else {
-			$label = "Create";
+			$label = Lang::get('fractal::labels.create');
 		}
 		if (!is_null($itemName) && $itemName != "") {
 			$label .= ' '.$itemName;
