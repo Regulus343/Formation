@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on September 6, 2013
+		last updated on September 9, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -675,10 +675,18 @@ class Formation {
 	{
 		$nameArray = explode('.', $name);
 		if (count($nameArray) < 2) {
-			return ucwords(str_replace('_', ' ', $name));
+			$nameFormatted = str_replace('_', ' ', $name);
 		} else { //if field is an array, create label from last array index
-			return ucwords(str_replace('_', ' ', $nameArray[(count($nameArray) - 1)]));
+			$nameFormatted = str_replace('_', ' ', $nameArray[(count($nameArray) - 1)]);
 		}
+
+		//convert icon code to markup
+		if (preg_match('/\[ICON:(.*)\]/', $nameFormatted, $match)) {
+			$nameFormatted = str_replace($match[0], '<span class="glyphicon glyphicon-'.str_replace(' ', '', $match[1]).'"></span>&nbsp; ', $nameFormatted);
+		}
+
+		if ($nameFormatted == strip_tags($nameFormatted)) $nameFormatted = ucwords($nameFormatted);
+		return $nameFormatted;
 	}
 
 	/**
@@ -748,6 +756,11 @@ class Formation {
 		} else {
 			//replace array denoting periods and underscores with dashes
 			$id = strtolower(str_replace('.', '-', str_replace('_', '-', str_replace(' ', '-', $name))));
+		}
+
+		//remove icon code
+		if (preg_match('/\[ICON:(.*)\]/i', $id, $match)) {
+			$id = str_replace($match[0], '', $id);
 		}
 
 		//remove round brackets that are used to prevent index number from appearing in field name
@@ -2096,7 +2109,9 @@ class Formation {
 		} else {
 			$attributes['class'] .= ' btn btn-default';
 		}
-		return '<button'.static::attributes($attributes).'>'.static::entities($value).'</button>' . "\n";
+
+		if ($value == strip_tags($value)) $value = static::entities($value);
+		return '<button'.static::attributes($attributes).'>'.$value.'</button>' . "\n";
 	}
 
 	/**
@@ -2107,15 +2122,29 @@ class Formation {
 	 * @param  mixed   $update
 	 * @return string
 	 */
-	public static function submitResource($itemName = null, $action = null, $update = null)
+	public static function submitResource($itemName = null, $action = null, $update = null, $icon = null)
 	{
+		//if null, check config button icon config setting
+		if (is_null($icon))
+			$icon = Config::get('formation::autoButtonIcon');
+
 		if (is_null($update))
 			$update = static::updateResource($action);
+
 		if ($update) {
-			$label = Lang::get('fractal::labels.update');
+			$label = 'Update';
+			if (is_bool($icon) && $icon)
+				$icon = 'ok';
 		} else {
-			$label = Lang::get('fractal::labels.create');
+			$label = 'Create';
+			if (is_bool($icon) && $icon)
+				$icon = 'plus';
 		}
+
+		//add icon code
+		if (is_string($icon) && $icon != "")
+			$label = '[ICON: '.$icon.']'.$label;
+
 		if (!is_null($itemName) && $itemName != "") {
 			$label .= ' '.$itemName;
 		}

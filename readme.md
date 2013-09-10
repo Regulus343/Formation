@@ -9,21 +9,30 @@ Formation makes it really easy to build a form with form building methods that a
 - add an `error` class to labels and form fields
 - add IDs to form fields based on their names and add matching `for` attributes to the fields' labels
 - provides the ability to validate specific arrays in the POST array as well as the entire form
+- set up by default to use Twitter Bootstrap classes for form elements
 
 All of this can be achieved with a minimal amount of code:
 
 	<?php
-	echo Form::field('username');
+	echo Form::field('first_name');
 	echo Form::field('password');
 	echo Form::field('user.item', 'select', array('options' => Form::prepOptions(Item::all(), array('id', 'name'))));
 
-	echo Form::label('email'); ?>
-	<div class="field">
-		<?php echo Form::text('email');
-		echo Form::error('email'); ?>
+	<?php //simply typing Form::field('first_name') is the same as the following code: ?>
+	<div class="form-group" id="first-name-area">
+		<?php echo Form::label('first_name');
+		echo Form::text('first_name');
+		echo Form::error('first_name'); ?>
 	</div>
 
-The above code is an example of how simple and versatile Formation is. The top 3 fields make use of Formation's simplified `field()` macro while the final field shows the long way to achieve the same markup as the first two text fields. All of the fields will be automatically repopulated when form data is posted to the page.
+	<?php //which may produce the following markup: ?>
+	<div class="form-group hass error" id="first-name-area">
+		<label for="first-name" class="control-label has-error"><span class="access">F</span>irst Name</label>
+		<input type="text" name="first_name" id="first-name" class="form-control has-error" placeholder="First Name" accesskey="f" value="" />
+		<div class="error">The First Name field is required.</div>
+	</div>
+
+The above code is an example of how simple and versatile Formation is. The top 3 fields make use of Formation's simplified `field()` macro, the middle section shows the long way to achieve the same markup as the first two text fields, and the final section shows the markup that may be produced from the above two examples (assuming a "required" form validation rule has been set for the "first_name" field and the form has been submitted). You may notice that the markup is quite comprehensive and complete. Accesskeys are automatically employed (unless you specify otherwise) and an "access" class is applied to the accesskey letter in the label. The label, field, and possibly error are all wrapped in a div tag with a Twitter Bootstrap "form-group" class. The IDs are based on the names but use hyphens instead of underscores and the labels are automatically created from the names as well (but can, again, be specified manually). All of the fields will be automatically repopulated when form data is posted to the page.
 
 	<input name="user[name]" value="" />
 	<input name="user[email]" value="" />
@@ -371,7 +380,7 @@ If you do not set the first argument, "Submit" will be used as the label.
 
 You may use the built-in `Form::field()` macro to turn this:
 
-	<div class="field">
+	<div class="form-group" id="user-email-area">
 		<?php echo Form::label('user.email');
 		echo Form::text('user.email');
 		echo Form::error('user.email'); ?>
@@ -381,7 +390,7 @@ Into this:
 
 	echo Form::field('user.email');
 
-The field container element can be changed from a div to another HTML element and the "field" class can be changed as well in `config.php`.
+The field container element can be changed from a div to another HTML element and the "form-group" class can be changed as well in `config.php`.
 
 **Using field macro for a drop-down select box:**
 
