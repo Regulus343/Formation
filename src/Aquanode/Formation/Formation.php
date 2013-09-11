@@ -1414,7 +1414,7 @@ class Formation {
 					unset($attributes[$attribute]);
 				}
 			}
-			$html = '<div'.static::attributes($containerAttributes).'>';
+			$html = '<ul'.static::attributes($containerAttributes).'>';
 
 			foreach ($names as $name => $display) {
 				//if a simple array is used, automatically create the label from the name
@@ -1431,10 +1431,11 @@ class Formation {
 					$display = static::nameToLabel($name);
 				}
 
+				$value = $name;
+
 				if (!is_null($namePrefix)) $name = $namePrefix . $name;
 
-				$value = 1;
-				if ($value == static::value($name)) {
+				if ($value == static::value($name, 'checkbox')) {
 					$checked = true;
 				} else {
 					$checked = false;
@@ -1443,18 +1444,20 @@ class Formation {
 				//add selected class to list item if checkbox is checked to allow styling for selected checkboxes in set
 				$listItemAttributes = array();
 				if ($checked) $listItemAttributes['class'] = "selected";
+				$li = '<li'.static::attributes($listItemAttributes).'>';
 
 				$checkboxAttributes = $attributes;
 				$checkboxAttributes['id'] = static::id($name);
 				if (isset($checkboxAttributes['associative'])) unset($checkboxAttributes['associative']);
 
-				$checkbox  = '<div class="checkbox"><label>';
-				$checkbox .= static::checkbox($name, $value, $checked, $checkboxAttributes).' '.$display;
-				$checkbox .='</label></div>' . "\n";
-				$html .= $checkbox;
+				$li .= static::checkbox($name, $value, $checked, $checkboxAttributes);
+				$li .= static::label($name, $display, array('accesskey' => false));
+
+				$li .= '</li>';
+				$html .= $li;
 			}
 
-			$html .= '</div>' . "\n";
+			$html .= '</ul>' . "\n";
 			return $html;
 		}
 	}
