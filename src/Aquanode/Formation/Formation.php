@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on September 9, 2013
+		last updated on September 12, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -1431,7 +1431,11 @@ class Formation {
 					$display = static::nameToLabel($name);
 				}
 
-				$value = $name;
+				if (isset($attributes['name-values']) && $attributes['name-values']) {
+					$value = $name;
+				} else {
+					$value = 1;
+				}
 
 				if (!is_null($namePrefix)) $name = $namePrefix . $name;
 
@@ -1448,7 +1452,9 @@ class Formation {
 
 				$checkboxAttributes = $attributes;
 				$checkboxAttributes['id'] = static::id($name);
+
 				if (isset($checkboxAttributes['associative'])) unset($checkboxAttributes['associative']);
+				if (isset($checkboxAttributes['name-values'])) unset($checkboxAttributes['name-values']);
 
 				$li .= static::checkbox($name, $value, $checked, $checkboxAttributes);
 				$li .= static::label($name, $display, array('accesskey' => false));
