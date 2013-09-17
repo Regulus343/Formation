@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on September 12, 2013
+		last updated on September 16, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -1265,6 +1265,9 @@ class Formation {
 		if (!isset($attributes['id'])) $attributes['id'] = static::id($name, $attributes);
 		$attributes['name'] = $name;
 		$attributes = static::addErrorClass($name, $attributes);
+
+		//add the field class if config option is set
+		$attributes = static::setFieldClass($name, $attributes);
 
 		if (is_null($selected)) $selected = static::value($name);
 
