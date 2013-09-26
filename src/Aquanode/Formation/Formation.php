@@ -766,6 +766,13 @@ class Formation {
 		//remove round brackets that are used to prevent index number from appearing in field name
 		$id = str_replace('(', '', str_replace(')', '', $id));
 
+		//replace double dashes with single dash
+		$id = str_replace('--', '-', $id);
+
+		//remove end dash if one exists
+		if (substr($id, -1) == "-")
+			$id = substr($id, 0, (strlen($id) - 1));
+
 		return $id;
 	}
 
@@ -1417,6 +1424,7 @@ class Formation {
 					unset($attributes[$attribute]);
 				}
 			}
+			$containerAttributes = static::addErrorClass('roles', $containerAttributes);
 			$html = '<div'.static::attributes($containerAttributes).'>';
 
 			foreach ($names as $name => $display) {
@@ -1449,10 +1457,6 @@ class Formation {
 				}
 
 				//add selected class to list item if checkbox is checked to allow styling for selected checkboxes in set
-				$listItemAttributes = array();
-				if ($checked) $listItemAttributes['class'] = "selected";
-				$checkbox = '<li'.static::attributes($listItemAttributes).'>';
-
 				$subContainerAttributes = array('class' => 'checkbox');
 				if ($checked) $subContainerAttributes['class'] .= ' selected';
 				$checkbox = '<div'.static::attributes($subContainerAttributes).'>' . "\n";
