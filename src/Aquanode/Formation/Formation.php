@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on September 16, 2013
+		last updated on September 25, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -1417,7 +1417,7 @@ class Formation {
 					unset($attributes[$attribute]);
 				}
 			}
-			$html = '<ul'.static::attributes($containerAttributes).'>';
+			$html = '<div'.static::attributes($containerAttributes).'>';
 
 			foreach ($names as $name => $display) {
 				//if a simple array is used, automatically create the label from the name
@@ -1451,7 +1451,11 @@ class Formation {
 				//add selected class to list item if checkbox is checked to allow styling for selected checkboxes in set
 				$listItemAttributes = array();
 				if ($checked) $listItemAttributes['class'] = "selected";
-				$li = '<li'.static::attributes($listItemAttributes).'>';
+				$checkbox = '<li'.static::attributes($listItemAttributes).'>';
+
+				$subContainerAttributes = array('class' => 'checkbox');
+				if ($checked) $subContainerAttributes['class'] .= ' selected';
+				$checkbox = '<div'.static::attributes($subContainerAttributes).'>' . "\n";
 
 				$checkboxAttributes = $attributes;
 				$checkboxAttributes['id'] = static::id($name);
@@ -1459,14 +1463,14 @@ class Formation {
 				if (isset($checkboxAttributes['associative'])) unset($checkboxAttributes['associative']);
 				if (isset($checkboxAttributes['name-values'])) unset($checkboxAttributes['name-values']);
 
-				$li .= static::checkbox($name, $value, $checked, $checkboxAttributes);
-				$li .= static::label($name, $display, array('accesskey' => false));
+				$checkbox .= static::checkbox($name, $value, $checked, $checkboxAttributes);
+				$checkbox .= static::label($name, $display, array('accesskey' => false));
 
-				$li .= '</li>';
-				$html .= $li;
+				$checkbox .= '</div>' . "\n";
+				$html .= $checkbox;
 			}
 
-			$html .= '</ul>' . "\n";
+			$html .= '</div>' . "\n";
 			return $html;
 		}
 	}
@@ -1541,7 +1545,7 @@ class Formation {
 				//add selected class to list item if radio button is set to allow styling for selected radio buttons in set
 				$subContainerAttributes = array('class' => 'radio');
 				if ($checked) $subContainerAttributes['class'] .= ' selected';
-				$radioButton = '<div'.static::attributes($subContainerAttributes).'>';
+				$radioButton = '<div'.static::attributes($subContainerAttributes).'>' . "\n";
 
 				//append radio button value to the end of ID to prevent all radio buttons from having the same ID
 				$idSuffix = str_replace('.', '-', str_replace(' ', '-', str_replace('_', '-', strtolower($value))));
