@@ -1992,6 +1992,7 @@ class Formation {
 	public static function error($name, $alwaysExists = false, $replacementFieldName = false)
 	{
 		$attr = "";
+		if (substr($name, -1) == ".") $name = substr($name, 0, (strlen($name) - 1));
 		if ($alwaysExists) $attr = ' id="'.str_replace('_', '-', $name).'-error"';
 
 		$message = static::errorMessage($name, $replacementFieldName);
