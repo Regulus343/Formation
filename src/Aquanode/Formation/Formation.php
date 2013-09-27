@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on September 25, 2013
+		last updated on September 26, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -91,21 +91,63 @@ class Formation {
 	 * Assigns default values to form fields.
 	 *
 	 * @param  array    $defaults
+	 * @param  array    $relationships
 	 * @return void
 	 */
-	public static function setDefaults($defaults = array())
+	public static function setDefaults($defaults = array(), $relationships = array())
 	{
+		$defaultsArray = $defaults;
+
 		//turn Eloquent instances into an array
-		if (isset($defaults) && isset($defaults->incrementing) && isset($defaults->timestamps)) $defaults = $defaults->toArray();
+		if (isset($defaults) && isset($defaults->incrementing) && isset($defaults->timestamps)) $defaultsArray = $defaults->toArray();
 
 		//turn object into array
-		if (is_object($defaults)) $defaults = (array) $defaults;
+		if (is_object($defaultsArray)) $defaultsArray = (array) $defaults;
 
 		//format default values for times
 		$defaults = static::formatDefaults($defaults);
 
-		static::$defaults = $defaults;
+		//add relationships data to defaults array if it is set
+		if (!empty($relationships)) {
+			$i = 0;
+			foreach ($relationships as $relationship => $fields) {
+				if (count($defaults->{$relationship})) {
+					$id    = isset($defaults->{$relationship}->id) ? $defaults->{$relationship}->id : $i;
+					$field = $fields;
 
+					if (is_bool($fields) && $fields) {
+						if (isset($defaults->{$relationship}->{$field})) {
+							var_dump($defaults->{$relationship}); exit;
+							foreach ($defaults->{$relationship} as $field => $value) {
+								$defaultsArray[$relationship.'.'.$id.'.'.$field] = $value;
+							}
+						} else {
+							foreach ($defaults->{$relationship} as $item) {
+								$item = $item->toArray();
+								$id   = isset($item->id) ? $item->id : $i;
+								foreach ($item as $field => $value) {
+									$defaultsArray[$relationship.'.'.$id.'.'.$field] = $value;
+								}
+							}
+						}
+					} else {
+						if (isset($defaults->{$relationship}->{$field})) {
+							$defaultsArray[$relationship.'.'.$id] = $defaults->{$relationship}->{$field};
+						} else {
+							foreach ($defaults->{$relationship} as $item) {
+								$id   = isset($item->id) ? $item->id : $i;
+								if (isset($item->{$field}))
+									$defaultsArray[$relationship.'.'.$id] = $item->{$field};
+							}
+						}
+					}
+
+					$i ++;
+				}
+			}
+		}
+
+		static::$defaults = $defaultsArray;
 		return static::$defaults;
 	}
 
@@ -1623,32 +1665,43 @@ class Formation {
 		$optionsFormatted = array();
 
 		//turn Eloquent instances into an array
-		if (isset($options[0]) && isset($options[0]->incrementing) && isset($options[0]->timestamps)) $options = $options->toArray();
+		$optionsArray = $options;
+		if (isset($optionsArray[0]) && isset($optionsArray[0]->incrementing) && isset($optionsArray[0]->timestamps))
+			$optionsArray = $options->toArray();
 
 		if (is_string($vars) || (is_array($vars) && count($vars) > 0)) {
-			foreach ($options as $option) {
-				//turn object into array
-				if (is_object($option)) $option = (array) $option;
+			foreach ($optionsArray as $key => $option) {
 
+				//turn object into array
+				$optionArray = $option;
+				if (is_object($option))
+					$optionArray = (array) $option;
+
+				//set label and value according to specified variables
 				if (is_string($vars)) {
-					$label = false;
+					$label = $vars;
 					$value = $vars;
 				} else if (is_array($vars) && count($vars) == 1) {
-					$label = false;
+					$label = $vars[0];
 					$value = $vars[0];
 				} else {
 					$label = $vars[0];
 					$value = $vars[1];
 				}
 
-				if ($label) {
-					if (isset($option[$label]) && isset($option[$value])) {
-						$optionsFormatted[$option[$label]] = $option[$value];
-					}
-				} else {
-					if (isset($option[$value])) {
-						$optionsFormatted[$option[$value]] = $option[$value];
-					}
+				//check whether the value is a method
+				preg_match('/\(\)/', $value, $functionMatch);
+				if (isset($optionValue)) unset($optionValue);
+				if (!empty($functionMatch)) { //value is a method of object; call it
+					$function = str_replace('()', '', $value);
+					$optionValue = $options[$key]->$function();
+				} else if (isset($optionArray[$value])) {
+					$optionValue = $optionArray[$value];
+				}
+
+				//if a label and a value are set, add it to options array
+				if (isset($optionArray[$label]) && isset($optionValue)) {
+					$optionsFormatted[$optionArray[$label]] = $optionValue;
 				}
 			}
 		}
