@@ -968,7 +968,7 @@ class Formation {
 		}
 
 		//set any field named "password" to a "password" field automatically; no type declaration required
-		if ($name == "password" && is_null($type)) $type = "password";
+		if (substr($name, 0, 8) == "password" && is_null($type)) $type = "password";
 
 		//if type is still null, assume it to be a regular "text" field
 		if (is_null($type)) $type = "text";
