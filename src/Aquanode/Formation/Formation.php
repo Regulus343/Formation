@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on September 26, 2013
+		last updated on October 10, 2013
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -662,6 +662,14 @@ class Formation {
 
 		//if any "{" characters are used, do not add "access" class for accesskey; Handlebars.js may be being used in field name or label
 		if (preg_match('/\{/', $name)) $attributes['accesskey'] = false;
+
+		//add label suffix
+		$suffix = Config::get('formation::labelSuffix');
+		if ($suffix != "" && (!isset($attributes['suffix']) || $attributes['suffix']))
+			$label .= $suffix;
+
+		if (isset($attributes['suffix']))
+			unset($attributes['suffix']);
 
 		//also do not add accesskey depiction if label already contains HTML tags or HTML special characters
 		if ($label != strip_tags($label) || $label != static::entities($label)) {

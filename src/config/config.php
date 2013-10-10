@@ -52,6 +52,18 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Label Suffix
+	|--------------------------------------------------------------------------
+	|
+	| Set an automatic suffix for labels such as a colon (":"). If set, you may
+	| disable for specific fields by passing a false "suffix" attribute to the
+	| label() method or a false "suffix-label" attribute to the field macro.
+	|
+	*/
+	'labelSuffix' => false,
+
+	/*
+	|--------------------------------------------------------------------------
 	| CSRF Token
 	|--------------------------------------------------------------------------
 	|
