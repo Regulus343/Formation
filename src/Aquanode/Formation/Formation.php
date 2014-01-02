@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on October 10, 2013
+		last updated on January 1, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -46,6 +46,20 @@ class Formation {
 	 * @var array
 	 */
 	public static $validation = array();
+
+	/**
+	 * The form fields to be validated.
+	 *
+	 * @var array
+	 */
+	public static $validationFields = array();
+
+	/**
+	 * The form errors.
+	 *
+	 * @var array
+	 */
+	public static $errors = array();
 
 	/**
 	 * Whether form fields are being reset to their default values rather than the POSTed values.
@@ -210,8 +224,12 @@ class Formation {
 	 */
 	public static function setValidationRules($rules = array())
 	{
+		static::$validationFields = array();
+
 		$rulesFormatted = array();
 		foreach ($rules as $name => $rulesItem) {
+			static::$validationFields[] = $name;
+
 			$rulesArray = explode('.', $name);
 			$last = $rulesArray[(count($rulesArray) - 1)];
 			if (count($rulesArray) < 2) {
@@ -319,7 +337,7 @@ class Formation {
 	{
 		$method = strtoupper($method);
 
-		$attributes['method'] =  static::method($method);
+		$attributes['method'] = static::method($method);
 
 		$attributes['action'] = static::action($action, $https);
 
@@ -338,7 +356,7 @@ class Formation {
 		// and set the actual request method variable to POST.
 		if ($method == 'PUT' or $method == 'DELETE')
 		{
-			$append = static::hidden(static::$spoofer, $method, array('id' => false, 'class' => 'form-method'));
+			$append = static::hidden(static::$spoofer, $method);
 		}
 
 		$html = '<form'.static::attributes($attributes).'>'.$append . "\n";
@@ -388,7 +406,7 @@ class Formation {
 	 *
 	 * If no action is specified, the current request URI will be used.
 	 *
-	 * @param  mixed    $action
+	 * @param  string   $action
 	 * @param  bool     $https
 	 * @return string
 	 */
@@ -402,7 +420,7 @@ class Formation {
 	/**
 	 * Open an HTML form with an HTTPS action URI.
 	 *
-	 * @param  mixed   $action
+	 * @param  string  $action
 	 * @param  string  $method
 	 * @param  array   $attributes
 	 * @return string
@@ -415,13 +433,13 @@ class Formation {
 	/**
 	 * Open an HTML form that accepts file uploads.
 	 *
-	 * @param  mixed   $action
+	 * @param  string  $action
 	 * @param  string  $method
 	 * @param  array   $attributes
 	 * @param  bool    $https
 	 * @return string
 	 */
-	public static function openForFiles($action = null, $method = 'POST', $attributes = array(), $https = null)
+	public static function openForFiles($action = null, $method = 'POST', $attributes = array(), $https = false)
 	{
 		$attributes['enctype'] = 'multipart/form-data';
 
@@ -431,7 +449,7 @@ class Formation {
 	/**
 	 * Open an HTML form that accepts file uploads with an HTTPS action URI.
 	 *
-	 * @param  mixed   $action
+	 * @param  string  $action
 	 * @param  string  $method
 	 * @param  array   $attributes
 	 * @return string
@@ -444,7 +462,7 @@ class Formation {
 	/**
 	 * Open an HTML form that automatically corrects the action for a resource controller.
 	 *
-	 * @param  mixed   $action
+	 * @param  string  $action
 	 * @param  array   $attributes
 	 * @param  mixed   $controller
 	 * @param  bool    $https
@@ -457,6 +475,10 @@ class Formation {
 		//set method based on action
 		$method = static::methodResource($action, $controller);
 
+		//remove "create" suffix and whatever URI content may be appended to the end of the action
+		if (preg_match('/\/create(.*)/', $action, $match))
+			$action = str_replace($match[0], '', $action);
+
 		//remove "create" and "edit" suffixes from action
 		$action = str_replace('/create', '', str_replace('/edit', '', $action));
 
@@ -466,28 +488,20 @@ class Formation {
 	/**
 	 * Open an HTML form for a resource controller with an HTTPS action URI.
 	 *
-	 * @param  mixed   $action
+	 * @param  string  $action
 	 * @param  array   $attributes
 	 * @param  mixed   $controller
 	 * @return string
 	 */
 	public static function openResourceSecure($action = null, $attributes = array(), $controller = null)
 	{
-		$action = static::action($action, true);
-
-		//set method based on action
-		$method = static::methodResource($action, $controller);
-
-		//remove "create" and "edit" suffixes from action
-		$action = str_replace('/create', '', str_replace('/edit', '', $action));
-
-		return static::openResource($action, $method, $attributes, true);
+		return static::openResource($action, $attributes, $controller, true);
 	}
 
 	/**
 	 * Open an HTML form for a resource controller that accepts file uploads.
 	 *
-	 * @param  mixed   $action
+	 * @param  string  $action
 	 * @param  array   $attributes
 	 * @param  mixed   $controller
 	 * @param  bool    $https
@@ -495,40 +509,24 @@ class Formation {
 	 */
 	public static function openResourceForFiles($action = null, $attributes = array(), $controller = null, $https = false)
 	{
-		$action = static::action($action, $https);
-
 		$attributes['enctype'] = 'multipart/form-data';
 
-		//set method based on action
-		$method = static::methodResource($action, $controller);
-
-		//remove "create" and "edit" suffixes from action
-		$action = str_replace('/create', '', str_replace('/edit', '', $action));
-
-		return static::open($action, $method, $attributes, $https);
+		return static::openResource($action, $attributes, $controller, $https);
 	}
 
 	/**
 	 * Open an HTML form for a resource controller that accepts file uploads with an HTTPS action URI.
 	 *
-	 * @param  mixed   $action
+	 * @param  string  $action
 	 * @param  array   $attributes
 	 * @param  mixed   $controller
 	 * @return string
 	 */
 	public static function openResourceSecureForFiles($action = null, $attributes = array(), $controller = null)
 	{
-		$action = static::action($action, false);
-
 		$attributes['enctype'] = 'multipart/form-data';
 
-		//set method based on action
-		$method = static::methodResource($action, $controller);
-
-		//remove "create" and "edit" suffixes from action
-		$action = str_replace('/create', '', str_replace('/edit', '', $action));
-
-		return static::openResourceForFiles($action, $method, $attributes, true);
+		return static::openResourceForFiles($action, $attributes, $controller, true);
 	}
 
 	/**
@@ -563,8 +561,9 @@ class Formation {
 	{
 		$name = str_replace('(', '', str_replace(')', '', $name));
 		$value = "";
-		if (isset(static::$defaults[$name]))	$value = static::$defaults[$name];
-		if ($_POST && !static::$reset)			$value = Input::get($name);
+		if (isset(static::$defaults[$name]))	  $value = static::$defaults[$name];
+		if ($_POST && !static::$reset)			  $value = Input::get($name);
+		if (Input::old($name) && !static::$reset) $value = Input::old($name);
 
 		if ($type == "checkbox" && is_null($value)) $value = 0; //if type is "checkbox", use 0 for null values - this helps when using Form::value() to add values to an insert or update query
 
@@ -593,6 +592,22 @@ class Formation {
 			$hour += 12;
 
 		return sprintf('%02d', $hour).':'.sprintf('%02d', $minutes).':00';
+	}
+
+	/**
+	 * Add checkboxes to post values for saving in the database.
+	 *
+	 * @param  array   $values
+	 * @param  array   $checkboxes
+	 * @return array
+	 */
+	public static function addCheckboxesToValues($values = array(), $checkboxes = array())
+	{
+		foreach ($checkboxes as $checkbox) {
+			$values[$checkbox] = static::value($checkbox, 'checkbox');
+		}
+
+		return $values;
 	}
 
 	/**
@@ -930,7 +945,7 @@ class Formation {
 				$type = "submit";
 			}
 
-			$types = array('text', 'search', 'password', 'textarea', 'hidden', 'select', 'checkbox', 'radio', 'checkbox-set', 'radio-set', 'submit', 'button');
+			$types = array('text', 'search', 'password', 'url', 'number', 'date', 'textarea', 'hidden', 'select', 'checkbox', 'radio', 'checkbox-set', 'radio-set', 'file', 'button', 'submit');
 			if (!is_array($type) && !in_array($type, array($types))) {
 				$name = $type;
 				$type = "submit";
@@ -1040,6 +1055,18 @@ class Formation {
 				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
 				$html .= static::password($name, $attributesField) . "\n";
 				break;
+			case "url":
+				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
+				$html .= static::url($name, $value, $attributesField) . "\n";
+				break;
+			case "number":
+				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
+				$html .= static::number($name, $value, $attributesField) . "\n";
+				break;
+			case "date":
+				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
+				$html .= static::date($name, $value, $attributesField) . "\n";
+				break;
 			case "textarea":
 				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
 				$html .= static::textarea($name, $value, $attributesField);
@@ -1077,6 +1104,10 @@ class Formation {
 			case "radio-set":
 				if ($fieldLabel) $html .= static::label(null, $label, $attributesLabel);
 				$html .= static::radioSet($name, $options, null, $attributesField);
+				break;
+			case "file":
+				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
+				$html .= static::file($name, $attributesField) . "\n";
 				break;
 			case "button":
 				$html .= static::button($label, $attributesField);
@@ -2028,6 +2059,49 @@ class Formation {
 	}
 
 	/**
+	 * Get all error messages.
+	 *
+	 * @return array
+	 */
+	public static function getErrors()
+	{
+		if (empty(static::$errors)) {
+			foreach (static::$validationFields as $fieldName) {
+				$error = static::errorMessage($fieldName);
+				if ($error)
+					static::$errors[] = $error;
+			}
+		}
+
+		return static::$errors;
+	}
+
+	/**
+	 * Set error messages from session data.
+	 *
+	 * @param  string  $errors
+	 * @return array
+	 */
+	public static function setErrors($session = 'errors')
+	{
+		static::$errors = Session::get($session);
+	}
+
+	/**
+	 * Reset error messages.
+	 *
+	 * @param  string  $errors
+	 * @return array
+	 */
+	public static function resetErrors($session = 'errors')
+	{
+		if ($session)
+			Session::forget($session);
+
+		static::$errors = array();
+	}
+
+	/**
 	 * Add an error class to an HTML attributes array if a validation error exists for the specified form field.
 	 *
 	 * @param  string  $name
@@ -2095,6 +2169,10 @@ class Formation {
 				$nameFormatted = strtolower($nameFormatted);
 		}
 
+		//return error message if it already exists
+		if (isset(static::$errors[$name]))
+			return str_replace($name, $nameFormatted, static::$errors[$name]);
+
 		//cycle through all validation instances to allow the ability to get error messages in root fields
 		//as well as field arrays like "field[array]" (passed to errorMessage in the form of "field.array")
 		foreach (static::$validation as $fieldName => $validation) {
@@ -2104,9 +2182,10 @@ class Formation {
 				$messages = $validation->messages();
 				$nameArray = explode('.', $name);
 				if (count($nameArray) < 2) {
-					if ($_POST && $fieldName == "root" && $messages->first($name) != "")
-						return str_replace(str_replace('_', ' ', $name), $nameFormatted, $messages->first($name));
-
+					if ($_POST && $fieldName == "root" && $messages->first($name) != "") {
+						static::$errors[$name] = str_replace(str_replace('_', ' ', $name), $nameFormatted, $messages->first($name));
+						return static::$errors[$name];
+					}
 				} else {
 					$last =	$nameArray[(count($nameArray) - 1)];
 					$first = str_replace('.'.$nameArray[(count($nameArray) - 1)], '', $name);
@@ -2124,13 +2203,24 @@ class Formation {
 							$nameFormatted = strtolower($nameFormatted);
 					}
 
-					if ($_POST && $fieldName == $first && $messages->first($last) != "")
-						return str_replace(str_replace('_', ' ', $last), $nameFormatted, $messages->first($last));
+					if ($_POST && $fieldName == $first && $messages->first($last) != "") {
+						static::$errors[$name] = str_replace(str_replace('_', ' ', $last), $nameFormatted, $messages->first($last));
+						return static::$errors[$name];
+					}
 				}
 			}
 		}
 
 		return false;
+	}
+
+	/**
+	 * Get the validators array.
+	 *
+	 */
+	public static function getValidation()
+	{
+		return static::$validation;
 	}
 
 	/**
