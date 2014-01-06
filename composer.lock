@@ -3,7 +3,7 @@
         "This file locks the dependencies of your project to a known state",
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file"
     ],
-    "hash": "6db8dc20c061607e23b542ff8cbff097",
+    "hash": "c3b71c5a5893e5b7b4ca510776d71534",
     "packages": [
         {
             "name": "illuminate/support",
@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/support.git",
-                "reference": "9e61ed7335f457521b888fd405f16eda6f7caf02"
+                "reference": "48db89ad7bd5f6b384377abc7ad1f96a387eabd9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/support/zipball/9e61ed7335f457521b888fd405f16eda6f7caf02",
-                "reference": "9e61ed7335f457521b888fd405f16eda6f7caf02",
+                "url": "https://api.github.com/repos/illuminate/support/zipball/48db89ad7bd5f6b384377abc7ad1f96a387eabd9",
+                "reference": "48db89ad7bd5f6b384377abc7ad1f96a387eabd9",
                 "shasum": ""
             },
             "require": {
@@ -31,7 +31,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "4.1-dev"
+                    "dev-master": "4.2-dev"
                 }
             },
             "autoload": {
@@ -54,7 +54,7 @@
                     "role": "Developer"
                 }
             ],
-            "time": "2013-09-06 05:21:45"
+            "time": "2013-12-13 02:49:39"
         }
     ],
     "packages-dev": [
