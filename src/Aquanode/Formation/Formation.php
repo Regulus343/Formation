@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on January 1, 2014
+		last updated on May 4, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -112,8 +112,9 @@ class Formation {
 	{
 		$defaultsArray = $defaults;
 
-		//turn Eloquent instances into an array
-		if (isset($defaults) && isset($defaults->incrementing) && isset($defaults->timestamps)) $defaultsArray = $defaults->toArray();
+		//turn Eloquent collection into an array
+		if (isset($defaults) && isset($defaults->incrementing) && isset($defaults->timestamps))
+			$defaultsArray = $defaults->toArray();
 
 		//turn object into array
 		if (is_object($defaultsArray)) $defaultsArray = (array) $defaults;
@@ -124,22 +125,26 @@ class Formation {
 		//add relationships data to defaults array if it is set
 		if (!empty($relationships)) {
 			$i = 0;
-			foreach ($relationships as $relationship => $fields) {
+			foreach ($relationships as $relationship => $field) {
 				if (count($defaults->{$relationship})) {
-					$id    = isset($defaults->{$relationship}->id) ? $defaults->{$relationship}->id : $i;
-					$field = $fields;
+					$id = isset($defaults->{$relationship}->id) ? $defaults->{$relationship}->id : $i;
 
-					if (is_bool($fields) && $fields) {
+					if (is_bool($field) && $field) {
 						if (isset($defaults->{$relationship}->{$field})) {
-							var_dump($defaults->{$relationship}); exit;
 							foreach ($defaults->{$relationship} as $field => $value) {
 								$defaultsArray[$relationship.'.'.$id.'.'.$field] = $value;
 							}
 						} else {
 							foreach ($defaults->{$relationship} as $item) {
 								$item = $item->toArray();
-								$id   = isset($item->id) ? $item->id : $i;
+								$id   = isset($item['id']) ? $item['id'] : $i;
 								foreach ($item as $field => $value) {
+									if ($field == "pivot") {
+										foreach ($value as $pivotField => $pivotValue) {
+											$defaultsArray[$relationship.'.'.$id.'.'.$pivotField] = $pivotValue;
+										}
+									}
+
 									$defaultsArray[$relationship.'.'.$id.'.'.$field] = $value;
 								}
 							}
@@ -149,7 +154,7 @@ class Formation {
 							$defaultsArray[$relationship.'.'.$id] = $defaults->{$relationship}->{$field};
 						} else {
 							foreach ($defaults->{$relationship} as $item) {
-								$id   = isset($item->id) ? $item->id : $i;
+								$id = isset($item->id) ? $item->id : $i;
 								if (isset($item->{$field}))
 									$defaultsArray[$relationship.'.'.$id] = $item->{$field};
 							}
@@ -162,6 +167,7 @@ class Formation {
 		}
 
 		static::$defaults = $defaultsArray;
+		\Dbg::a(static::$defaults);
 		return static::$defaults;
 	}
 
@@ -175,6 +181,8 @@ class Formation {
 	{
 		foreach ($defaults as $field => $value) {
 			$fieldArray = explode('.', $field);
+
+			//divide any field that starts with "time" into "hour", "minutes", and "meridiem" fields
 			if (substr(end($fieldArray), 0, 4) == "time") {
 				$valueArray = explode(':', $value);
 				if (count($valueArray) >= 2) {
@@ -189,6 +197,160 @@ class Formation {
 			}
 		}
 		return $defaults;
+	}
+
+	/**
+	 * Get an array of all default values. Turns values with decimal notation names back into proper arrays.
+	 *
+	 * @param  mixed    $name
+	 * @param  integer  $levelsDeep
+	 * @param  boolean  $object
+	 * @param  boolean  $id
+	 * @return array
+	 */
+	public static function getDefaultsArrayX($name = null, $levelsDeep = 0, $object = false, $id = null)
+	{
+		$values    = array();
+
+		foreach (static::$defaults as $field => $value) {
+			$fieldNameArray = explode('.', $field);
+
+			$add = false;
+			if (!$name) {
+				$add = true;
+			} else {
+				/*if (isset($values['id'])) {
+					echo '<pre>';
+					var_dump($values['id']);
+					var_dump($fieldNameArray[1]);
+					var_dump('------');
+					echo '</pre><br /><br />';
+				}*/
+				\Regulus\Exterminator\Exterminator::a($id);
+				\Regulus\Exterminator\Exterminator::a($name);
+				\Regulus\Exterminator\Exterminator::a($fieldNameArray[0]);
+				\Regulus\Exterminator\Exterminator::a($values);
+
+				if ($name == $fieldNameArray[1]) {
+					\Regulus\Exterminator\Exterminator::a('Tiger');
+					//if (!is_null($id) && $id == $fieldNameArray[0]) {
+						$add = true;
+						\Regulus\Exterminator\Exterminator::a('Add!');
+					//}
+				}
+
+				\Regulus\Exterminator\Exterminator::a('-----------------------');
+			}
+
+			if ($add) {
+				if (count($fieldNameArray) > $levelsDeep + 1) {
+					\Regulus\Exterminator\Exterminator::a('========');
+					\Regulus\Exterminator\Exterminator::a($fieldNameArray);
+					$id = is_numeric($fieldNameArray[1]) ? $fieldNameArray[1] : null;
+					\Regulus\Exterminator\Exterminator::a($id);
+
+					//\Regulus\Exterminator\Exterminator::a($fieldNameArray[1]);
+
+					$values[$fieldNameArray[$levelsDeep]] = static::getDefaultsArray($fieldNameArray[1], ($levelsDeep + 1), $object, $id);
+				} else {
+					$values[$fieldNameArray[$levelsDeep]] = $value;
+				}
+			}
+		}
+
+		if (!$levelsDeep && is_string($name) && isset($values[$name]))
+			$values = $values[$name];
+
+		if ($object)
+			return (object) $values;
+		else
+			return $values;
+	}
+
+	/**
+	 * Get an array of all default values. Turns values with decimal notation names back into proper arrays.
+	 *
+	 * @param  mixed    $name
+	 * @param  integer  $levelsDeep
+	 * @param  boolean  $object
+	 * @return array
+	 */
+	public static function getDefaultsArray($name = null, $levelsDeep = 0, $object = false, $matchId = null)
+	{
+		$values    = array();
+		$nameArray = is_string($name) ? explode('.', $name) : null;
+
+		foreach (static::$defaults as $field => $value) {
+			$fieldNameArray = explode('.', $field);
+
+			$add = false;
+			$id  = (end($fieldNameArray) == "id") ? $value : null;
+
+			/*echo '<pre>';
+			var_dump($name);
+			isset($fieldNameArray[$levelsDeep]) ? var_dump($fieldNameArray[$levelsDeep]) : var_dump('----');
+			echo '</pre><br /><br />';*/
+
+			//if (isset($fieldNameArray[$levelsDeep]) && !isset($values[$fieldNameArray[$levelsDeep]])) {
+				if (!$name) {
+					$add = true;
+				} else {
+					if ($nameArray[0] == $fieldNameArray[0]) {
+						/*if (!isset($nameArray[1]) || !isset($fieldNameArray[1]) || $nameArray[1] == $fieldNameArray[1])
+							$add = true;*/
+
+						//$id = isset($fieldNameArray[1]) && is_numeric($fieldNameArray[1]) ? $fieldNameArray[1] : null;
+
+						if (!$id || !$matchId || $id == $matchId)
+							$add = true;
+
+						/*echo '<pre>';
+						var_dump($id);
+						var_dump($nameArray);
+						var_dump($fieldNameArray);
+						var_dump($add);
+						var_dump('------');
+						echo '</pre><br /><br />';*/
+					}
+				}
+			//}
+
+			if ($add) {
+				$fieldNameSegment = $fieldNameArray[$levelsDeep];
+
+				if (count($fieldNameArray) > $levelsDeep + 1) {
+					$values[$fieldNameSegment] = static::getDefaultsArray($fieldNameArray[0].'.'.$fieldNameArray[1], ($levelsDeep + 1), $object, $fieldNameSegment);
+				} else {
+					$values[$fieldNameSegment] = $value;
+				}
+			}
+		}
+
+		if (!$levelsDeep && is_string($name) && isset($values[$name]))
+			$values = $values[$name];
+
+		/*echo '<pre>';
+		var_dump($values);
+		var_dump(!isset($nameArray[1]) || !isset($fieldNameArray[1]) || $nameArray[1] == $fieldNameArray[1]);
+		var_dump('------');
+		echo '</pre><br /><br />';*/
+
+		if ($object)
+			return (object) $values;
+		else
+			return $values;
+	}
+
+	/**
+	 * Get an object of all default values.
+	 *
+	 * @param  mixed    $name
+	 * @param  integer  $levelsDeep
+	 * @return object
+	 */
+	public static function getDefaultsObject($name = null, $levelsDeep = 0)
+	{
+		return static::getDefaultsArray($name, $levelsDeep, true);
 	}
 
 	/**
@@ -550,6 +712,27 @@ class Formation {
 	}
 
 	/**
+	 * Get the value of the form or of a form field array.
+	 *
+	 * @param  string  $name
+	 * @param  string  $type
+	 * @return mixed
+	 */
+	public static function values($name = null)
+	{
+		if (is_string($name))
+			$name = str_replace('(', '', str_replace(')', '', $name));
+
+		if ($_POST && !static::$reset) {
+			return Input::get($name);
+		} else if (Input::old($name) && !static::$reset) {
+			return Input::old($name);
+		} else {
+			return static::getDefaultsArray($name);
+		}
+	}
+
+	/**
 	 * Get the value of the form field. If no POST data exists or reinitialize() has been called, default value
 	 * will be used. Otherwise, POST value will be used. Using "checkbox" type ensures a boolean return value.
 	 *
@@ -559,11 +742,17 @@ class Formation {
 	 */
 	public static function value($name, $type = 'standard')
 	{
-		$name = str_replace('(', '', str_replace(')', '', $name));
+		$name  = str_replace('(', '', str_replace(')', '', $name));
 		$value = "";
-		if (isset(static::$defaults[$name]))	  $value = static::$defaults[$name];
-		if ($_POST && !static::$reset)			  $value = Input::get($name);
-		if (Input::old($name) && !static::$reset) $value = Input::old($name);
+
+		if (isset(static::$defaults[$name]))
+			$value = static::$defaults[$name];
+
+		if ($_POST && !static::$reset)
+			$value = Input::get($name);
+
+		if (Input::old($name) && !static::$reset)
+			$value = Input::old($name);
 
 		if ($type == "checkbox" && is_null($value)) $value = 0; //if type is "checkbox", use 0 for null values - this helps when using Form::value() to add values to an insert or update query
 
@@ -595,19 +784,74 @@ class Formation {
 	}
 
 	/**
-	 * Add checkboxes to post values for saving in the database.
+	 * Add values to a data object or array.
 	 *
-	 * @param  array   $values
-	 * @param  array   $checkboxes
-	 * @return array
+	 * @param  mixed   $values
+	 * @param  array   $fields
+	 * @return mixed
 	 */
-	public static function addCheckboxesToValues($values = array(), $checkboxes = array())
+	public static function addValues($data = array(), $fields = array())
 	{
-		foreach ($checkboxes as $checkbox) {
-			$values[$checkbox] = static::value($checkbox, 'checkbox');
+		$associative = (bool) count(array_filter(array_keys((array) $fields), 'is_string'));
+
+		if ($associative) {
+			foreach ($fields as $field => $config) {
+				$add = true;
+
+				if (is_bool($config) || $config == "text") {
+					$value = trim(static::value($field));
+
+					if (!$config)
+						$add = false;
+				} else if (is_array($config)) {
+					$value = trim(static::value($field));
+
+					if (!in_array($value, $config))
+						$add = false;
+				} else if ($config == "checkbox") {
+					$value = static::value($field, 'checkbox');
+				}
+
+				if ($add) {
+					if (is_object($data))
+						$data->{$field} = $value;
+					else
+						$data[$field]   = $value;
+				}
+			}
+		} else {
+			foreach ($fields as $field) {
+				$value = trim(static::value($field));
+
+				if (is_object($data))
+					$data->{$field} = $value;
+				else
+					$data[$field]   = $value;
+			}
 		}
 
-		return $values;
+		return $data;
+	}
+
+	/**
+	 * Add checkbox values to a data object or array.
+	 *
+	 * @param  mixed   $values
+	 * @param  array   $checkboxes
+	 * @return mixed
+	 */
+	public static function addCheckboxValues($data = array(), $checkboxes = array())
+	{
+		foreach ($checkboxes as $checkbox) {
+			$value = static::value($checkbox, 'checkbox');
+
+			if (is_object($data))
+				$data->{$checkbox} = $value;
+			else
+				$data[$checkbox]   = $value;
+		}
+
+		return $data;
 	}
 
 	/**
