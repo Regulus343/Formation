@@ -167,7 +167,6 @@ class Formation {
 		}
 
 		static::$defaults = $defaultsArray;
-		\Dbg::a(static::$defaults);
 		return static::$defaults;
 	}
 
