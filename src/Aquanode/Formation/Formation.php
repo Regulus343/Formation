@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on May 4, 2014
+		last updated on May 5, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -124,10 +124,10 @@ class Formation {
 
 		//add relationships data to defaults array if it is set
 		if (!empty($relationships)) {
-			$i = 0;
+			$i = 1;
 			foreach ($relationships as $relationship => $field) {
 				if (count($defaults->{$relationship})) {
-					$id = isset($defaults->{$relationship}->id) ? $defaults->{$relationship}->id : $i;
+					$id = $i;
 
 					if (is_bool($field) && $field) {
 						if (isset($defaults->{$relationship}->{$field})) {
@@ -137,16 +137,19 @@ class Formation {
 						} else {
 							foreach ($defaults->{$relationship} as $item) {
 								$item = $item->toArray();
-								$id   = isset($item['id']) ? $item['id'] : $i;
+								$id   = $i;
 								foreach ($item as $field => $value) {
 									if ($field == "pivot") {
 										foreach ($value as $pivotField => $pivotValue) {
-											$defaultsArray[$relationship.'.'.$id.'.'.$pivotField] = $pivotValue;
+											if (!isset($defaultsArray[$relationship.'.'.$id.'.'.$pivotField]))
+												$defaultsArray[$relationship.'.'.$id.'.'.$pivotField] = $pivotValue;
 										}
 									}
 
 									$defaultsArray[$relationship.'.'.$id.'.'.$field] = $value;
 								}
+
+								$i ++;
 							}
 						}
 					} else {
@@ -202,154 +205,74 @@ class Formation {
 	 * Get an array of all default values. Turns values with decimal notation names back into proper arrays.
 	 *
 	 * @param  mixed    $name
-	 * @param  integer  $levelsDeep
 	 * @param  boolean  $object
-	 * @param  boolean  $id
-	 * @return array
+	 * @param  boolean  $defaults
+	 * @return mixed
 	 */
-	public static function getDefaultsArrayX($name = null, $levelsDeep = 0, $object = false, $id = null)
-	{
-		$values    = array();
+	public static function getValuesArray($name = null, $object = false, $defaults = false) {
+		$result = array();
 
 		foreach (static::$defaults as $field => $value) {
-			$fieldNameArray = explode('.', $field);
+			if (!$defaults)
+				$value = static::value($field);
 
-			$add = false;
-			if (!$name) {
-				$add = true;
-			} else {
-				/*if (isset($values['id'])) {
-					echo '<pre>';
-					var_dump($values['id']);
-					var_dump($fieldNameArray[1]);
-					var_dump('------');
-					echo '</pre><br /><br />';
-				}*/
-				\Regulus\Exterminator\Exterminator::a($id);
-				\Regulus\Exterminator\Exterminator::a($name);
-				\Regulus\Exterminator\Exterminator::a($fieldNameArray[0]);
-				\Regulus\Exterminator\Exterminator::a($values);
+			$s = explode('.', $field);
 
-				if ($name == $fieldNameArray[1]) {
-					\Regulus\Exterminator\Exterminator::a('Tiger');
-					//if (!is_null($id) && $id == $fieldNameArray[0]) {
-						$add = true;
-						\Regulus\Exterminator\Exterminator::a('Add!');
-					//}
-				}
-
-				\Regulus\Exterminator\Exterminator::a('-----------------------');
-			}
-
-			if ($add) {
-				if (count($fieldNameArray) > $levelsDeep + 1) {
-					\Regulus\Exterminator\Exterminator::a('========');
-					\Regulus\Exterminator\Exterminator::a($fieldNameArray);
-					$id = is_numeric($fieldNameArray[1]) ? $fieldNameArray[1] : null;
-					\Regulus\Exterminator\Exterminator::a($id);
-
-					//\Regulus\Exterminator\Exterminator::a($fieldNameArray[1]);
-
-					$values[$fieldNameArray[$levelsDeep]] = static::getDefaultsArray($fieldNameArray[1], ($levelsDeep + 1), $object, $id);
-				} else {
-					$values[$fieldNameArray[$levelsDeep]] = $value;
-				}
+			switch (count($s)) {
+				case 1:	$result[$s[0]] = $value; break;
+				case 2:	$result[$s[0]][$s[1]] = $value; break;
+				case 3:	$result[$s[0]][$s[1]][$s[2]] = $value; break;
+				case 4:	$result[$s[0]][$s[1]][$s[2]][$s[3]] = $value; break;
+				case 5:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]] = $value; break;
+				case 6:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]][$s[5]] = $value; break;
+				case 7:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]][$s[5]][$s[6]] = $value; break;
 			}
 		}
 
-		if (!$levelsDeep && is_string($name) && isset($values[$name]))
-			$values = $values[$name];
-
-		if ($object)
-			return (object) $values;
-		else
-			return $values;
-	}
-
-	/**
-	 * Get an array of all default values. Turns values with decimal notation names back into proper arrays.
-	 *
-	 * @param  mixed    $name
-	 * @param  integer  $levelsDeep
-	 * @param  boolean  $object
-	 * @return array
-	 */
-	public static function getDefaultsArray($name = null, $levelsDeep = 0, $object = false, $matchId = null)
-	{
-		$values    = array();
-		$nameArray = is_string($name) ? explode('.', $name) : null;
-
-		foreach (static::$defaults as $field => $value) {
-			$fieldNameArray = explode('.', $field);
-
-			$add = false;
-			$id  = (end($fieldNameArray) == "id") ? $value : null;
-
-			/*echo '<pre>';
-			var_dump($name);
-			isset($fieldNameArray[$levelsDeep]) ? var_dump($fieldNameArray[$levelsDeep]) : var_dump('----');
-			echo '</pre><br /><br />';*/
-
-			//if (isset($fieldNameArray[$levelsDeep]) && !isset($values[$fieldNameArray[$levelsDeep]])) {
-				if (!$name) {
-					$add = true;
-				} else {
-					if ($nameArray[0] == $fieldNameArray[0]) {
-						/*if (!isset($nameArray[1]) || !isset($fieldNameArray[1]) || $nameArray[1] == $fieldNameArray[1])
-							$add = true;*/
-
-						//$id = isset($fieldNameArray[1]) && is_numeric($fieldNameArray[1]) ? $fieldNameArray[1] : null;
-
-						if (!$id || !$matchId || $id == $matchId)
-							$add = true;
-
-						/*echo '<pre>';
-						var_dump($id);
-						var_dump($nameArray);
-						var_dump($fieldNameArray);
-						var_dump($add);
-						var_dump('------');
-						echo '</pre><br /><br />';*/
-					}
-				}
-			//}
-
-			if ($add) {
-				$fieldNameSegment = $fieldNameArray[$levelsDeep];
-
-				if (count($fieldNameArray) > $levelsDeep + 1) {
-					$values[$fieldNameSegment] = static::getDefaultsArray($fieldNameArray[0].'.'.$fieldNameArray[1], ($levelsDeep + 1), $object, $fieldNameSegment);
-				} else {
-					$values[$fieldNameSegment] = $value;
-				}
-			}
+		if (!is_null($name)) {
+			if (isset($result[$name]))
+				$result = $result[$name];
+			else
+				$result = array();
 		}
 
-		if (!$levelsDeep && is_string($name) && isset($values[$name]))
-			$values = $values[$name];
-
-		/*echo '<pre>';
-		var_dump($values);
-		var_dump(!isset($nameArray[1]) || !isset($fieldNameArray[1]) || $nameArray[1] == $fieldNameArray[1]);
-		var_dump('------');
-		echo '</pre><br /><br />';*/
-
 		if ($object)
-			return (object) $values;
-		else
-			return $values;
+			$result = json_decode(json_encode($result));
+
+		return $result;
 	}
 
 	/**
 	 * Get an object of all default values.
 	 *
 	 * @param  mixed    $name
-	 * @param  integer  $levelsDeep
 	 * @return object
 	 */
-	public static function getDefaultsObject($name = null, $levelsDeep = 0)
+	public static function getValuesObject($name = null)
 	{
-		return static::getDefaultsArray($name, $levelsDeep, true);
+		return static::getValuesArray($name, true, false);
+	}
+
+	/**
+	 * Get an array of all default values. Turns values with decimal notation names back into proper arrays.
+	 *
+	 * @param  mixed    $name
+	 * @return array
+	 */
+	public static function getDefaultsArray($name = null)
+	{
+		return static::getValuesArray($name, false, true);
+	}
+
+	/**
+	 * Get an object of all default values.
+	 *
+	 * @param  mixed    $name
+	 * @return object
+	 */
+	public static function getDefaultsObject($name = null)
+	{
+		return static::getValuesArray($name, true, true);
 	}
 
 	/**
@@ -750,7 +673,7 @@ class Formation {
 		if ($_POST && !static::$reset)
 			$value = Input::get($name);
 
-		if (Input::old($name) && !static::$reset)
+		if (!is_null(Input::old($name)) && !static::$reset)
 			$value = Input::old($name);
 
 		if ($type == "checkbox" && is_null($value)) $value = 0; //if type is "checkbox", use 0 for null values - this helps when using Form::value() to add values to an insert or update query
