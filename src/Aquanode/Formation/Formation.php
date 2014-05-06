@@ -1004,6 +1004,9 @@ class Formation {
 		if (substr($id, -1) == "-")
 			$id = substr($id, 0, (strlen($id) - 1));
 
+		if (!$id || $id == "")
+			unset($attributes['id']);
+
 		return $id;
 	}
 
@@ -1016,14 +1019,43 @@ class Formation {
 	 */
 	protected static function setFieldClass($name, $attributes = array())
 	{
-		$class = Config::get('formation::fieldClass');
-		if ($class != "") {
+		$defaultClass = Config::get('formation::fieldClass');
+		if ($defaultClass != "") {
 			if (isset($attributes['class']) && $attributes['class'] != "") {
-				$attributes['class'] .= ' '.$class;
+				$attributes['class'] .= ' '.$defaultClass;
 			} else {
-				$attributes['class'] = $class;
+				$attributes['class'] = $defaultClass;
 			}
 		}
+
+		$nameSegments = explode('.', $name);
+		$fieldClass   = strtolower(str_replace('_', '-', str_replace(' ', '-', end($nameSegments))));
+
+		//remove icon code
+		if (preg_match('/\[ICON:(.*)\]/i', $fieldClass, $match)) {
+			$fieldClass = str_replace($match[0], '', $fieldClass);
+		}
+
+		//remove round brackets that are used to prevent index number from appearing in field name
+		$fieldClass = str_replace('(', '', str_replace(')', '', $fieldClass));
+
+		//replace double dashes with single dash
+		$fieldClass = str_replace('--', '-', $fieldClass);
+
+		//remove end dash if one exists
+		if (substr($fieldClass, -1) == "-")
+			$fieldClass = substr($fieldClass, 0, (strlen($fieldClass) - 1));
+
+		if ($fieldClass != "") {
+			$fieldClass = "field-".$fieldClass;
+
+			if (isset($attributes['class']) && $attributes['class'] != "") {
+				$attributes['class'] .= ' '.$fieldClass;
+			} else {
+				$attributes['class'] = $fieldClass;
+			}
+		}
+
 		return $attributes;
 	}
 
@@ -1323,8 +1355,6 @@ class Formation {
 		$attributes = static::addErrorClass($name, $attributes);
 
 		$attributes['id'] = static::id($name, $attributes);
-		if (isset($attributes['id']) && (!$attributes['id'] || $attributes['id'] == ""))
-			unset($attributes['id']);
 
 		if (is_null($value) && $type != "password") $value = static::value($name);
 
