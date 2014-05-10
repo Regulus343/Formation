@@ -4,7 +4,7 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
-	| Field Container and Field
+	| Field Containers, Fields, Labels and Errors: Elements and Classes
 	|--------------------------------------------------------------------------
 	|
 	| The field container element, class, and clear setting which will append
@@ -12,32 +12,50 @@ return array(
 	| within the container.
 	|
 	*/
-	'fieldContainer'      => 'div',
-	'fieldContainerClass' => 'form-group',
-	'fieldContainerClear' => false,
+	'fieldContainer' => array(
+		'element' => 'div',
+		'class'   => 'form-group',
+		'error'   => true,
+		'clear'   => false,
+	),
 
-	'fieldClass'          => 'form-control',
+	'field' => array(
+		'class'           => 'form-control',
+		'autoLabel'       => true,
+		'autoPlaceholder' => true,
+	),
+
+	'label' => array(
+		'class'  => 'control-label',
+		'suffix' => false,
+	),
 
 	/*
 	|--------------------------------------------------------------------------
-	| Automatic Field Labels
+	| Errors
 	|--------------------------------------------------------------------------
 	|
-	| Automatically create a label in field() method.
+	| Choose whether the error type should be a title attribute in a label or
+	| if it should be its own standalone element that appears after the field.
+	| You may also set a glyphicon for the tooltip and attributes for the
+	| tooltip's label. If the attribute values you would like to set already
+	| exist for the label, the new ones will simply be appended to the
+	| existing values.
 	|
 	*/
-	'autoFieldLabel' => true,
+	'error' => array(
+		'element'             => 'div',
+		'elementClass'        => 'error',
+		'class'               => 'has-error',
+		'icon'                => 'remove-circle',
+		'typeLabelTooltip'    => true,
 
-	/*
-	|--------------------------------------------------------------------------
-	| Automatic Field Placeholder
-	|--------------------------------------------------------------------------
-	|
-	| Automatically set a "placeholder" attribute for the field according to
-	| the name of the field's label.
-	|
-	*/
-	'autoFieldPlaceholder' => true,
+		'typeLabelAttributes' => array(
+			'data-toggle'    => 'tooltip',
+			'data-placement' => 'top',
+			'class'          => 'error-tooltip',
+		),
+	),
 
 	/*
 	|--------------------------------------------------------------------------
@@ -49,18 +67,6 @@ return array(
 	|
 	*/
 	'autoButtonIcon' => true,
-
-	/*
-	|--------------------------------------------------------------------------
-	| Label Suffix
-	|--------------------------------------------------------------------------
-	|
-	| Set an automatic suffix for labels such as a colon (":"). If set, you may
-	| disable for specific fields by passing a false "suffix" attribute to the
-	| label() method or a false "suffix-label" attribute to the field macro.
-	|
-	*/
-	'labelSuffix' => false,
 
 	/*
 	|--------------------------------------------------------------------------

@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on May 5, 2014
+		last updated on May 10, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -55,6 +55,13 @@ class Formation {
 	public static $validationFields = array();
 
 	/**
+	 * The form values array or object.
+	 *
+	 * @var array
+	 */
+	public static $values = array();
+
+	/**
 	 * The form errors.
 	 *
 	 * @var array
@@ -102,6 +109,19 @@ class Formation {
 	}
 
 	/**
+	 * Returns the POST data.
+	 *
+	 * @return mixed
+	 */
+	public static function post()
+	{
+		if (Input::old())
+			return Input::old();
+
+		return Input::all();
+	}
+
+	/**
 	 * Assigns default values to form fields.
 	 *
 	 * @param  array    $defaults
@@ -144,9 +164,9 @@ class Formation {
 											if (!isset($defaultsArray[$relationship.'.'.$id.'.'.$pivotField]))
 												$defaultsArray[$relationship.'.'.$id.'.'.$pivotField] = $pivotValue;
 										}
+									} else {
+										$defaultsArray[$relationship.'.'.$id.'.'.$field] = $value;
 									}
-
-									$defaultsArray[$relationship.'.'.$id.'.'.$field] = $value;
 								}
 
 								$i ++;
@@ -212,9 +232,55 @@ class Formation {
 	public static function getValuesArray($name = null, $object = false, $defaults = false) {
 		$result = array();
 
+		$input = array(
+			'laser'              => 'wow',
+			'A.B.C.D.first_name' => 'Kenneth',
+			'A.B.C.D.last_name'  => 'Buck',
+			'A.B.age'            => 30,
+			'blergers'           => 'flies',
+		);
+
+		$input2 = array(
+			"id" => "2",
+			"slug" => "about",
+			"title" => "About Us",
+			"layout_template_id" => "2",
+			"layout" => "",
+			"user_id" => "0",
+			"active" => "1",
+			"created_at" => "2014-05-05 23:59:15",
+			"updated_at" => "2014-05-05 23:59:15",
+			"deleted_at" => "0000-00-00 00:00:00",
+			"content_areas.1.id" => "2",
+			"content_areas.1.title" => "About Us - Main",
+			"content_areas.1.content_type" => "HTML",
+			"content_areas.1.content" => "About Us content coming soon.",
+			/*"content_areas.1.user_id" => "0",
+			"content_areas.1.created_at" => "2014-05-05 23:59:15",
+			"content_areas.1.updated_at" => "2014-05-05 23:59:15",
+			"content_areas.1.deleted_at" => "0000-00-00 00:00:00",
+			"content_areas.1.page_id" => "2",
+			"content_areas.1.area_id" => "2",
+			"content_areas.1.layout_tag" => "main",
+			"content_areas.2.id" => "3",
+			"content_areas.2.title" => "About Us - Side",
+			"content_areas.2.content_type" => "HTML",
+			"content_areas.2.content" => "About Us side content coming soon.",
+			"content_areas.2.user_id" => "0",
+			"content_areas.2.created_at" => "2014-05-05 23:59:15",
+			"content_areas.2.updated_at" => "2014-05-05 23:59:15",
+			"content_areas.2.deleted_at" => "0000-00-00 00:00:00",
+			"content_areas.2.page_id" => "2",
+			"content_areas.2.area_id" => "3",
+			"content_areas.2.layout_tag" => "side",*/
+		);
+
 		foreach (static::$defaults as $field => $value) {
 			if (!$defaults)
 				$value = static::value($field);
+
+			/*$keys   = explode('.', $field);
+			$result = static::assignValuesToArray($keys, $result, $value);*/
 
 			$s = explode('.', $field);
 
@@ -239,7 +305,29 @@ class Formation {
 		if ($object)
 			$result = json_decode(json_encode($result));
 
+		static::$values = $result;
+
 		return $result;
+	}
+
+	/**
+	 *
+	 */
+	private static function assignValuesToArray(array $keys, $result, $value)
+	{
+		if (count($keys)) {
+			$key = $keys[0];
+
+			if (isset($result[$key])) {
+				$result[$key] = array_merge($result[$key], static::assignValuesToArray(array_slice($keys, 1), $result[$key], $value));
+			} else {
+				$result[$key] = static::assignValuesToArray(array_slice($keys, 1), array(), $value);
+			}
+
+			return $result;
+		}
+
+		return $value;
 	}
 
 	/**
@@ -276,6 +364,42 @@ class Formation {
 	}
 
 	/**
+	 * Get a value from an array if it exists.
+	 *
+	 * @param  string   $field
+	 * @param  array    $values
+	 * @return string
+	 */
+	public static function getValueFromArray($field, $values = null)
+	{
+		if (isset($values[$field]))
+			return $values[$field];
+
+		return "";
+	}
+
+	/**
+	 * Get a value from an object if it exists.
+	 *
+	 * @param  string   $field
+	 * @param  object   $values
+	 * @return string
+	 */
+	public static function getValueFromObject($field, $values = null)
+	{
+		if (is_null($values))
+			$values = static::$values;
+
+		if (!is_object($values))
+			$values = json_decode(json_encode($values));
+
+		if (isset($values->{$field}))
+			return $values->{$field};
+
+		return "";
+	}
+
+	/**
 	 * Resets form field values back to defaults and ignores POSTed values.
 	 *
 	 * @param  array    $defaults
@@ -304,14 +428,16 @@ class Formation {
 	 * to automatically add error classes to labels and fields.
 	 *
 	 * @param  array    $rules
+	 * @param  mixed    $prefix
 	 * @return array
 	 */
-	public static function setValidationRules($rules = array())
+	public static function setValidationRules($rules = array(), $prefix = null)
 	{
-		static::$validationFields = array();
-
 		$rulesFormatted = array();
 		foreach ($rules as $name => $rulesItem) {
+			if (!is_null($prefix))
+				$name = $prefix.'.'.$name;
+
 			static::$validationFields[] = $name;
 
 			$rulesArray = explode('.', $name);
@@ -826,6 +952,24 @@ class Formation {
 	{
 		$attributes = static::addErrorClass($name, $attributes);
 
+		//add tooltip and tooltip attributes if necessary
+		if (Config::get('formation::error.typeLabelTooltip')) {
+			$errorMessage = static::errorMessage($name, false);
+
+			if ($errorMessage) {
+				$addAttributes = Config::get('formation::error.typeLabelAttributes');
+				foreach ($addAttributes as $attribute => $attributeValue) {
+					if (isset($attributes[$attribute]))
+						$attributes[$attribute] .= ' '.$attributeValue;
+					else
+						$attributes[$attribute] = $attributeValue;
+				}
+
+				//set tooltip error message
+				$attributes['title'] = str_replace('"', '&quot;', $errorMessage);
+			}
+		}
+
 		if (!is_null($name) && $name != "") {
 			if (is_null($label)) $label = static::nameToLabel($name);
 		} else {
@@ -845,7 +989,7 @@ class Formation {
 		if (preg_match('/\{/', $name)) $attributes['accesskey'] = false;
 
 		//add label suffix
-		$suffix = Config::get('formation::labelSuffix');
+		$suffix = Config::get('formation::label.suffix');
 		if ($suffix != "" && (!isset($attributes['suffix']) || $attributes['suffix']))
 			$label .= $suffix;
 
@@ -865,9 +1009,9 @@ class Formation {
 		//add "control-label" class
 		if (!isset($attributes['control-label-class']) || $attributes['control-label-class']) {
 			if (isset($attributes['class']) && $attributes['class'] != "") {
-				$attributes['class'] .= ' control-label';
+				$attributes['class'] .= ' '.Config::get('formation::label.class');
 			} else {
-				$attributes['class'] = 'control-label';
+				$attributes['class'] = Config::get('formation::label.class');
 			}
 		}
 		if (isset($attributes['control-label-class'])) unset($attributes['control-label-class']);
@@ -1015,16 +1159,19 @@ class Formation {
 	 *
 	 * @param  string  $name
 	 * @param  array   $attributes
+	 * @param  string  $type
 	 * @return array
 	 */
-	protected static function setFieldClass($name, $attributes = array())
+	protected static function setFieldClass($name, $attributes = array(), $type = 'text')
 	{
-		$defaultClass = Config::get('formation::fieldClass');
-		if ($defaultClass != "") {
-			if (isset($attributes['class']) && $attributes['class'] != "") {
-				$attributes['class'] .= ' '.$defaultClass;
-			} else {
-				$attributes['class'] = $defaultClass;
+		if (!in_array($type, array('hidden', 'checkbox', 'radio'))) {
+			$defaultClass = Config::get('formation::field.class');
+			if ($defaultClass != "") {
+				if (isset($attributes['class']) && $attributes['class'] != "") {
+					$attributes['class'] .= ' '.$defaultClass;
+				} else {
+					$attributes['class'] = $defaultClass;
+				}
 			}
 		}
 
@@ -1068,7 +1215,7 @@ class Formation {
 	 */
 	protected static function setFieldPlaceholder($name, $attributes = array())
 	{
-		$placeholder = Config::get('formation::autoFieldPlaceholder');
+		$placeholder = Config::get('formation::field.autoPlaceholder');
 		if ($placeholder && !isset($attributes['placeholder'])) {
 			$namePlaceholder = $name;
 			if (isset(static::$labels[$name]) && static::$labels[$name] != "") {
@@ -1152,7 +1299,7 @@ class Formation {
 		}
 
 		//allow label to be set via attributes array (defaults to labels array and then to a label derived from the field's name)
-		$fieldLabel = Config::get('formation::autoFieldLabel');
+		$fieldLabel = Config::get('formation::field.autoLabel');
 		if (!is_null($name)) {
 			$label = static::nameToLabel($name);
 		} else {
@@ -1222,9 +1369,9 @@ class Formation {
 			}
 		}
 		if (!isset($attributesFieldContainer['class']) || $attributesFieldContainer['class'] == "") {
-			$attributesFieldContainer['class'] = Config::get('formation::fieldContainerClass');
+			$attributesFieldContainer['class'] = Config::get('formation::fieldContainer.class');
 		} else {
-			$attributesFieldContainer['class'] .= ' '.Config::get('formation::fieldContainerClass');
+			$attributesFieldContainer['class'] .= ' '.Config::get('formation::fieldContainer.class');
 		}
 		if (!isset($attributesFieldContainer['id'])) {
 			$attributesFieldContainer['id'] = static::id($name, $attributesFieldContainer).'-area';
@@ -1239,7 +1386,7 @@ class Formation {
 
 		$attributesFieldContainer = static::addErrorClass($name, $attributesFieldContainer);
 
-		$html = '<'.Config::get('formation::fieldContainer').static::attributes($attributesFieldContainer).'>' . "\n";
+		$html = '<'.Config::get('formation::fieldContainer.element').static::attributes($attributesFieldContainer).'>' . "\n";
 		switch ($type) {
 			case "text":
 				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
@@ -1314,9 +1461,14 @@ class Formation {
 				$html .= static::submit($label, $attributesField);
 				break;
 		}
-		$html .= static::error($name) . "\n";
-		if (Config::get('formation::fieldContainerClear')) $html .= '<div class="clear"></div>' . "\n";
-		$html .= '</'.Config::get('formation::fieldContainer').'>' . "\n";
+
+		if (Config::get('formation::fieldContainer.error') && !Config::get('formation::error.typeLabelTooltip'))
+			$html .= static::error($name) . "\n";
+
+		if (Config::get('formation::fieldContainer.clear'))
+			$html .= '<div class="clear"></div>' . "\n";
+
+		$html .= '</'.Config::get('formation::fieldContainer.element').'>' . "\n";
 		return $html;
 	}
 
@@ -1339,13 +1491,12 @@ class Formation {
 	 */
 	public static function input($type, $name, $value = null, $attributes = array())
 	{
-		if (!in_array($type, array('hidden', 'checkbox', 'radio'))) {
-			//add the field class if config option is set
-			$attributes = static::setFieldClass($name, $attributes);
-
-			//automatically set placeholder attribute if config option is set
+		//automatically set placeholder attribute if config option is set
+		if (!in_array($type, array('hidden', 'checkbox', 'radio')))
 			$attributes = static::setFieldPlaceholder($name, $attributes);
-		}
+
+		//add the field class if config option is set
+		$attributes = static::setFieldClass($name, $attributes, $type);
 
 		//remove "placeholder" attribute if it is set to false
 		if (isset($attributes['placeholder']) && !$attributes['placeholder'])
@@ -1355,6 +1506,9 @@ class Formation {
 		$attributes = static::addErrorClass($name, $attributes);
 
 		$attributes['id'] = static::id($name, $attributes);
+
+		if ($name == static::$spoofer)
+			unset($attributes['id']);
 
 		if (is_null($value) && $type != "password") $value = static::value($name);
 
@@ -2265,7 +2419,7 @@ class Formation {
 			foreach (static::$validationFields as $fieldName) {
 				$error = static::errorMessage($fieldName);
 				if ($error)
-					static::$errors[] = $error;
+					static::$errors[$fieldName] = $error;
 			}
 		}
 
@@ -2281,6 +2435,8 @@ class Formation {
 	public static function setErrors($session = 'errors')
 	{
 		static::$errors = Session::get($session);
+
+		return static::$errors;
 	}
 
 	/**
@@ -2308,12 +2464,24 @@ class Formation {
 	{
 		if (static::errorMessage($name)) { //an error exists; add the error class
 			if (!isset($attributes['class'])) {
-				$attributes['class'] = "has-error";
+				$attributes['class'] = static::getErrorClass();
 			} else {
-				$attributes['class'] .= " has-error";
+				$attributes['class'] .= " ".static::getErrorClass();
 			}
 		}
 		return $attributes;
+	}
+
+	/**
+	 * Add an error class to an HTML attributes array if a validation error exists for the specified form field.
+	 *
+	 * @param  string  $name
+	 * @param  array   $attributes
+	 * @return array
+	 */
+	public static function getErrorClass()
+	{
+		return Config::get('formation::error.class');
 	}
 
 	/**
@@ -2322,20 +2490,30 @@ class Formation {
 	 * @param  string  $name
 	 * @param  boolean $alwaysExists
 	 * @param  mixed   $replacementFieldName
+	 * @param  mixed   $customMessage
 	 * @return string
 	 */
-	public static function error($name, $alwaysExists = false, $replacementFieldName = false)
+	public static function error($name, $alwaysExists = false, $replacementFieldName = false, $customMessage = null)
 	{
-		$attr = "";
 		if (substr($name, -1) == ".") $name = substr($name, 0, (strlen($name) - 1));
-		if ($alwaysExists) $attr = ' id="'.str_replace('_', '-', $name).'-error"';
+
+		if ($alwaysExists)
+			$attr = ' id="'.static::id($name).'-error"';
+		else
+			$attr = "";
 
 		$message = static::errorMessage($name, $replacementFieldName);
 
+		if (!is_null($customMessage))
+			$message = $customMessage;
+
+		$errorElement = Config::get('formation::error.element');
+
 		if ($message && $message != "") {
-			return '<div class="error"'.$attr.'>'.$message.'</div>';
+			return '<'.$errorElement.' class="error"'.$attr.'>'.$message.'</'.$errorElement.'>';
 		} else {
-			if ($alwaysExists) return '<div class="error"'.$attr.' style="display: none;"></div>';
+			if ($alwaysExists)
+				return '<'.$errorElement.' class="error"'.$attr.' style="display: none;"></'.$errorElement.'>';
 		}
 	}
 
@@ -2344,30 +2522,40 @@ class Formation {
 	 *
 	 * @param  string  $name
 	 * @param  mixed   $replacementFieldName
+	 * @param  boolean $ignoreIcon
 	 * @return string
 	 */
-	public static function errorMessage($name, $replacementFieldName = false)
+	public static function errorMessage($name, $replacementFieldName = false, $ignoreIcon = false)
 	{
+		$errorMessage = false;
+
 		//replace field name in error message with label if it exists
 		$name = str_replace('(', '', str_replace(')', '', $name));
 		$nameFormatted = $name;
 
-		if ($replacementFieldName && is_string($replacementFieldName) && $replacementFieldName != "" && $replacementFieldName != "LOWERCASE") {
+		$specialReplacementNames = array('LOWERCASE', 'UPPERCASE', 'UPPERCASE-WORDS');
+
+		if ($replacementFieldName && is_string($replacementFieldName) && $replacementFieldName != ""
+		&& !in_array($replacementFieldName, $specialReplacementNames)) {
 			$nameFormatted = $replacementFieldName;
 		} else {
 			if (isset(static::$labels[$name]) && static::$labels[$name] != "")
 				$nameFormatted = static::$labels[$name];
+			else
+				$nameFormatted = static::nameToLabel($nameFormatted);
 
 			if (substr($nameFormatted, -1) == ":")
 				$nameFormatted = substr($nameFormatted, 0, (strlen($nameFormatted) - 1));
 
-			if ($replacementFieldName == "LOWERCASE")
-				$nameFormatted = strtolower($nameFormatted);
+			$nameFormatted = static::formatReplacementName($nameFormatted, $replacementFieldName);
 		}
+
+		if ($nameFormatted == strip_tags($nameFormatted))
+			$nameFormatted = static::entities($nameFormatted);
 
 		//return error message if it already exists
 		if (isset(static::$errors[$name]))
-			return str_replace($name, $nameFormatted, static::$errors[$name]);
+			$errorMessage = str_replace($name, $nameFormatted, static::$errors[$name]);
 
 		//cycle through all validation instances to allow the ability to get error messages in root fields
 		//as well as field arrays like "field[array]" (passed to errorMessage in the form of "field.array")
@@ -2380,13 +2568,14 @@ class Formation {
 				if (count($nameArray) < 2) {
 					if ($_POST && $fieldName == "root" && $messages->first($name) != "") {
 						static::$errors[$name] = str_replace(str_replace('_', ' ', $name), $nameFormatted, $messages->first($name));
-						return static::$errors[$name];
+						$errorMessage = static::$errors[$name];
 					}
 				} else {
 					$last =	$nameArray[(count($nameArray) - 1)];
 					$first = str_replace('.'.$nameArray[(count($nameArray) - 1)], '', $name);
 
-					if ($replacementFieldName && is_string($replacementFieldName) && $replacementFieldName != "" && $replacementFieldName != "LOWERCASE") {
+					if ($replacementFieldName && is_string($replacementFieldName) && $replacementFieldName != ""
+					&& !in_array($replacementFieldName, $specialReplacementNames)) {
 						$nameFormatted = $replacementFieldName;
 					} else {
 						if ($nameFormatted == $name) {
@@ -2395,19 +2584,107 @@ class Formation {
 						if (substr($nameFormatted, -1) == ":")
 							$nameFormatted = substr($nameFormatted, 0, (strlen($nameFormatted) - 2));
 
-						if ($replacementFieldName == "LOWERCASE")
-							$nameFormatted = strtolower($nameFormatted);
+						$nameFormatted = static::formatReplacementName($nameFormatted, $replacementFieldName);
 					}
 
 					if ($_POST && $fieldName == $first && $messages->first($last) != "") {
 						static::$errors[$name] = str_replace(str_replace('_', ' ', $last), $nameFormatted, $messages->first($last));
-						return static::$errors[$name];
+						$errorMessage = static::$errors[$name];
 					}
 				}
 			}
 		}
 
-		return false;
+		if ($errorMessage && !$ignoreIcon) {
+			$errorIcon = Config::get('formation::error.icon');
+			if ($errorIcon) {
+				if (!preg_match("/glyphicon/", $errorMessage))
+					$errorMessage = '<span class="glyphicon glyphicon-'.$errorIcon.'"></span>&nbsp; '.$errorMessage;
+			}
+		}
+
+		return $errorMessage;
+	}
+
+	/**
+	 * Format replacement name for error messages.
+	 *
+	 * @param  string  $name
+	 * @param  mixed   $replacementName
+	 * @return string
+	 */
+	private static function formatReplacementName($name, $replacementName) {
+		if ($replacementName == "LOWERCASE")
+			$name = strtolower($name);
+
+		if ($replacementName == "UPPERCASE")
+			$name = strtoupper($name);
+
+		if ($replacementName == "UPPERCASE-WORDS")
+			$name = ucwords(strtolower($name));
+
+		return $name;
+	}
+
+	/**
+	 * Get JSON encoded errors for formation.js.
+	 *
+	 * @param  string  $errors
+	 * @return string
+	 */
+	public static function getJsonErrors($session = 'errors')
+	{
+		//var_dump(str_replace('\\"', '\\\"', json_encode(static::setErrors($session)))); exit;
+		return str_replace('\\"', '\\\"', json_encode(static::setErrors($session)));
+	}
+
+	/**
+	 * Get JSON encoded errors for formation.js.
+	 *
+	 * @param  string  $errors
+	 * @return string
+	 */
+	public static function getJsonErrorSettings($session = 'errors')
+	{
+		$errorSettings = static::formatSettingsForJs(Config::get('formation::error'));
+		return json_encode($errorSettings);
+	}
+
+	/**
+	 * Format settings array for Javascript.
+	 *
+	 * @param  array   $settings
+	 * @return array
+	 */
+	private static function formatSettingsForJs($settings) {
+		if (is_array($settings)) {
+			foreach ($settings as $setting => $value) {
+				$settingOriginal = $setting;
+
+				if ($setting == "class")
+					$setting = "classAttribute";
+
+				$setting = static::dashedToCamelCase($setting);
+
+				if ($setting != $settingOriginal && isset($settings[$settingOriginal]))
+					unset($settings[$settingOriginal]);
+
+				$settings[$setting] = static::formatSettingsForJs($value);
+			}
+		}
+		return $settings;
+	}
+
+	/**
+	 * Turn a dash formatted string into a camelcase formatted string.
+	 *
+	 * @param  array   $settings
+	 * @return array
+	 */
+	private static function dashedToCamelCase($string) {
+		$string    = str_replace(' ', '', ucwords(str_replace('-', ' ', $string)));
+        $string[0] = strtolower($string[0]);
+        return $string;
 	}
 
 	/**
