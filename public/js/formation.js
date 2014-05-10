@@ -21,7 +21,7 @@ var Formation = {
 		},
 	},
 
-	errorCallback: null,
+	errorCallback: 'Formation.defaultErrorCallback',
 
 	errors:        null,
 	errorsById:    null,
@@ -32,6 +32,10 @@ var Formation = {
 
 	setErrorCallback: function (errorCallback) {
 		this.errorCallback = errorCallback;
+	},
+
+	defaultErrorCallback: function(fieldContainer) {
+		fieldContainer.find('[data-toggle="tooltip"]').tooltip({html: true}); //by default, form errors are set up for Bootstrap 3
 	},
 
 	setErrors: function(errors) {
@@ -140,8 +144,13 @@ var Formation = {
 							fieldElement.after(errorHtml);
 						}
 
-						if (this.errorCallback)
-							window[this.errorCallback](containerElement);
+						if (this.errorCallback) {
+							var errorCallbackArray = this.errorCallback.split('.');
+							if (errorCallbackArray.length == 2)
+								window[errorCallbackArray[0]][errorCallbackArray[1]](containerElement);
+							else
+								window[this.errorCallback](containerElement);
+						}
 					}
 				}
 			}
