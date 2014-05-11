@@ -10,11 +10,13 @@
 	],
 	"require": {
 		"php": ">=5.3.0",
-		"illuminate/support": "4.x"
+		"illuminate/support": "4.x",
+		"regulus/tetra-text": "dev-master"
 	},
 	"autoload": {
 		"classmap": [
-			"src/migrations"
+			"src/migrations",
+			"src/models"
 		],
 		"psr-0": {
 			"Aquanode\\Formation": "src/"
