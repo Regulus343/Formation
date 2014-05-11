@@ -6,6 +6,8 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
+    'Regulus\\TetraText' => array($vendorDir . '/regulus/tetra-text/src'),
     'Illuminate\\Support' => array($vendorDir . '/illuminate/support'),
+    'HTMLPurifier' => array($vendorDir . '/ezyang/htmlpurifier/library'),
     'Aquanode\\Formation' => array($baseDir . '/src'),
 );
