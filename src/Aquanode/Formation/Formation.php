@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on May 10, 2014
+		last updated on May 11, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -232,7 +232,7 @@ class Formation {
 	}
 
 	/**
-	 * Get an array of all default values. Turns values with decimal notation names back into proper arrays.
+	 * Get an array of all values. Turns values with decimal notation names back into proper arrays.
 	 *
 	 * @param  mixed    $name
 	 * @param  boolean  $object
@@ -241,49 +241,6 @@ class Formation {
 	 */
 	public static function getValuesArray($name = null, $object = false, $defaults = false) {
 		$result = array();
-
-		$input = array(
-			'laser'              => 'wow',
-			'A.B.C.D.first_name' => 'Kenneth',
-			'A.B.C.D.last_name'  => 'Buck',
-			'A.B.age'            => 30,
-			'blergers'           => 'flies',
-		);
-
-		$input2 = array(
-			"id" => "2",
-			"slug" => "about",
-			"title" => "About Us",
-			"layout_template_id" => "2",
-			"layout" => "",
-			"user_id" => "0",
-			"active" => "1",
-			"created_at" => "2014-05-05 23:59:15",
-			"updated_at" => "2014-05-05 23:59:15",
-			"deleted_at" => "0000-00-00 00:00:00",
-			"content_areas.1.id" => "2",
-			"content_areas.1.title" => "About Us - Main",
-			"content_areas.1.content_type" => "HTML",
-			"content_areas.1.content" => "About Us content coming soon.",
-			/*"content_areas.1.user_id" => "0",
-			"content_areas.1.created_at" => "2014-05-05 23:59:15",
-			"content_areas.1.updated_at" => "2014-05-05 23:59:15",
-			"content_areas.1.deleted_at" => "0000-00-00 00:00:00",
-			"content_areas.1.page_id" => "2",
-			"content_areas.1.area_id" => "2",
-			"content_areas.1.layout_tag" => "main",
-			"content_areas.2.id" => "3",
-			"content_areas.2.title" => "About Us - Side",
-			"content_areas.2.content_type" => "HTML",
-			"content_areas.2.content" => "About Us side content coming soon.",
-			"content_areas.2.user_id" => "0",
-			"content_areas.2.created_at" => "2014-05-05 23:59:15",
-			"content_areas.2.updated_at" => "2014-05-05 23:59:15",
-			"content_areas.2.deleted_at" => "0000-00-00 00:00:00",
-			"content_areas.2.page_id" => "2",
-			"content_areas.2.area_id" => "3",
-			"content_areas.2.layout_tag" => "side",*/
-		);
 
 		foreach (static::$defaults as $field => $value) {
 			if (!$defaults)
@@ -341,7 +298,7 @@ class Formation {
 	}
 
 	/**
-	 * Get an object of all default values.
+	 * Get an object of all values.
 	 *
 	 * @param  mixed    $name
 	 * @return object
@@ -349,6 +306,17 @@ class Formation {
 	public static function getValuesObject($name = null)
 	{
 		return static::getValuesArray($name, true, false);
+	}
+
+	/**
+	 * Get a JSON string of all values.
+	 *
+	 * @param  mixed    $name
+	 * @return object
+	 */
+	public static function getJsonValues($name = null)
+	{
+		return json_encode(static::getValuesArray($name));
 	}
 
 	/**
@@ -2858,7 +2826,7 @@ class Formation {
 	}
 
 	/**
-	 * Get the appliction.encoding without needing to request it from Config::get() each time.
+	 * Get the application.encoding without needing to request it from Config::get() each time.
 	 *
 	 * @return string
 	 */

@@ -9,7 +9,8 @@ Formation makes it really easy to build a form with form building methods that a
 - add an `error` class to labels and form fields
 - add IDs to form fields based on their names and add matching `for` attributes to the fields' labels
 - provides the ability to validate specific arrays in the POST array as well as the entire form
-- set up by default to use Twitter Bootstrap classes for form elements
+- set up by default to use Twitter Bootstrap 3 classes for form elements but can be easily customized for other CSS frameworks
+- allows use of combination of PHP and JS to allow automatic creation of Handlebars JS form templates
 
 All of this can be achieved with a minimal amount of code:
 
@@ -59,6 +60,7 @@ This and many other features make Formation a useful addition to any Laravel 4 p
 - [Drop-Down Lists](#drop-down-lists)
 - [File Input](#file-input)
 - [Buttons](#buttons)
+- [Integrating Handlebars JS Templates](#js-templates)
 - [Field Macro](#field-macro)
 - [Custom Macros](#custom-macros)
 
@@ -374,6 +376,48 @@ The first argument is your start month. You can use `true`, `false`, `null`, or 
 If you do not set the first argument, "Submit" will be used as the label.
 
 > **Note:** Need to create a button element? Try the button method. It has the same signature as submit.
+
+<a name="js-templates"></a>
+## Integrating Handlebars JS Templates
+
+**Loading and initializing formation.js:**
+
+	@include('formation::load_js')
+
+This view automatically loads the `formation.js` script and executes the following javascript code:
+
+	Formation.setErrorSettings($.parseJSON('{{ Form::getJsonErrorSettings() }}'));
+	Formation.setErrors($.parseJSON('{{ Form::getJsonErrors() }}'));
+
+This will automatically pass Formation's error settings and any Formation errors to the `formation.js` library.
+
+**Load a Handlebars JS template with automatically populated fields and error displaying:**
+
+	var exampleTemplateCallback = function(item, data) { //example callback function for each template item created
+		item.hide().fadeIn();
+	};
+
+	Formation.loadTemplates('#example-items', $.parseJSON('{{ Form::getJsonValues('example_items') }}'), exampleTemplateCallback);
+
+Here is a simple container element and example template that can be used in conjunction with the `loadTemplates()` method:
+
+	<div id="example-items" data-template-id="example-item-template"></div>
+
+	<script id="example-item-template" type="text/x-handlebars-template">
+		<fieldset id="example-item-{{number}}" data-item-number="{{number}}">
+			<legend>Example Item</legend>
+
+			<?=Form::hidden('example_items.{{number}}.id')?>
+
+			<div class="row">
+				<div class="col-md-12">
+					<?=Form::field('example_items.{{number}}.title')?>
+				</div>
+			</div>
+		</fieldset>
+	</script>
+
+> **Note:** The container element should have a `data-template-id` attribute and the item template should have a `data-item-number` attribute. If you are using the Blade templating engine, you should use `@include()` to load the template in another non-Blade file as Handlebars' `{{` and `}}` wrappers can conflict with Blade. To see an example of `loadTemplates()` in action, please refer to the Laravel 4 CMS which uses Formation, [Fractal](https://github.com/Regulus343/Fractal).
 
 <a name="field-macro"></a>
 ## Field Macro
