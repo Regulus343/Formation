@@ -122,66 +122,76 @@ class Formation {
 	}
 
 	/**
-	 * Assigns default values to form fields.
+	 * Sets the default values for the form.
 	 *
 	 * @param  array    $defaults
 	 * @param  array    $relationships
-	 * @return void
+	 * @param  mixed    $prefix
+	 * @return array
 	 */
-	public static function setDefaults($defaults = array(), $relationships = array())
+	public static function setDefaults($defaults = array(), $relationships = array(), $prefix = null)
 	{
-		$defaultsArray = $defaults;
-
-		//turn Eloquent collection into an array
-		if (isset($defaults) && isset($defaults->incrementing) && isset($defaults->timestamps))
-			$defaultsArray = $defaults->toArray();
-
-		//turn object into array
-		if (is_object($defaultsArray)) $defaultsArray = (array) $defaults;
+		//prepare prefix
+		if (is_string($prefix) && $prefix != "")
+			$prefix .= ".";
+		else
+			$prefix = "";
 
 		//format default values for times
 		$defaults = static::formatDefaults($defaults);
 
+		//set defaults array
+		$defaultsArray = static::$defaults;
+
+		//turn Eloquent collection into an array
+		if (isset($defaults) && isset($defaults->incrementing) && isset($defaults->timestamps))
+			$defaultsFormatted = $defaults->toArray();
+		else
+			$defaultsFormatted = $defaults;
+
+		foreach ($defaultsFormatted as $field => $value) {
+			if (!is_array($value) && !is_object($value))
+				$defaultsArray[$prefix.$field] = $value;
+		}
+
+		//the suffix that formatted values will have if Formation's BaseModel is used as the model
+		$formattedSuffix = "_formatted";
+
 		//add relationships data to defaults array if it is set
 		if (!empty($relationships)) {
 			$i = 1;
-			foreach ($relationships as $relationship => $field) {
+			foreach ($relationships as $relationship) {
 				if (count($defaults->{$relationship})) {
-					$id = $i;
 
-					if (is_bool($field) && $field) {
-						if (isset($defaults->{$relationship}->{$field})) {
-							foreach ($defaults->{$relationship} as $field => $value) {
-								$defaultsArray[$relationship.'.'.$id.'.'.$field] = $value;
-							}
-						} else {
-							foreach ($defaults->{$relationship} as $item) {
-								$item = $item->toArray();
-								$id   = $i;
-								foreach ($item as $field => $value) {
-									if ($field == "pivot") {
-										foreach ($value as $pivotField => $pivotValue) {
-											if (!isset($defaultsArray[$relationship.'.'.$id.'.'.$pivotField]))
-												$defaultsArray[$relationship.'.'.$id.'.'.$pivotField] = $pivotValue;
-										}
-									} else {
-										$defaultsArray[$relationship.'.'.$id.'.'.$field] = $value;
-									}
+					foreach ($defaults->{$relationship} as $item) {
+						$item = $item->toArray();
+
+						$itemPrefix = $prefix.(static::camelCaseToUnderscore($relationship));
+
+						foreach ($item as $field => $value) {
+							if ($field == "pivot") {
+								foreach ($value as $pivotField => $pivotValue) {
+									if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
+										$fieldName = str_replace($formattedSuffix, '', $pivotField);
+									else
+										$fieldName = $pivotField;
+
+									if (!isset($defaultsArray[$itemPrefix.'.'.$i.'.'.$fieldName]))
+										$defaultsArray[$itemPrefix.'.'.$i.'.'.$fieldName] = $pivotValue;
+									else
+										$defaultsArray[$itemPrefix.'.'.$i.'.pivot.'.$fieldName] = $pivotValue;
 								}
+							} else {
+								if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
+									$fieldName = str_replace($formattedSuffix, '', $field);
+								else
+									$fieldName = $field;
 
-								$i ++;
+								$defaultsArray[$itemPrefix.'.'.$i.'.'.$fieldName] = $value;
 							}
 						}
-					} else {
-						if (isset($defaults->{$relationship}->{$field})) {
-							$defaultsArray[$relationship.'.'.$id] = $defaults->{$relationship}->{$field};
-						} else {
-							foreach ($defaults->{$relationship} as $item) {
-								$id = isset($item->id) ? $item->id : $i;
-								if (isset($item->{$field}))
-									$defaultsArray[$relationship.'.'.$id] = $item->{$field};
-							}
-						}
+
+						$i ++;
 					}
 
 					$i ++;
@@ -2676,15 +2686,26 @@ class Formation {
 	}
 
 	/**
-	 * Turn a dash formatted string into a camelcase formatted string.
+	 * Turn a dash formatted string into a camel case formatted string.
 	 *
-	 * @param  array   $settings
-	 * @return array
+	 * @param  string  $string
+	 * @return string
 	 */
 	private static function dashedToCamelCase($string) {
 		$string    = str_replace(' ', '', ucwords(str_replace('-', ' ', $string)));
-        $string[0] = strtolower($string[0]);
-        return $string;
+		$string[0] = strtolower($string[0]);
+
+		return $string;
+	}
+
+	/**
+	 * Turn a camel case formatted string into an underscore formatted string.
+	 *
+	 * @param  string  $string
+	 * @return string
+	 */
+	private static function camelCaseToUnderscore($string) {
+		return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $string));
 	}
 
 	/**
@@ -2735,7 +2756,7 @@ class Formation {
 	 */
 	public static function image($url, $name = null, $attributes = array())
 	{
-		$attributes['src'] = URL::to_asset($url);
+		$attributes['src'] = URL::toAsset($url);
 
 		return static::input('image', $name, null, $attributes);
 	}
@@ -2814,6 +2835,26 @@ class Formation {
 		} else {
 			return false;
 		}
+	}
+
+	/**
+	 * Get the date format for populating date fields.
+	 *
+	 * @return string
+	 */
+	public static function getDateFormat()
+	{
+		return Config::get('formation::dateFormat');
+	}
+
+	/**
+	 * Get the date-time format for populating date-time fields.
+	 *
+	 * @return string
+	 */
+	public static function getDateTimeFormat()
+	{
+		return Config::get('formation::dateTimeFormat');
 	}
 
 	/**
