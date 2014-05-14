@@ -93,6 +93,17 @@ return array(
 
 	/*
 	|--------------------------------------------------------------------------
+	| Pivot Timestamps
+	|--------------------------------------------------------------------------
+	|
+	| Whether or not timestamps are present in the pivot tables. This is only
+	| used if Formation's BaseModel is used to extend Eloquent models.
+	|
+	*/
+	'pivotTimestamps' => true,
+
+	/*
+	|--------------------------------------------------------------------------
 	| Encoding
 	|--------------------------------------------------------------------------
 	|

@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on May 11, 2014
+		last updated on May 13, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -125,11 +125,11 @@ class Formation {
 	 * Sets the default values for the form.
 	 *
 	 * @param  array    $defaults
-	 * @param  array    $relationships
+	 * @param  array    $relations
 	 * @param  mixed    $prefix
 	 * @return array
 	 */
-	public static function setDefaults($defaults = array(), $relationships = array(), $prefix = null)
+	public static function setDefaults($defaults = array(), $relations = array(), $prefix = null)
 	{
 		//prepare prefix
 		if (is_string($prefix) && $prefix != "")
@@ -155,18 +155,18 @@ class Formation {
 		}
 
 		//the suffix that formatted values will have if Formation's BaseModel is used as the model
-		$formattedSuffix = "_formatted";
+		$formattedSuffix = static::getFormattedFieldSuffix();
 
-		//add relationships data to defaults array if it is set
-		if (!empty($relationships)) {
+		//add relations data to defaults array if it is set
+		if (!empty($relations)) {
 			$i = 1;
-			foreach ($relationships as $relationship) {
-				if (count($defaults->{$relationship})) {
+			foreach ($relations as $relation) {
+				if (count($defaults->{$relation})) {
 
-					foreach ($defaults->{$relationship} as $item) {
+					foreach ($defaults->{$relation} as $item) {
 						$item = $item->toArray();
 
-						$itemPrefix = $prefix.(static::camelCaseToUnderscore($relationship));
+						$itemPrefix = $prefix.(static::camelCaseToUnderscore($relation));
 
 						foreach ($item as $field => $value) {
 							if ($field == "pivot") {
@@ -176,10 +176,7 @@ class Formation {
 									else
 										$fieldName = $pivotField;
 
-									if (!isset($defaultsArray[$itemPrefix.'.'.$i.'.'.$fieldName]))
-										$defaultsArray[$itemPrefix.'.'.$i.'.'.$fieldName] = $pivotValue;
-									else
-										$defaultsArray[$itemPrefix.'.'.$i.'.pivot.'.$fieldName] = $pivotValue;
+									$defaultsArray[$itemPrefix.'.'.$i.'.pivot.'.$fieldName] = $pivotValue;
 								}
 							} else {
 								if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
@@ -232,6 +229,16 @@ class Formation {
 	}
 
 	/**
+	 * Get formatted field suffix.
+	 *
+	 * @return string
+	 */
+	public static function getFormattedFieldSuffix()
+	{
+		return "_formatted";
+	}
+
+	/**
 	 * Get an array of all values. Turns values with decimal notation names back into proper arrays.
 	 *
 	 * @param  mixed    $name
@@ -246,19 +253,18 @@ class Formation {
 			if (!$defaults)
 				$value = static::value($field);
 
-			/*$keys   = explode('.', $field);
-			$result = static::assignValuesToArray($keys, $result, $value);*/
-
 			$s = explode('.', $field);
 
-			switch (count($s)) {
-				case 1:	$result[$s[0]] = $value; break;
-				case 2:	$result[$s[0]][$s[1]] = $value; break;
-				case 3:	$result[$s[0]][$s[1]][$s[2]] = $value; break;
-				case 4:	$result[$s[0]][$s[1]][$s[2]][$s[3]] = $value; break;
-				case 5:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]] = $value; break;
-				case 6:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]][$s[5]] = $value; break;
-				case 7:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]][$s[5]][$s[6]] = $value; break;
+			if (!is_null($value)) {
+				switch (count($s)) {
+					case 1:	$result[$s[0]] = $value; break;
+					case 2:	$result[$s[0]][$s[1]] = $value; break;
+					case 3:	$result[$s[0]][$s[1]][$s[2]] = $value; break;
+					case 4:	$result[$s[0]][$s[1]][$s[2]][$s[3]] = $value; break;
+					case 5:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]] = $value; break;
+					case 6:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]][$s[5]] = $value; break;
+					case 7:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]][$s[5]][$s[6]] = $value; break;
+				}
 			}
 		}
 
@@ -275,26 +281,6 @@ class Formation {
 		static::$values = $result;
 
 		return $result;
-	}
-
-	/**
-	 *
-	 */
-	private static function assignValuesToArray(array $keys, $result, $value)
-	{
-		if (count($keys)) {
-			$key = $keys[0];
-
-			if (isset($result[$key])) {
-				$result[$key] = array_merge($result[$key], static::assignValuesToArray(array_slice($keys, 1), $result[$key], $value));
-			} else {
-				$result[$key] = static::assignValuesToArray(array_slice($keys, 1), array(), $value);
-			}
-
-			return $result;
-		}
-
-		return $value;
 	}
 
 	/**
@@ -365,14 +351,24 @@ class Formation {
 	 */
 	public static function getValueFromObject($field, $values = null)
 	{
+		$fieldKeys = explode('.', $field);
+
 		if (is_null($values))
 			$values = static::$values;
 
 		if (!is_object($values))
 			$values = json_decode(json_encode($values));
 
-		if (isset($values->{$field}))
-			return $values->{$field};
+		if (count($fieldKeys) == 1) {
+			if (isset($values->{$fieldKeys[0]}))
+				return $values->{$fieldKeys[0]};
+		} else if (count($fieldKeys) == 2) {
+			if (isset($values->{$fieldKeys[0]}->{$fieldKeys[1]}))
+				return $values->{$fieldKeys[0]}->{$fieldKeys[1]};
+		} else if (count($fieldKeys) == 3) {
+			if (isset($values->{$fieldKeys[0]}->{$fieldKeys[1]}->{$fieldKeys[2]}))
+				return $values->{$fieldKeys[0]}->{$fieldKeys[1]}->{$fieldKeys[2]};
+		}
 
 		return "";
 	}
@@ -2659,8 +2655,21 @@ class Formation {
 	 * @param  string  $string
 	 * @return string
 	 */
-	private static function dashedToCamelCase($string) {
+	public static function dashedToCamelCase($string) {
 		$string    = str_replace(' ', '', ucwords(str_replace('-', ' ', $string)));
+		$string[0] = strtolower($string[0]);
+
+		return $string;
+	}
+
+	/**
+	 * Turn an underscore formatted string into a camel case formatted string.
+	 *
+	 * @param  string  $string
+	 * @return string
+	 */
+	public static function underscoredToCamelCase($string) {
+		$string    = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
 		$string[0] = strtolower($string[0]);
 
 		return $string;
@@ -2672,7 +2681,7 @@ class Formation {
 	 * @param  string  $string
 	 * @return string
 	 */
-	private static function camelCaseToUnderscore($string) {
+	public static function camelCaseToUnderscore($string) {
 		return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $string));
 	}
 
@@ -2826,7 +2835,7 @@ class Formation {
 	}
 
 	/**
-	 * Get the application.encoding without needing to request it from Config::get() each time.
+	 * Get the appliction.encoding without needing to request it from Config::get() each time.
 	 *
 	 * @return string
 	 */

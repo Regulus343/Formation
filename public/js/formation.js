@@ -3,7 +3,7 @@
 | Formation.js
 |------------------------------------------------------------------------------
 |
-| Last Updated: May 10, 2014
+| Last Updated: May 13, 2014
 |
 */
 
@@ -21,10 +21,10 @@ var Formation = {
 		},
 	},
 
-	errorCallback: 'Formation.defaultErrorCallback',
+	errorCallback:     'Formation.defaultErrorCallback',
 
-	errors:        null,
-	errorsById:    null,
+	errors:            null,
+	errorsById:        null,
 
 	setErrorSettings: function (errorSettings) {
 		this.errorSettings = errorSettings;
@@ -86,8 +86,6 @@ var Formation = {
 			return;
 		}
 
-		var errorSettings = this.errorSettings;
-
 		for (i in items) {
 			var item = items[i];
 
@@ -101,62 +99,74 @@ var Formation = {
 			//append item to container
 			$(container).append(html);
 
-			//populate fields based on data
-			for (field in item) {
-				var value = item[field];
-				if (!Array.isArray(value)) {
-					var fieldElement = $(container).find('[data-item-number="'+i+'"]').find('.field-'+field.replace('_', '-'));
+			//populate fields and set errors for item based on data
+			this.setFieldsForItem(item);
 
-					//set value for field
-					fieldElement.val(value);
+			//trigger callback function if one is set
+			if (callbackFunction !== undefined)
+				callbackFunction($(container).find('[data-item-number="'+i+'"]'), item);
+		}
+	},
 
-					//add error class for field if an error exists
-					var error = this.getErrorById(fieldElement.attr('id'));
-					if (error !== false) {
-						var containerElement = fieldElement.parents('div.form-group');
-						containerElement.addClass(errorSettings.classAttribute);
+	setFieldsForItem: function(item) {
+		var errorSettings = this.errorSettings;
 
-						var labelElement = containerElement.find('label');
-						labelElement.addClass(errorSettings.classAttribute);
+		for (field in item) {
+			var value = item[field];
 
-						fieldElement.addClass(errorSettings.classAttribute);
+			if (typeof value == "object") {
 
-						if (this.errorSettings.typeLabelTooltip) {
-							//add attributes to tooltip's label
-							var attributes = errorSettings.typeLabelAttributes;
-							for (a in attributes) {
-								var attribute = this.camelCaseToDashed(a);
-								var value     = attributes[a];
+				this.setFieldsForItem(value);
 
-								labelElement.addClass(errorSettings.typeLabelAttributes.classAttribute);
+			} else {
+				var fieldElement = $(container).find('[data-item-number="'+i+'"]').find('.field-'+field.replace('_', '-'));
 
-								if (labelElement.attr(attribute) != undefined)
-									labelElement.attr(attribute, labelElement.attr(attribute) + ' ' + value);
-								else
-									labelElement.attr(attribute, value);
-							}
+				//set value for field
+				fieldElement.val(value);
 
-							//set tooltip error message
-							labelElement.attr('title', error);
+				//add error class for field if an error exists
+				var error = this.getErrorById(fieldElement.attr('id'));
+				if (error !== false) {
+					var containerElement = fieldElement.parents('div.form-group');
+					containerElement.addClass(errorSettings.classAttribute);
 
-						} else {
-							var errorHtml = '<'+errorSettings.element+' class="'+errorSettings.elementClass+'">' + error + '</'+errorSettings.element+'>';
-							fieldElement.after(errorHtml);
-						}
+					var labelElement = containerElement.find('label');
+					labelElement.addClass(errorSettings.classAttribute);
 
-						if (this.errorCallback) {
-							var errorCallbackArray = this.errorCallback.split('.');
-							if (errorCallbackArray.length == 2)
-								window[errorCallbackArray[0]][errorCallbackArray[1]](containerElement);
+					fieldElement.addClass(errorSettings.classAttribute);
+
+					if (this.errorSettings.typeLabelTooltip) {
+						//add attributes to tooltip's label
+						var attributes = errorSettings.typeLabelAttributes;
+						for (a in attributes) {
+							var attribute = this.camelCaseToDashed(a);
+							var value     = attributes[a];
+
+							labelElement.addClass(errorSettings.typeLabelAttributes.classAttribute);
+
+							if (labelElement.attr(attribute) != undefined)
+								labelElement.attr(attribute, labelElement.attr(attribute) + ' ' + value);
 							else
-								window[this.errorCallback](containerElement);
+								labelElement.attr(attribute, value);
 						}
+
+						//set tooltip error message
+						labelElement.attr('title', error);
+
+					} else {
+						var errorHtml = '<'+errorSettings.element+' class="'+errorSettings.elementClass+'">' + error + '</'+errorSettings.element+'>';
+						fieldElement.after(errorHtml);
+					}
+
+					if (this.errorCallback) {
+						var errorCallbackArray = this.errorCallback.split('.');
+						if (errorCallbackArray.length == 2)
+							window[errorCallbackArray[0]][errorCallbackArray[1]](containerElement);
+						else
+							window[this.errorCallback](containerElement);
 					}
 				}
 			}
-
-			if (callbackFunction !== undefined)
-				callbackFunction($(container).find('[data-item-number="'+i+'"]'), item);
 		}
 	}
 

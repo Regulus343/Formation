@@ -2,6 +2,10 @@
 
 use Illuminate\Database\Eloquent\Model as Eloquent;
 
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Input;
+
 use Aquanode\Formation\Formation as Form;
 
 use Regulus\TetraText\TetraText as Format;
@@ -14,6 +18,26 @@ class BaseModel extends Eloquent {
 	 * @var    array
 	 */
 	protected static $types = array();
+
+	/**
+	 * The foreign key for the model.
+	 *
+	 * @var    string
+	 */
+	protected $foreignKey = null;
+
+	/**
+	 * Get the default foreign key name for the model.
+	 *
+	 * @return string
+	 */
+	public function getForeignKey()
+	{
+		if (!is_null($this->foreignKey))
+			return $this->foreignKey;
+		else
+			return snake_case(class_basename($this)).'_id';
+	}
 
 	/**
 	 * Get the special typed fields for the model.
@@ -59,10 +83,10 @@ class BaseModel extends Eloquent {
 	/**
 	 * Get the formatted values for populating a form.
 	 *
-	 * @param  array    $relationships
+	 * @param  array    $relations
 	 * @return string
 	 */
-	public function getFormattedValues($relationships = array())
+	public function getFormattedValues($relations = array())
 	{
 		foreach ($this->getFieldTypes() as $field => $type) {
 			if (isset($this->{$field})) {
@@ -71,9 +95,9 @@ class BaseModel extends Eloquent {
 			}
 		}
 
-		foreach ($relationships as $relationship) {
-			if ($this->{$relationship}) {
-				foreach ($this->{$relationship} as &$item) {
+		foreach ($relations as $relation) {
+			if ($this->{$relation}) {
+				foreach ($this->{$relation} as &$item) {
 					foreach ($item->getFieldTypes() as $field => $type) {
 						if (isset($item->{$field})) {
 							$value = $item->{$field};
@@ -138,22 +162,23 @@ class BaseModel extends Eloquent {
 	/**
 	 * Set the default values for the model.
 	 *
-	 * @param  array    $relationships
+	 * @param  array    $relations
 	 * @param  mixed    $prefix
 	 * @return array
 	 */
-	public function setDefaults($relationships = array(), $prefix = null)
+	public function setDefaults($relations = array(), $prefix = null)
 	{
-		return Form::setDefaults($this->getFormattedValues($relationships), $relationships, $prefix);
+		return Form::setDefaults($this->getFormattedValues($relations), $relations, $prefix);
 	}
 
 	/**
 	 * Save the input data to the model.
 	 *
 	 * @param  mixed    $input
+	 * @param  boolean  $new
 	 * @return void
 	 */
-	public function saveData($input = null)
+	public function saveData($input = null, $new = false)
 	{
 		if (is_null($input))
 			$input = Input::all();
@@ -169,8 +194,130 @@ class BaseModel extends Eloquent {
 			}
 		}
 
+		foreach ($input as $field => $value) {
+			if (is_array($value)) {
+				$fieldCamelCase = Form::underscoredToCamelCase($field);
+				if (isset($this->{$fieldCamelCase})) {
+					$this->saveRelationData($value, $fieldCamelCase);
+				}
+				//var_dump(get_class($this->{$fieldCamelCase}()->getModel())); exit;
+			}
+		}
+
+		foreach ($this->relations as $models) {
+			foreach (\Illuminate\Database\Eloquent\Collection::make($models) as $model) {
+				var_dump($model->toArray());
+			}
+			//var_dump($models);
+			//var_dump('x');
+			//echo '<br />';
+		}
+
 		$this->fill($input);
 		$this->save();
+	}
+
+	public function saveRelationData($input, $modelMethod)
+	{
+		$idsSaved        = array();
+		$items           = $this->{$modelMethod};
+		$model           = get_class($this->{$modelMethod}()->getModel());
+		$formattedSuffix = Form::getFormattedFieldSuffix();
+		$pivotTimestamps = Config::get('formation::pivotTimestamps');
+
+		//create or update relatied items
+		foreach ($input as $index => $itemData) {
+			if (isset($itemData['id']) && $itemData['id'] > 0 && $itemData['id'] != "")
+				$new = false;
+			else
+				$new = true;
+
+			$found = false;
+			if (!$new) {
+				foreach ($items as $item) {
+					if ((int) $item['id'] == (int) $item->id) {
+						$found = true;
+
+						//remove formatted fields from item to prevent errors in saving data
+						foreach ($item->toArray() as $field => $value) {
+							if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
+								unset($item->{$field});
+						}
+
+						//save data
+						$item->fill($itemData)->save();
+
+						//save pivot data
+						if (isset($itemData['pivot'])) {
+							$pivotTable = $this->{$modelMethod}()->getTable();
+							$pivotKeys  = array(
+								$this->foreignKey => $this->id,
+								$item->foreignKey => $item->id,
+							);
+
+							$pivotData = array_merge($itemData['pivot'], $pivotKeys);
+
+							//set updated timestamp
+							if ($pivotTimestamps) {
+								$timestamp = date('Y-m-d H:i:s');
+								$pivotData['updated_at'] = $timestamp;
+							}
+
+							//attempt to select pivot record by both keys
+							$pivotItem = DB::table($pivotTable);
+							foreach ($pivotKeys as $key => $id) {
+								$pivotItem->where($key, $id);
+							}
+
+							//if id exists, add it to where clause and unset it
+							if (isset($pivotData['id'])) {
+								$pivotItem->where('id', $pivotData['id']);
+								unset($pivotData['id']);
+							}
+
+							//attempt to update and if it doesn't work, insert a new record
+							if (!$pivotItem->update($pivotData)) {
+								if ($pivotTimestamps)
+									$pivotData['created_at'] = $timestamp;
+
+								DB::table($pivotTable)->insert($pivotData);
+							}
+						}
+
+						if (!in_array((int) $item->id, $idsSaved))
+							$idsSaved[] = (int) $item->id;
+					}
+				}
+			}
+
+			if ($new || !$found) {
+				$item = new $model;
+				$item->fill($itemData)->save();
+
+				if (!in_array((int) $item->id, $idsSaved))
+					$idsSaved[] = (int) $item->id;
+			}
+		}
+
+		//remove any items no longer present in input data
+		foreach ($items as $item) {
+			if (!in_array((int) $item->id, $idsSaved))
+				$item->delete();
+		}
+	}
+
+	/**
+	 * Create a model item and save the input data to the model.
+	 *
+	 * @param  mixed    $input
+	 * @return object
+	 */
+	public static function createNew($input = null)
+	{
+		$item = new static;
+		$item->saveData($input, true);
+
+		return $item;
 	}
 
 	/**
@@ -178,22 +325,30 @@ class BaseModel extends Eloquent {
 	 *
 	 * @param  string   $field
 	 * @param  string   $value
-	 * @return Page
+	 * @param  array    $relations
+	 * @return object
 	 */
-	public static function findBy($field = 'slug', $value)
+	public static function findBy($field = 'slug', $value, $relations = array())
 	{
-		return static::where($field, $slug)->first();
+		$item = new static;
+
+		foreach ($relations as $relation) {
+			$item = $item->with($relation);
+		}
+
+		return $item->where($field, $value)->first();
 	}
 
 	/**
 	 * Gets the model by its slug.
 	 *
 	 * @param  string   $slug
-	 * @return Page
+	 * @param  array    $relations
+	 * @return object
 	 */
-	public static function findBySlug($slug)
+	public static function findBySlug($slug, $relations = array())
 	{
-		return static::findBy('slug', $slug);
+		return static::findBy('slug', $slug, $relations);
 	}
 
 }
