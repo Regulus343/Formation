@@ -1684,7 +1684,12 @@ class Formation {
 		if (is_null($selected)) $selected = static::value($name);
 
 		$html = array();
-		if (!is_null($nullOption)) $html[] = static::option('', $nullOption, $selected);
+		if (!is_null($nullOption)) {
+			$html[] = static::option('', $nullOption, $selected);
+
+			$attributes['data-null-option'] = $nullOption;
+		}
+
 		foreach ($options as $value => $display) {
 			$value = str_replace('[DUPLICATE]', '', $value); //allow the possibility of the same value appearing in the options array twice by appending "[DUPLICATE]" to its key
 
