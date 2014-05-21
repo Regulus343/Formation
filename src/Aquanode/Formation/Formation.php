@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on May 13, 2014
+		last updated on May 20, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -302,7 +302,7 @@ class Formation {
 	 */
 	public static function getJsonValues($name = null)
 	{
-		return json_encode(static::getValuesArray($name));
+		return addslashes(json_encode(static::getValuesArray($name)));
 	}
 
 	/**
