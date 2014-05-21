@@ -131,6 +131,9 @@ class Formation {
 	 */
 	public static function setDefaults($defaults = array(), $relations = array(), $prefix = null)
 	{
+		//check if relations is an associative array
+		$associative = (bool) count(array_filter(array_keys((array) $relations), 'is_string'));
+
 		//prepare prefix
 		if (is_string($prefix) && $prefix != "")
 			$prefix .= ".";
@@ -160,31 +163,50 @@ class Formation {
 		//add relations data to defaults array if it is set
 		if (!empty($relations)) {
 			$i = 1;
-			foreach ($relations as $relation) {
-				if (count($defaults->{$relation})) {
 
+			foreach ($relations as $key => $relation) {
+
+				$relationField = false;
+				if ($associative) {
+					if (is_string($relation))
+						$relationField = $relation;
+
+					$relation = $key;
+				}
+
+				if (count($defaults->{$relation}))
+				{
 					foreach ($defaults->{$relation} as $item) {
 						$item = $item->toArray();
 
 						$itemPrefix = $prefix.(static::camelCaseToUnderscore($relation));
 
 						foreach ($item as $field => $value) {
-							if ($field == "pivot") {
-								foreach ($value as $pivotField => $pivotValue) {
+							if (!$relationField || $field == $relationField)
+							{
+								if ($field == "pivot") {
+									foreach ($value as $pivotField => $pivotValue) {
+										if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
+											$fieldName = str_replace($formattedSuffix, '', $pivotField);
+										else
+											$fieldName = $pivotField;
+
+										if ($relationField)
+											$defaultsArray[$itemPrefix.'.'.$i][] = $pivotValue;
+										else
+											$defaultsArray[$itemPrefix.'.'.$i.'.pivot.'.$fieldName] = $pivotValue;
+									}
+								} else {
 									if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
-										$fieldName = str_replace($formattedSuffix, '', $pivotField);
+										$fieldName = str_replace($formattedSuffix, '', $field);
 									else
-										$fieldName = $pivotField;
+										$fieldName = $field;
 
-									$defaultsArray[$itemPrefix.'.'.$i.'.pivot.'.$fieldName] = $pivotValue;
+									if ($relationField)
+										$defaultsArray[$itemPrefix][] = $value;
+									else
+										$defaultsArray[$itemPrefix.'.'.$i.'.'.$fieldName] = $value;
 								}
-							} else {
-								if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
-									$fieldName = str_replace($formattedSuffix, '', $field);
-								else
-									$fieldName = $field;
-
-								$defaultsArray[$itemPrefix.'.'.$i.'.'.$fieldName] = $value;
 							}
 						}
 
@@ -776,7 +798,8 @@ class Formation {
 		if (!is_null(Input::old($name)) && !static::$reset)
 			$value = Input::old($name);
 
-		if ($type == "checkbox" && is_null($value)) $value = 0; //if type is "checkbox", use 0 for null values - this helps when using Form::value() to add values to an insert or update query
+		if ($type == "checkbox")
+			$value = (bool) $value;
 
 		return $value;
 	}
@@ -1858,12 +1881,24 @@ class Formation {
 					$value = 1;
 				}
 
-				if (!is_null($namePrefix)) $name = $namePrefix . $name;
+				$nameToCheck = $name;
+				if (!is_null($namePrefix)) {
+					if (substr($namePrefix, -1) == ".") {
+						$name = $namePrefix . $name;
+					} else {
+						$nameToCheck = $namePrefix;
+						$name = $namePrefix . '.('.$name.')';
+					}
+				}
 
-				if ($value == static::value($name, 'checkbox')) {
+				$valueToCheck = static::value($nameToCheck);
+				$checked      = false;
+				if (is_array($valueToCheck) && in_array($value, $valueToCheck)) {
 					$checked = true;
-				} else {
-					$checked = false;
+				} else if (is_bool($value) && $value == static::value($nameToCheck, 'checkbox')) {
+					$checked = true;
+				} else if (is_string($value) && $value == $valueToCheck) {
+					$checked = true;
 				}
 
 				//add selected class to list item if checkbox is checked to allow styling for selected checkboxes in set
@@ -1908,10 +1943,11 @@ class Formation {
 	 */
 	public static function checkbox($name, $value = 1, $checked = false, $attributes = array())
 	{
-		if ($value == static::value($name)) $checked = true;
+		if ($value == static::value($name))
+			$checked = true;
 
-		if (!isset($attributes['id'])) $attributes['id'] = static::id($name, $attributes);
-		$name = static::name($name);
+		if (!isset($attributes['id']))
+			$attributes['id'] = static::id($name, $attributes);
 
 		return static::checkable('checkbox', $name, $value, $checked, $attributes);
 	}
