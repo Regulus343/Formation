@@ -235,7 +235,7 @@ class BaseModel extends Eloquent {
 			$found = false;
 			if (!$new) {
 				foreach ($items as $item) {
-					if ((int) $item['id'] == (int) $item->id) {
+					if ((int) $itemData['id'] == (int) $item->id) {
 						$found = true;
 
 						//remove formatted fields from item to prevent errors in saving data
