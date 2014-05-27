@@ -3,7 +3,7 @@
 | Formation.js
 |------------------------------------------------------------------------------
 |
-| Last Updated: May 14, 2014
+| Last Updated: May 26, 2014
 |
 */
 
@@ -80,8 +80,6 @@ var Formation = {
 
 	//used with Handlebars.js to load form template items populate fields
 	loadTemplates: function(container, items, callbackFunction) {
-		$(container).html('');
-
 		//require "data-template-id" attribute for container
 		var templateId = $(container).attr('data-template-id');
 		if (templateId == null) {
@@ -117,6 +115,37 @@ var Formation = {
 			if (callbackFunction !== undefined)
 				callbackFunction($(container).find('[data-item-number="'+i+'"]'), item);
 		}
+	},
+
+	loadNewTemplate: function(container, callbackFunction) {
+		//require "data-template-id" attribute for container
+		var templateId = $(container).attr('data-template-id');
+		if (templateId == null) {
+			console.log('Container requires "data-template-id" attribute.');
+			return;
+		}
+
+		//set i to an unused number
+		var i = 0;
+		$(container).find('[data-item-number]').each(function(){
+			if ($(this).attr('data-item-number') > i)
+				i = $(this).attr('data-item-number');
+		});
+
+		i ++;
+
+		//create item template
+		var source   = $('#'+templateId).html();
+		var template = Handlebars.compile(source);
+		var context  = {number: i};
+		var html     = template(context);
+
+		//append item to container
+		$(container).append(html);
+
+		//trigger callback function if one is set
+		if (callbackFunction !== undefined)
+			callbackFunction($(container).find('[data-item-number="'+i+'"]'));
 	},
 
 	setFieldsForItem: function(item) {
