@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on May 20, 2014
+		last updated on May 27, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -271,21 +271,27 @@ class Formation {
 	public static function getValuesArray($name = null, $object = false, $defaults = false) {
 		$result = array();
 
-		foreach (static::$defaults as $field => $value) {
-			if (!$defaults)
-				$value = static::value($field);
+		if (!$defaults && Input::all() || Input::old()) {
+			if (Input::all())
+				$values = Input::all();
+			else
+				$values = Input::old();
 
-			$s = explode('.', $field);
+			$result = $values;
+		} else {
+			foreach (static::$defaults as $field => $value) {
+				$s = explode('.', $field);
 
-			if (!is_null($value)) {
-				switch (count($s)) {
-					case 1:	$result[$s[0]] = $value; break;
-					case 2:	$result[$s[0]][$s[1]] = $value; break;
-					case 3:	$result[$s[0]][$s[1]][$s[2]] = $value; break;
-					case 4:	$result[$s[0]][$s[1]][$s[2]][$s[3]] = $value; break;
-					case 5:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]] = $value; break;
-					case 6:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]][$s[5]] = $value; break;
-					case 7:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]][$s[5]][$s[6]] = $value; break;
+				if (!is_null($value)) {
+					switch (count($s)) {
+						case 1:	$result[$s[0]] = $value; break;
+						case 2:	$result[$s[0]][$s[1]] = $value; break;
+						case 3:	$result[$s[0]][$s[1]][$s[2]] = $value; break;
+						case 4:	$result[$s[0]][$s[1]][$s[2]][$s[3]] = $value; break;
+						case 5:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]] = $value; break;
+						case 6:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]][$s[5]] = $value; break;
+						case 7:	$result[$s[0]][$s[1]][$s[2]][$s[3]][$s[4]][$s[5]][$s[6]] = $value; break;
+					}
 				}
 			}
 		}
