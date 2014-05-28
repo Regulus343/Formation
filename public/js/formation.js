@@ -3,7 +3,7 @@
 | Formation.js
 |------------------------------------------------------------------------------
 |
-| Last Updated: May 26, 2014
+| Last Updated: May 27, 2014
 |
 */
 
@@ -28,6 +28,7 @@ var Formation = {
 
 	templateItems:       0,
 	templateItemsLoaded: 0,
+	itemNumber:          0,
 
 	setErrorSettings: function (errorSettings) {
 		this.errorSettings = errorSettings;
@@ -96,6 +97,8 @@ var Formation = {
 		for (i in items) {
 			var item = items[i];
 
+			this.itemNumber = i;
+
 			//create item template
 			var source     = $('#'+templateId).html();
 			var template   = Handlebars.compile(source);
@@ -117,7 +120,7 @@ var Formation = {
 		}
 	},
 
-	loadNewTemplate: function(container, callbackFunction) {
+	loadTemplate: function(container, item, callbackFunction) {
 		//require "data-template-id" attribute for container
 		var templateId = $(container).attr('data-template-id');
 		if (templateId == null) {
@@ -134,22 +137,38 @@ var Formation = {
 
 		i ++;
 
+		this.itemNumber = i;
+
 		//create item template
-		var source   = $('#'+templateId).html();
-		var template = Handlebars.compile(source);
-		var context  = {number: i};
-		var html     = template(context);
+		var source     = $('#'+templateId).html();
+		var template   = Handlebars.compile(source);
+		var context    = {};
+
+		if (item !== undefined && item !== null)
+			context    = item;
+
+		context.number = i;
+		var html       = template(context);
 
 		//append item to container
 		$(container).append(html);
 
+		//populate fields and set errors for item based on data
+		this.setFieldsForItem(item);
+
 		//trigger callback function if one is set
 		if (callbackFunction !== undefined)
-			callbackFunction($(container).find('[data-item-number="'+i+'"]'));
+			callbackFunction($(container).find('[data-item-number="'+i+'"]'), item);
+	},
+
+	loadNewTemplate: function(container, callbackFunction) {
+		this.loadTemplate(container, null, callbackFunction);
 	},
 
 	setFieldsForItem: function(item) {
 		var errorSettings = this.errorSettings;
+
+		i = this.itemNumber;
 
 		for (field in item) {
 			var value = item[field];
