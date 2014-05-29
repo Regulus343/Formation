@@ -198,26 +198,23 @@ class BaseModel extends Eloquent {
 			if (is_array($value)) {
 				$fieldCamelCase = Form::underscoredToCamelCase($field);
 				if (isset($this->{$fieldCamelCase})) {
-					$this->saveRelationData($value, $fieldCamelCase);
+					$this->saveRelationalData($value, $fieldCamelCase);
 				}
-				//var_dump(get_class($this->{$fieldCamelCase}()->getModel())); exit;
 			}
-		}
-
-		foreach ($this->relations as $models) {
-			foreach (\Illuminate\Database\Eloquent\Collection::make($models) as $model) {
-				var_dump($model->toArray());
-			}
-			//var_dump($models);
-			//var_dump('x');
-			//echo '<br />';
 		}
 
 		$this->fill($input);
 		$this->save();
 	}
 
-	public function saveRelationData($input, $modelMethod)
+	/**
+	 * Save the relational input data to the model.
+	 *
+	 * @param  mixed    $input
+	 * @param  string   $modelMethod
+	 * @return void
+	 */
+	public function saveRelationalData($input, $modelMethod)
 	{
 		$idsSaved        = array();
 		$items           = $this->{$modelMethod};
@@ -247,43 +244,6 @@ class BaseModel extends Eloquent {
 						//save data
 						$item->fill($itemData)->save();
 
-						//save pivot data
-						if (isset($itemData['pivot'])) {
-							$pivotTable = $this->{$modelMethod}()->getTable();
-							$pivotKeys  = array(
-								$this->foreignKey => $this->id,
-								$item->foreignKey => $item->id,
-							);
-
-							$pivotData = array_merge($itemData['pivot'], $pivotKeys);
-
-							//set updated timestamp
-							if ($pivotTimestamps) {
-								$timestamp = date('Y-m-d H:i:s');
-								$pivotData['updated_at'] = $timestamp;
-							}
-
-							//attempt to select pivot record by both keys
-							$pivotItem = DB::table($pivotTable);
-							foreach ($pivotKeys as $key => $id) {
-								$pivotItem->where($key, $id);
-							}
-
-							//if id exists, add it to where clause and unset it
-							if (isset($pivotData['id'])) {
-								$pivotItem->where('id', $pivotData['id']);
-								unset($pivotData['id']);
-							}
-
-							//attempt to update and if it doesn't work, insert a new record
-							if (!$pivotItem->update($pivotData)) {
-								if ($pivotTimestamps)
-									$pivotData['created_at'] = $timestamp;
-
-								DB::table($pivotTable)->insert($pivotData);
-							}
-						}
-
 						if (!in_array((int) $item->id, $idsSaved))
 							$idsSaved[] = (int) $item->id;
 					}
@@ -296,6 +256,43 @@ class BaseModel extends Eloquent {
 
 				if (!in_array((int) $item->id, $idsSaved))
 					$idsSaved[] = (int) $item->id;
+			}
+
+			//save pivot data
+			if (isset($itemData['pivot'])) {
+				$pivotTable = $this->{$modelMethod}()->getTable();
+				$pivotKeys  = array(
+					$this->foreignKey => $this->id,
+					$item->foreignKey => $item->id,
+				);
+
+				$pivotData = array_merge($itemData['pivot'], $pivotKeys);
+
+				//set updated timestamp
+				if ($pivotTimestamps) {
+					$timestamp = date('Y-m-d H:i:s');
+					$pivotData['updated_at'] = $timestamp;
+				}
+
+				//attempt to select pivot record by both keys
+				$pivotItem = DB::table($pivotTable);
+				foreach ($pivotKeys as $key => $id) {
+					$pivotItem->where($key, (int) $id);
+				}
+
+				//if id exists, add it to where clause and unset it
+				if (isset($pivotData['id']) && (int) $pivotData['id']) {
+					$pivotItem->where('id', (int) $pivotData['id']);
+					unset($pivotData['id']);
+				}
+
+				//attempt to update and if it doesn't work, insert a new record
+				if (!$pivotItem->update($pivotData)) {
+					if ($pivotTimestamps)
+						$pivotData['created_at'] = $timestamp;
+
+					DB::table($pivotTable)->insert($pivotData);
+				}
 			}
 		}
 

@@ -3,7 +3,7 @@
 | Formation.js
 |------------------------------------------------------------------------------
 |
-| Last Updated: May 27, 2014
+| Last Updated: May 28, 2014
 |
 */
 
@@ -267,19 +267,24 @@ var Formation = {
 
 		if (settings.optionLabel === undefined) settings.optionLabel = settings.optionValue;
 
-		var currentValue = $(settings.targetSelect).val();
+		//build select options markup
+		var options = "";
 		if (settings.nullOption !== false) {
-			$(settings.targetSelect).html('<option value="">'+settings.nullOption+'</option>' + "\n");
+			options += '<option value="">'+settings.nullOption+'</option>' + "\n";
 		}
 		for (c=0; c < settings.options.length; c++) {
-			if (settings.optionValue === undefined) {
-				var option = '<option value="'+settings.options[c]+'">'+settings.options[c]+'</option>' + "\n";
-			} else {
-				var option = '<option value="'+settings.options[c][settings.optionValue]+'">'+settings.options[c][settings.optionLabel]+'</option>' + "\n";
-			}
-			$(settings.targetSelect).append(option);
+			if (settings.optionValue === undefined)
+				options += '<option value="'+settings.options[c]+'">'+settings.options[c]+'</option>' + "\n";
+			else
+				options += '<option value="'+settings.options[c][settings.optionValue]+'">'+settings.options[c][settings.optionLabel]+'</option>' + "\n";
 		}
-		$(settings.targetSelect).val(currentValue); //attempt to change to selected value (if it still exists)
+
+		//set options for each target select field and attempt to set to original value
+		$(settings.targetSelect).each(function(){
+			var currentValue = $(this).val();
+			$(this).html(options);
+			$(this).val(currentValue);
+		});
 
 		//show or hide an element depending on whether options are available in select box
 		if (settings.optionsToggleElement !== undefined) {
