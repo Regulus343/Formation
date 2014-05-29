@@ -29,6 +29,9 @@ var Formation = {
 	templateItems:       0,
 	templateItemsLoaded: 0,
 	itemNumber:          0,
+	itemContainer:       null,
+
+	setUpRemoveButtons:  true,
 
 	setErrorSettings: function (errorSettings) {
 		this.errorSettings = errorSettings;
@@ -109,14 +112,21 @@ var Formation = {
 			//append item to container
 			$(container).append(html);
 
+			//select item
+			this.itemContainer = $(container).find('[data-item-number="'+i+'"]');
+
 			//populate fields and set errors for item based on data
 			this.setFieldsForItem(item);
 
+			//add template item to loaded total
 			this.templateItemsLoaded ++;
+
+			//set up remove buttons
+			this.setUpRemoveButtonsForTemplate();
 
 			//trigger callback function if one is set
 			if (callbackFunction !== undefined)
-				callbackFunction($(container).find('[data-item-number="'+i+'"]'), item);
+				callbackFunction(this.itemContainer, item);
 		}
 	},
 
@@ -137,7 +147,7 @@ var Formation = {
 
 		i ++;
 
-		this.itemNumber = i;
+		this.itemNumber  = i;
 
 		//create item template
 		var source     = $('#'+templateId).html();
@@ -153,16 +163,39 @@ var Formation = {
 		//append item to container
 		$(container).append(html);
 
+		//select item
+		this.itemContainer = $(container).find('[data-item-number="'+i+'"]');
+
 		//populate fields and set errors for item based on data
 		this.setFieldsForItem(item);
 
+		//add template item to loaded total
+		this.templateItemsLoaded ++;
+
+		//set up remove buttons
+		this.setUpRemoveButtonsForTemplate();
+
 		//trigger callback function if one is set
 		if (callbackFunction !== undefined)
-			callbackFunction($(container).find('[data-item-number="'+i+'"]'), item);
+			callbackFunction(this.itemContainer, item);
 	},
 
 	loadNewTemplate: function(container, callbackFunction) {
 		this.loadTemplate(container, null, callbackFunction);
+	},
+
+	setUpRemoveButtonsForTemplate: function() {
+		if (this.setUpRemoveButtons) {
+			this.itemContainer.find('.remove-template-item').click(function(e){
+				e.preventDefault();
+
+				var itemContainer = $(this).parents('[data-item-number]');
+
+				itemContainer.slideUp(500, function(){
+					itemContainer.remove();
+				});
+			});
+		}
 	},
 
 	setFieldsForItem: function(item) {
@@ -178,7 +211,7 @@ var Formation = {
 				this.setFieldsForItem(value);
 
 			} else {
-				var fieldElement = $(container).find('[data-item-number="'+i+'"]').find('.field-'+field.replace('_', '-'));
+				var fieldElement = this.itemContainer.find('.field-'+field.replace('_', '-'));
 
 				//set value for field
 				fieldElement.val(value);

@@ -299,7 +299,17 @@ class BaseModel extends Eloquent {
 		//remove any items no longer present in input data
 		foreach ($items as $item) {
 			if (!in_array((int) $item->id, $idsSaved))
-				$item->delete();
+			{
+				//check for pivot data and delete pivot item instead of item if it exists
+				if (isset($itemData['pivot'])) {
+					DB::table($pivotTable)
+						->where('page_id', $this->id)
+						->where('area_id', $item->id)
+						->delete();
+				} else {
+					$item->delete();
+				}
+			}
 		}
 	}
 
