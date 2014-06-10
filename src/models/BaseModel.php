@@ -244,13 +244,31 @@ class BaseModel extends Eloquent {
 						//save data
 						$item->fill($itemData)->save();
 
+						$currentItem = $item;
+
 						if (!in_array((int) $item->id, $idsSaved))
 							$idsSaved[] = (int) $item->id;
 					}
 				}
 			}
 
-			if ($new || !$found) {
+			//if model was not found, it may still exist in the database but not have a current relationship with item
+			if (!$found && !$new) {
+				$item = $model::find($itemData['id']);
+				if ($item) {
+					//save data
+					$item->fill($itemData)->save();
+
+					$currentItem = $item;
+
+					if (!in_array((int) $item->id, $idsSaved))
+						$idsSaved[] = (int) $item->id;
+				} else {
+					$new = true;
+				}
+			}
+
+			if ($new) {
 				$item = new $model;
 				$item->fill($itemData)->save();
 
@@ -263,7 +281,7 @@ class BaseModel extends Eloquent {
 				$pivotTable = $this->{$modelMethod}()->getTable();
 				$pivotKeys  = array(
 					$this->foreignKey => $this->id,
-					$item->foreignKey => $item->id,
+					$item->foreignKey => $currentItem->id,
 				);
 
 				$pivotData = array_merge($itemData['pivot'], $pivotKeys);
@@ -277,12 +295,12 @@ class BaseModel extends Eloquent {
 				//attempt to select pivot record by both keys
 				$pivotItem = DB::table($pivotTable);
 				foreach ($pivotKeys as $key => $id) {
-					$pivotItem->where($key, (int) $id);
+					$pivotItem->where($key, $id);
 				}
 
 				//if id exists, add it to where clause and unset it
 				if (isset($pivotData['id']) && (int) $pivotData['id']) {
-					$pivotItem->where('id', (int) $pivotData['id']);
+					$pivotItem->where('id', $pivotData['id']);
 					unset($pivotData['id']);
 				}
 

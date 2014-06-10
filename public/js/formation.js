@@ -3,7 +3,7 @@
 | Formation.js
 |------------------------------------------------------------------------------
 |
-| Last Updated: May 28, 2014
+| Last Updated: June 9, 2014
 |
 */
 
@@ -198,7 +198,7 @@ var Formation = {
 		}
 	},
 
-	setFieldsForItem: function(item) {
+	setFieldsForItem: function(item, parentField) {
 		var errorSettings = this.errorSettings;
 
 		i = this.itemNumber;
@@ -208,10 +208,18 @@ var Formation = {
 
 			if (typeof value == "object") {
 
-				this.setFieldsForItem(value);
+				this.setFieldsForItem(value, field);
 
 			} else {
-				var fieldElement = this.itemContainer.find('.field-'+field.replace('_', '-'));
+				var fieldClassName = field.replace('_', '-');
+
+				//if parent field is "pivot" array, add it to fieldElement
+				if (parentField === "pivot")
+					fieldClassName = parentField + "-" + fieldClassName;
+
+				fieldClassName = "field-" + fieldClassName;
+
+				var fieldElement = this.itemContainer.find('.'+fieldClassName);
 
 				//set value for field
 				fieldElement.val(value);

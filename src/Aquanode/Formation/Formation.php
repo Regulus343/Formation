@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on May 27, 2014
+		last updated on June 9, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -1180,6 +1180,10 @@ class Formation {
 
 		$nameSegments = explode('.', $name);
 		$fieldClass   = strtolower(str_replace('_', '-', str_replace(' ', '-', end($nameSegments))));
+
+		//add "pivot" prefix to field name if it exists
+		if (count($nameSegments) > 1 && $nameSegments[count($nameSegments) - 2] == "pivot")
+			$fieldClass = $nameSegments[count($nameSegments) - 2]."-".$fieldClass;
 
 		//remove icon code
 		if (preg_match('/\[ICON:(.*)\]/i', $fieldClass, $match)) {
