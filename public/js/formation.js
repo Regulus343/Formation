@@ -3,7 +3,7 @@
 | Formation.js
 |------------------------------------------------------------------------------
 |
-| Last Updated: June 9, 2014
+| Last Updated: July 6, 2014
 |
 */
 
@@ -222,7 +222,11 @@ var Formation = {
 				var fieldElement = this.itemContainer.find('.'+fieldClassName);
 
 				//set value for field
-				fieldElement.val(value);
+				if (fieldElement.attr('type') == "checkbox") {
+					fieldElement.prop('checked', parseInt(value));
+				} else {
+					fieldElement.val(value);
+				}
 
 				//set "data-value" attribute as well in case fields are select boxes that have not yet been populated with options
 				fieldElement.attr('data-value', value);

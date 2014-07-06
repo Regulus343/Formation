@@ -183,21 +183,12 @@ class BaseModel extends Eloquent {
 		if (is_null($input))
 			$input = Input::all();
 
-		foreach ($this->getFieldTypes() as $field => $type) {
-			if (isset($input[$field])) {
-				switch ($type) {
-					case "date":        $input[$field] = ($input[$field] != "" ? date('Y-m-d', strtotime($input[$field])) : "0000-00-00"); break;
-					case "date-time":   $input[$field] = ($input[$field] != "" ? date('Y-m-d H:i:s', strtotime($input[$field])) : "0000-00-00 00:00:00"); break;
-					case "slug":        $input[$field] = Format::slug($input[$field]); break;
-					case "unique-slug": $input[$field] = Format::uniqueSlug($input[$field], $this->table, $field, $this->id); break;
-				}
-			}
-		}
+		$input = $this->formatValuesForTypes($input);
 
 		foreach ($input as $field => $value) {
 			if (is_array($value)) {
 				$fieldCamelCase = Form::underscoredToCamelCase($field);
-				if (isset($this->{$fieldCamelCase})) {
+				if (isset($this->{$fieldCamelCase}) || $this->{$fieldCamelCase}) {
 					$this->saveRelationalData($value, $fieldCamelCase);
 				}
 			}
@@ -222,7 +213,7 @@ class BaseModel extends Eloquent {
 		$formattedSuffix = Form::getFormattedFieldSuffix();
 		$pivotTimestamps = Config::get('formation::pivotTimestamps');
 
-		//create or update relatied items
+		//create or update related items
 		foreach ($input as $index => $itemData) {
 			if (isset($itemData['id']) && $itemData['id'] > 0 && $itemData['id'] != "")
 				$new = false;
@@ -241,6 +232,9 @@ class BaseModel extends Eloquent {
 								unset($item->{$field});
 						}
 
+						//format data for special types
+						$itemData = $item->formatValuesForTypes($itemData);
+
 						//save data
 						$item->fill($itemData)->save();
 
@@ -256,6 +250,9 @@ class BaseModel extends Eloquent {
 			if (!$found && !$new) {
 				$item = $model::find($itemData['id']);
 				if ($item) {
+					//format data for special types
+					$itemData = $item->formatValuesForTypes($itemData);
+
 					//save data
 					$item->fill($itemData)->save();
 
@@ -270,6 +267,10 @@ class BaseModel extends Eloquent {
 
 			if ($new) {
 				$item = new $model;
+
+				//format data for special types
+				$itemData = $item->formatValuesForTypes($itemData);
+
 				$item->fill($itemData)->save();
 
 				if (!in_array((int) $item->id, $idsSaved))
@@ -329,6 +330,31 @@ class BaseModel extends Eloquent {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Format values based on the model's special field types for data insertion into database.
+	 *
+	 * @param  array    $values
+	 * @return array
+	 */
+	public function formatValuesForTypes($values)
+	{
+		foreach ($this->getFieldTypes() as $field => $type) {
+			$value = isset($values[$field]) ? $values[$field] : null;
+
+			switch ($type) {
+				case "date":        $value = ($value != "" ? date('Y-m-d', strtotime($value)) : "0000-00-00"); break;
+				case "date-time":   $value = ($value != "" ? date('Y-m-d H:i:s', strtotime($value)) : "0000-00-00 00:00:00"); break;
+				case "slug":        $value = Format::slug($value); break;
+				case "unique-slug": $value = Format::uniqueSlug($value, $this->table, $field, $this->id); break;
+				case "checkbox":    $value = ($value != null && $value != false); break;
+			}
+
+			$values[$field] = $value;
+		}
+
+		return $values;
 	}
 
 	/**
