@@ -268,6 +268,9 @@ class BaseModel extends Eloquent {
 			if ($new) {
 				$item = new $model;
 
+				//attempt to add foreign key ID in case relationship doesn't require a pivot table
+				$itemData[$this->getForeignKey()] = $this->id;
+
 				//format data for special types
 				$itemData = $item->formatValuesForTypes($itemData);
 
@@ -281,8 +284,8 @@ class BaseModel extends Eloquent {
 			if (isset($itemData['pivot'])) {
 				$pivotTable = $this->{$modelMethod}()->getTable();
 				$pivotKeys  = array(
-					$this->foreignKey => $this->id,
-					$item->foreignKey => $currentItem->id,
+					$this->getForeignKey() => $this->id,
+					$item->getForeignKey() => $currentItem->id,
 				);
 
 				$pivotData = array_merge($itemData['pivot'], $pivotKeys);
