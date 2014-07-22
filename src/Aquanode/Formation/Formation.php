@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on June 9, 2014
+		last updated on July 21, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Support\Facades\Config;
@@ -153,8 +153,7 @@ class Formation {
 			$defaultsFormatted = $defaults;
 
 		foreach ($defaultsFormatted as $field => $value) {
-			if (!is_array($value) && !is_object($value))
-				$defaultsArray[$prefix.$field] = $value;
+			$defaultsArray[$prefix.$field] = $value;
 		}
 
 		//the suffix that formatted values will have if Formation's BaseModel is used as the model
@@ -1701,7 +1700,7 @@ class Formation {
 	 * @param  string  $name
 	 * @param  array   $options
 	 * @param  string  $nullOption
-	 * @param  string  $selected
+	 * @param  mixed   $selected
 	 * @param  array   $attributes
 	 * @return string
 	 */
@@ -2659,7 +2658,6 @@ class Formation {
 	 */
 	public static function getJsonErrors($session = 'errors')
 	{
-		//var_dump(str_replace('\\"', '\\\"', json_encode(static::setErrors($session)))); exit;
 		return str_replace('\\"', '\\\"', json_encode(static::setErrors($session)));
 	}
 
