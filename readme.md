@@ -18,6 +18,7 @@ All of this can be achieved with a minimal amount of code:
 	echo Form::field('first_name');
 	echo Form::field('password');
 	echo Form::field('user.item', 'select', array('options' => Form::prepOptions(Item::all(), array('id', 'name'))));
+	?>
 
 	<?php //simply typing Form::field('first_name') is the same as the following code: ?>
 	<div class="form-group" id="first-name-area">
@@ -41,8 +42,6 @@ The above code is an example of how simple and versatile Formation is. The top 3
 	<input name="other_field" value="" />
 
 With this form, we can validate just the fields in the user array with `Form::validated('user')`, the final field with `Form::validated('root')`, or all of the fields in the form with `Form::validated()`.
-
-This and many other features make Formation a useful addition to any Laravel 4 project that makes any reasonable use of forms and a great aid in transitioning a web application from Laravel 3 to Laravel 4.
 
 > You may notice much of this documentation is borrowed from Taylor Otwell's Laravel 3 documentation. This is because Formation was built with Laravel 3's Form class as a starting point. If you are familiar with the Form class for Laravel 3, you will adapt to Formation very easily.
 
@@ -94,29 +93,17 @@ You may use 'Formation', or another alias, but 'Form' is recommended for the sak
 
 **Opening a form using a given URI and request method:**
 
-	echo Form::open('user/profile', 'PUT');
-
-**Opening a Form that POSTS to an HTTPS URL:**
-
-	echo Form::openSecure('user/profile');
-
-**Specifying extra HTML attributes on a form open tag:**
-
-	echo Form::open('user/profile', 'POST', array('class' => 'awesome'));
+	echo Form::open(array('url' => user/profile'));
 
 **Opening a form that accepts file uploads:**
 
-	echo Form::openForFiles('users/profile');
-
-**Opening a form that accepts file uploads and uses HTTPS:**
-
-	echo Form::openSecureForFiles('users/profile');
+	echo Form::openForFiles(array('url' => 'user/profile', 'files' => true));
 
 **Opening a form for a resource controller:**
 
 	echo Form::openResource();
 
-> **Note:** This method automatically removes `/create` and `/edit` from the action. For resource editing, it will also use `PUT` for the form's method attribute. This is based on the last URI segment being either numeric or the word "edit". You can use this with all the previous form opening methods for secure and file uploading forms. The other methods are `openResourceSecure()`, `openResourceForFiles()`, and `openResourceSecureForFiles()`.
+> **Note:** This method automatically creates the correct route for the form action, assuming a resource controller is being used.
 
 **Closing a form:**
 
@@ -452,9 +439,9 @@ The field container element can be changed from a div to another HTML element an
 You will notice that the third parameter, `attributes`, has some options for special attributes such as `label` and `options` that don't work like any other attribute declaration. The combination of these into the attributes array makes sense because of the generic, many-use nature of the field macro. This prevents simple fields from requiring a bunch of `null` parameters. In addition to `label` and `options`, you can use `nullOption` for a prepended null option for a select box. Lastly, `value` can be used to manually set the value of the field. This is unnecessary if you are using the `setDefaults()` or `setup` methods to pre-populate your form with data.
 
 	$attributes = array('class'      => 'select-number',
-				  		'options'    => Form::numberOptions(1, 10),
-				  		'nullOption' => 'Select a number',
-				  		'value'      => 3);
+						'options'    => Form::numberOptions(1, 10),
+						'nullOption' => 'Select a number',
+						'value'      => 3);
 	echo Form::field('number', 'select', $attributes);
 
 <a name="custom-macros"></a>
