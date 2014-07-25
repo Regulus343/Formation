@@ -5,39 +5,42 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		last updated on July 21, 2014
+		version 0.6.0
+		last updated on July 24, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
+use Illuminate\Html\FormBuilder;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 
-class Formation {
+class Formation extends FormBuilder {
 
 	/**
 	 * The default values for form fields.
 	 *
 	 * @var array
 	 */
-	public static $defaults = array();
+	protected $defaults = array();
 
 	/**
 	 * The labels for form fields.
 	 *
 	 * @var array
 	 */
-	public static $labels = array();
+	protected $labels = array();
 
 	/**
 	 * The access keys for form fields.
 	 *
 	 * @var array
 	 */
-	public static $accessKeys = array();
+	protected $accessKeys = array();
 
 	/**
 	 * The validation rules (routed through Formation's validation() method to Validator library to allow
@@ -45,75 +48,56 @@ class Formation {
 	 *
 	 * @var array
 	 */
-	public static $validation = array();
+	protected $validation = array();
 
 	/**
 	 * The form fields to be validated.
 	 *
 	 * @var array
 	 */
-	public static $validationFields = array();
+	protected $validationFields = array();
 
 	/**
 	 * The form values array or object.
 	 *
 	 * @var array
 	 */
-	public static $values = array();
+	protected $values = array();
 
 	/**
 	 * The form errors.
 	 *
 	 * @var array
 	 */
-	public static $errors = array();
+	protected $errors = array();
 
 	/**
 	 * Whether form fields are being reset to their default values rather than the POSTed values.
 	 *
 	 * @var bool
 	 */
-	public static $reset = false;
-
-	/**
-	 * The registered custom macros.
-	 *
-	 * @var array
-	 */
-	public static $macros = array();
+	protected $reset = false;
 
 	/**
 	 * The request spoofer.
 	 *
 	 * @var string
 	 */
-	public static $spoofer = '_method';
+	protected $spoofer = '_method';
 
 	/**
 	 * Cache application encoding locally to save expensive calls to config::get().
 	 *
 	 * @var string
 	 */
-	public static $encoding = null;
-
-	/**
-	 * Registers a custom macro.
-	 *
-	 * @param  string   $name
-	 * @param  Closure  $macro
-	 * @return void
-	 */
-	public static function macro($name, $macro)
-	{
-		static::$macros[$name] = $macro;
-	}
+	protected $encoding = null;
 
 	/**
 	 * Returns the POST data.
 	 *
 	 * @return mixed
 	 */
-	public static function post()
+	public function post()
 	{
 		if (Input::old())
 			return Input::old();
@@ -129,7 +113,7 @@ class Formation {
 	 * @param  mixed    $prefix
 	 * @return array
 	 */
-	public static function setDefaults($defaults = array(), $relations = array(), $prefix = null)
+	public function setDefaults($defaults = array(), $relations = array(), $prefix = null)
 	{
 		//check if relations is an associative array
 		$associative = (bool) count(array_filter(array_keys((array) $relations), 'is_string'));
@@ -141,10 +125,10 @@ class Formation {
 			$prefix = "";
 
 		//format default values for times
-		$defaults = static::formatDefaults($defaults);
+		$defaults = $this->formatDefaults($defaults);
 
 		//set defaults array
-		$defaultsArray = static::$defaults;
+		$defaultsArray = $this->defaults;
 
 		//turn Eloquent collection into an array
 		if (isset($defaults) && isset($defaults->incrementing) && isset($defaults->timestamps))
@@ -157,7 +141,7 @@ class Formation {
 		}
 
 		//the suffix that formatted values will have if Formation's BaseModel is used as the model
-		$formattedSuffix = static::getFormattedFieldSuffix();
+		$formattedSuffix = $this->getFormattedFieldSuffix();
 
 		//add relations data to defaults array if it is set
 		if (!empty($relations)) {
@@ -178,7 +162,7 @@ class Formation {
 					foreach ($defaults->{$relation} as $item) {
 						$item = $item->toArray();
 
-						$itemPrefix = $prefix.(static::camelCaseToUnderscore($relation));
+						$itemPrefix = $prefix.($this->camelCaseToUnderscore($relation));
 
 						foreach ($item as $field => $value) {
 							if (!$relationField || $field == $relationField)
@@ -217,8 +201,8 @@ class Formation {
 			}
 		}
 
-		static::$defaults = $defaultsArray;
-		return static::$defaults;
+		$this->defaults = $defaultsArray;
+		return $this->defaults;
 	}
 
 	/**
@@ -227,7 +211,7 @@ class Formation {
 	 * @param  array    $defaults
 	 * @return void
 	 */
-	private static function formatDefaults($defaults = array())
+	private function formatDefaults($defaults = array())
 	{
 		foreach ($defaults as $field => $value) {
 			$fieldArray = explode('.', $field);
@@ -254,7 +238,7 @@ class Formation {
 	 *
 	 * @return string
 	 */
-	public static function getFormattedFieldSuffix()
+	public function getFormattedFieldSuffix()
 	{
 		return "_formatted";
 	}
@@ -267,7 +251,7 @@ class Formation {
 	 * @param  boolean  $defaults
 	 * @return mixed
 	 */
-	public static function getValuesArray($name = null, $object = false, $defaults = false) {
+	public function getValuesArray($name = null, $object = false, $defaults = false) {
 		$result = array();
 
 		if (!$defaults && Input::all() || Input::old()) {
@@ -278,7 +262,7 @@ class Formation {
 
 			$result = $values;
 		} else {
-			foreach (static::$defaults as $field => $value) {
+			foreach ($this->defaults as $field => $value) {
 				$s = explode('.', $field);
 
 				if (!is_null($value)) {
@@ -305,7 +289,7 @@ class Formation {
 		if ($object)
 			$result = json_decode(json_encode($result));
 
-		static::$values = $result;
+		$this->values = $result;
 
 		return $result;
 	}
@@ -316,9 +300,9 @@ class Formation {
 	 * @param  mixed    $name
 	 * @return object
 	 */
-	public static function getValuesObject($name = null)
+	public function getValuesObject($name = null)
 	{
-		return static::getValuesArray($name, true, false);
+		return $this->getValuesArray($name, true, false);
 	}
 
 	/**
@@ -327,9 +311,9 @@ class Formation {
 	 * @param  mixed    $name
 	 * @return object
 	 */
-	public static function getJsonValues($name = null)
+	public function getJsonValues($name = null)
 	{
-		return addslashes(json_encode(static::getValuesArray($name)));
+		return addslashes(json_encode($this->getValuesArray($name)));
 	}
 
 	/**
@@ -338,9 +322,9 @@ class Formation {
 	 * @param  mixed    $name
 	 * @return array
 	 */
-	public static function getDefaultsArray($name = null)
+	public function getDefaultsArray($name = null)
 	{
-		return static::getValuesArray($name, false, true);
+		return $this->getValuesArray($name, false, true);
 	}
 
 	/**
@@ -349,9 +333,9 @@ class Formation {
 	 * @param  mixed    $name
 	 * @return object
 	 */
-	public static function getDefaultsObject($name = null)
+	public function getDefaultsObject($name = null)
 	{
-		return static::getValuesArray($name, true, true);
+		return $this->getValuesArray($name, true, true);
 	}
 
 	/**
@@ -361,7 +345,7 @@ class Formation {
 	 * @param  array    $values
 	 * @return string
 	 */
-	public static function getValueFromArray($field, $values = null)
+	public function getValueFromArray($field, $values = null)
 	{
 		if (isset($values[$field]))
 			return $values[$field];
@@ -376,12 +360,12 @@ class Formation {
 	 * @param  object   $values
 	 * @return string
 	 */
-	public static function getValueFromObject($field, $values = null)
+	public function getValueFromObject($field, $values = null)
 	{
 		$fieldKeys = explode('.', $field);
 
 		if (is_null($values))
-			$values = static::$values;
+			$values = $this->values;
 
 		if (!is_object($values))
 			$values = json_decode(json_encode($values));
@@ -406,10 +390,10 @@ class Formation {
 	 * @param  array    $defaults
 	 * @return void
 	 */
-	public static function resetDefaults($defaults = array())
+	public function resetDefaults($defaults = array())
 	{
-		if (!empty($defaults)) static::setDefaults($defaults); //if new defaults are set, pass them to static::$defaults
-		static::$reset = true;
+		if (!empty($defaults)) $this->setDefaults($defaults); //if new defaults are set, pass them to $this->defaults
+		$this->reset = true;
 	}
 
 	/**
@@ -418,10 +402,10 @@ class Formation {
 	 * @param  array    $labels
 	 * @return void
 	 */
-	public static function setLabels($labels = array())
+	public function setLabels($labels = array())
 	{
 		if (is_object($labels)) $labels = (array) $labels;
-		static::$labels = $labels;
+		$this->labels = $labels;
 	}
 
 	/**
@@ -432,14 +416,14 @@ class Formation {
 	 * @param  mixed    $prefix
 	 * @return array
 	 */
-	public static function setValidationRules($rules = array(), $prefix = null)
+	public function setValidationRules($rules = array(), $prefix = null)
 	{
 		$rulesFormatted = array();
 		foreach ($rules as $name => $rulesItem) {
 			if (!is_null($prefix))
 				$name = $prefix.'.'.$name;
 
-			static::$validationFields[] = $name;
+			$this->validationFields[] = $name;
 
 			$rulesArray = explode('.', $name);
 			$last = $rulesArray[(count($rulesArray) - 1)];
@@ -452,15 +436,15 @@ class Formation {
 
 		foreach ($rulesFormatted as $name => $rules) {
 			if ($name == "root") {
-				static::$validation['root'] = Validator::make(Input::all(), $rules);
+				$this->validation['root'] = Validator::make(Input::all(), $rules);
 			} else {
 				$data = Input::get($name);
 				if (is_null($data)) $data = array();
-				static::$validation[$name] = Validator::make($data, $rules);
+				$this->validation[$name] = Validator::make($data, $rules);
 			}
 		}
 
-		return static::$validation;
+		return $this->validation;
 	}
 
 	/**
@@ -469,23 +453,23 @@ class Formation {
 	 * @param  string   $index
 	 * @return bool
 	 */
-	public static function validated($index = null)
+	public function validated($index = null)
 	{
 		//if index is null, cycle through all Validator instances
 		if (is_null($index)) {
-			foreach (static::$validation as $fieldName => $validation) {
+			foreach ($this->validation as $fieldName => $validation) {
 				if ($validation->fails()) return false;
 			}
 		} else {
 			if (substr($index, -1) == ".") { //index ends in "."; validate all fields that start with that index
-				foreach (static::$validation as $fieldName => $validation) {
+				foreach ($this->validation as $fieldName => $validation) {
 					if (substr($fieldName, 0, strlen($index)) == $index) {
 						if ($validation->fails()) return false;
 					}
 				}
 			} else {
-				if (isset(static::$validation[$index])) {
-					if (static::$validation[$index]->fails()) return false;
+				if (isset($this->validation[$index])) {
+					if ($this->validation[$index]->fails()) return false;
 				} else {
 					return false;
 				}
@@ -500,81 +484,29 @@ class Formation {
 	 * @param  array    $form
 	 * @return array
 	 */
-	public static function setup($form = array())
+	public function setup($form = array())
 	{
-		$labels = array();
-		$rules = array();
+		$labels   = array();
+		$rules    = array();
 		$defaults = array();
 
-		if (is_object($form)) $form = (array) $form;
+		if (is_object($form))
+			$form = (array) $form;
+
 		foreach ($form as $name => $field) {
-			if (is_object($field)) $field = (array) $field;
+			if (is_object($field))
+				$field = (array) $field;
+
 			if (isset($field[0]) && !is_null($field[0]) && $field[0] != "") $labels[$name]   = $field[0];
 			if (isset($field[1]) && !is_null($field[1]) && $field[1] != "") $rules[$name]    = $field[1];
 			if (isset($field[2]) && !is_null($field[2]) && $field[2] != "") $defaults[$name] = $field[2];
 		}
 
-		static::setLabels($labels);
-		static::setValidationRules($rules);
-		static::setDefaults($defaults);
+		$this->setLabels($labels);
+		$this->setValidationRules($rules);
+		$this->setDefaults($defaults);
 
-		return static::$validation;
-	}
-
-	/**
-	 * Open an HTML form.
-	 *
-	 * <code>
-	 *		// Open a "POST" form to the current request URI
-	 *		echo Form::open();
-	 *
-	 *		// Open a "POST" form to a given URI
-	 *		echo Form::open('user/profile');
-	 *
-	 *		// Open a "PUT" form to a given URI
-	 *		echo Form::open('user/profile', 'put');
-	 *
-	 *		// Open a form that has HTML attributes
-	 *		echo Form::open('user/profile', 'post', array('class' => 'profile'));
-	 * </code>
-	 *
-	 * @param  string   $action
-	 * @param  string   $method
-	 * @param  array    $attributes
-	 * @param  bool     $https
-	 * @return string
-	 */
-	public static function open($action = null, $method = 'POST', $attributes = array(), $https = null)
-	{
-		$method = strtoupper($method);
-
-		$attributes['method'] = static::method($method);
-
-		$attributes['action'] = static::action($action, $https);
-
-		// If a character encoding has not been specified in the attributes, we will
-		// use the default encoding as specified in the application configuration
-		// file for the "accept-charset" attribute.
-		if ( ! array_key_exists('accept-charset', $attributes))
-		{
-			$attributes['accept-charset'] = static::$encoding;
-		}
-
-		$append = '';
-
-		// Since PUT and DELETE methods are not actually supported by HTML forms,
-		// we'll create a hidden input element that contains the request method
-		// and set the actual request method variable to POST.
-		if ($method == 'PUT' or $method == 'DELETE')
-		{
-			$append = static::hidden(static::$spoofer, $method);
-		}
-
-		$html = '<form'.static::attributes($attributes).'>'.$append . "\n";
-		if (Config::get('formation::autoCsrfToken')) {
-			$html .= static::token();
-		}
-		return $html;
+		return $this->validation;
 	}
 
 	/**
@@ -583,30 +515,23 @@ class Formation {
 	 * @param  string  $method
 	 * @return string
 	 */
-	protected static function method($method)
+	protected function method($method = 'POST')
 	{
-		return ($method !== 'GET') ? 'POST' : $method;
+		return $method !== "GET" ? "POST" : $method;
 	}
 
 	/**
 	 * Determine the appropriate request method for a resource controller form.
 	 *
-	 * @param  mixed   $action
-	 * @param  mixed   $controller
+	 * @param  mixed   $route
 	 * @return string
 	 */
-	public static function methodResource($action = null, $controller = null)
+	public function methodResource($route = null)
 	{
-		$action = static::action($action);
-
+		$route  = $this->route($route);
 		$method = "POST";
-		$actionArray = explode('/', $action);
-		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
 
-		if (is_numeric($actionLastSegment) || $actionLastSegment == "edit")
-			$method = "PUT";
-
-		if (!is_null($controller) && $actionLastSegment != $controller && $actionLastSegment != "create")
+		if (substr($route[0], -5) == ".edit")
 			$method = "PUT";
 
 		return $method;
@@ -621,143 +546,86 @@ class Formation {
 	 * @param  bool     $https
 	 * @return string
 	 */
-	protected static function action($action = null, $https = false)
+	protected function route($route = null)
 	{
-		$uri = (is_null($action)) ? Request::fullUrl() : $action;
+		if (!is_null($route))
+			return $route;
 
-		return static::entities(URL::to($uri, $https));
+		return array_merge(
+			array(Route::currentRouteName()),
+			array_values(Route::getCurrentRoute()->parameters())
+		);
 	}
 
 	/**
-	 * Open an HTML form with an HTTPS action URI.
+	 * Open up a new HTML form.
 	 *
-	 * @param  string  $action
-	 * @param  string  $method
-	 * @param  array   $attributes
+	 * @param  array    $options
 	 * @return string
 	 */
-	public static function openSecure($action = null, $method = 'POST', $attributes = array())
+	public function open(array $options = array())
 	{
-		return static::open($action, $method, $attributes, true);
-	}
+		$method = array_get($options, 'method', 'post');
 
-	/**
-	 * Open an HTML form that accepts file uploads.
-	 *
-	 * @param  string  $action
-	 * @param  string  $method
-	 * @param  array   $attributes
-	 * @param  bool    $https
-	 * @return string
-	 */
-	public static function openForFiles($action = null, $method = 'POST', $attributes = array(), $https = false)
-	{
-		$attributes['enctype'] = 'multipart/form-data';
+		// We need to extract the proper method from the attributes. If the method is
+		// something other than GET or POST we'll use POST since we will spoof the
+		// actual method since forms don't support the reserved methods in HTML.
+		$attributes['method'] = $this->getMethod($method);
 
-		return static::open($action, $method, $attributes, $https);
-	}
+		$attributes['action'] = $this->getAction($options);
 
-	/**
-	 * Open an HTML form that accepts file uploads with an HTTPS action URI.
-	 *
-	 * @param  string  $action
-	 * @param  string  $method
-	 * @param  array   $attributes
-	 * @return string
-	 */
-	public static function openSecureForFiles($action = null, $method = 'POST', $attributes = array())
-	{
-		return static::openForFiles($action, $method, $attributes, true);
+		$attributes['accept-charset'] = 'UTF-8';
+
+		// If the method is PUT, PATCH or DELETE we will need to add a spoofer hidden
+		// field that will instruct the Symfony request to pretend the method is a
+		// different method than it actually is, for convenience from the forms.
+		$append = $this->getAppendage($method);
+
+		if (isset($options['files']) && $options['files'])
+		{
+			$options['enctype'] = 'multipart/form-data';
+		}
+
+		// Finally we're ready to create the final form HTML field. We will attribute
+		// format the array of attributes. We will also add on the appendage which
+		// is used to spoof requests for this PUT, PATCH, etc. methods on forms.
+		$attributes = array_merge(
+
+			$attributes, array_except($options, $this->reserved)
+
+		);
+
+		// Finally, we will concatenate all of the attributes into a single string so
+		// we can build out the final form open statement. We'll also append on an
+		// extra value for the hidden _method field if it's needed for the form.
+		$attributes = $this->html->attributes($attributes);
+
+		return '<form'.$attributes.'>'."\n\n\t".$append;
 	}
 
 	/**
 	 * Open an HTML form that automatically corrects the action for a resource controller.
 	 *
-	 * @param  string  $action
+	 * @param  mixed   $route
 	 * @param  array   $attributes
-	 * @param  mixed   $controller
-	 * @param  bool    $https
 	 * @return string
 	 */
-	public static function openResource($action = null, $attributes = array(), $controller = null, $https = false)
+	public function openResource(array $attributes = array())
 	{
-		$action = static::action($action, $https);
+		$route = $this->route();
 
 		//set method based on action
-		$method = static::methodResource($action, $controller);
+		$method = $this->methodResource($route);
 
-		//remove "create" suffix and whatever URI content may be appended to the end of the action
-		if (preg_match('/\/create(.*)/', $action, $match))
-			$action = str_replace($match[0], '', $action);
+		$route[0] = str_replace('create', 'store', $route[0]);
+		$route[0] = str_replace('edit', 'update', $route[0]);
 
-		//remove "create" and "edit" suffixes from action
-		$action = str_replace('/create', '', str_replace('/edit', '', $action));
+		$options = array_merge(array(
+			'route'  => $route,
+			'method' => $method,
+		), $attributes);
 
-		return static::open($action, $method, $attributes, $https);
-	}
-
-	/**
-	 * Open an HTML form for a resource controller with an HTTPS action URI.
-	 *
-	 * @param  string  $action
-	 * @param  array   $attributes
-	 * @param  mixed   $controller
-	 * @return string
-	 */
-	public static function openResourceSecure($action = null, $attributes = array(), $controller = null)
-	{
-		return static::openResource($action, $attributes, $controller, true);
-	}
-
-	/**
-	 * Open an HTML form for a resource controller that accepts file uploads.
-	 *
-	 * @param  string  $action
-	 * @param  array   $attributes
-	 * @param  mixed   $controller
-	 * @param  bool    $https
-	 * @return string
-	 */
-	public static function openResourceForFiles($action = null, $attributes = array(), $controller = null, $https = false)
-	{
-		$attributes['enctype'] = 'multipart/form-data';
-
-		return static::openResource($action, $attributes, $controller, $https);
-	}
-
-	/**
-	 * Open an HTML form for a resource controller that accepts file uploads with an HTTPS action URI.
-	 *
-	 * @param  string  $action
-	 * @param  array   $attributes
-	 * @param  mixed   $controller
-	 * @return string
-	 */
-	public static function openResourceSecureForFiles($action = null, $attributes = array(), $controller = null)
-	{
-		$attributes['enctype'] = 'multipart/form-data';
-
-		return static::openResourceForFiles($action, $attributes, $controller, true);
-	}
-
-	/**
-	 * Close an HTML form.
-	 *
-	 * @return string
-	 */
-	public static function close()
-	{
-		return '</form>';
-	}
-
-	/**
-	 * Generate a hidden field containing the current CSRF token.
-	 *
-	 * @return string
-	 */
-	public static function token()
-	{
-		return static::input('hidden', Config::get('formation::csrfToken'), Session::getToken());
+		return $this->open($options);
 	}
 
 	/**
@@ -767,17 +635,17 @@ class Formation {
 	 * @param  string  $type
 	 * @return mixed
 	 */
-	public static function values($name = null)
+	public function values($name = null)
 	{
 		if (is_string($name))
 			$name = str_replace('(', '', str_replace(')', '', $name));
 
-		if ($_POST && !static::$reset) {
+		if ($_POST && !$this->reset) {
 			return Input::get($name);
-		} else if (Input::old($name) && !static::$reset) {
+		} else if (Input::old($name) && !$this->reset) {
 			return Input::old($name);
 		} else {
-			return static::getDefaultsArray($name);
+			return $this->getDefaultsArray($name);
 		}
 	}
 
@@ -789,18 +657,18 @@ class Formation {
 	 * @param  string  $type
 	 * @return mixed
 	 */
-	public static function value($name, $type = 'standard')
+	public function value($name, $type = 'standard')
 	{
 		$name  = str_replace('(', '', str_replace(')', '', $name));
 		$value = "";
 
-		if (isset(static::$defaults[$name]))
-			$value = static::$defaults[$name];
+		if (isset($this->defaults[$name]))
+			$value = $this->defaults[$name];
 
-		if ($_POST && !static::$reset)
+		if ($_POST && !$this->reset)
 			$value = Input::get($name);
 
-		if (!is_null(Input::old($name)) && !static::$reset)
+		if (!is_null(Input::old($name)) && !$this->reset)
 			$value = Input::old($name);
 
 		if ($type == "checkbox")
@@ -816,7 +684,7 @@ class Formation {
 	 * @param  string  $type
 	 * @return mixed
 	 */
-	public static function valueTime($name)
+	public function valueTime($name)
 	{
 		if (substr($name, -1) != "_") $name .= "_";
 
@@ -840,7 +708,7 @@ class Formation {
 	 * @param  array   $fields
 	 * @return mixed
 	 */
-	public static function addValues($data = array(), $fields = array())
+	public function addValues($data = array(), $fields = array())
 	{
 		$associative = (bool) count(array_filter(array_keys((array) $fields), 'is_string'));
 
@@ -849,17 +717,17 @@ class Formation {
 				$add = true;
 
 				if (is_bool($config) || $config == "text") {
-					$value = trim(static::value($field));
+					$value = trim($this->value($field));
 
 					if (!$config)
 						$add = false;
 				} else if (is_array($config)) {
-					$value = trim(static::value($field));
+					$value = trim($this->value($field));
 
 					if (!in_array($value, $config))
 						$add = false;
 				} else if ($config == "checkbox") {
-					$value = static::value($field, 'checkbox');
+					$value = $this->value($field, 'checkbox');
 				}
 
 				if ($add) {
@@ -871,7 +739,7 @@ class Formation {
 			}
 		} else {
 			foreach ($fields as $field) {
-				$value = trim(static::value($field));
+				$value = trim($this->value($field));
 
 				if (is_object($data))
 					$data->{$field} = $value;
@@ -890,10 +758,10 @@ class Formation {
 	 * @param  array   $checkboxes
 	 * @return mixed
 	 */
-	public static function addCheckboxValues($data = array(), $checkboxes = array())
+	public function addCheckboxValues($data = array(), $checkboxes = array())
 	{
 		foreach ($checkboxes as $checkbox) {
-			$value = static::value($checkbox, 'checkbox');
+			$value = $this->value($checkbox, 'checkbox');
 
 			if (is_object($data))
 				$data->{$checkbox} = $value;
@@ -910,9 +778,9 @@ class Formation {
 	 * @param  string  $name
 	 * @return boolean
 	 */
-	public static function checked($name)
+	public function checked($name)
 	{
-		return static::value($name, 'checkbox');
+		return $this->value($name, 'checkbox');
 	}
 
 	/**
@@ -921,7 +789,7 @@ class Formation {
 	 * @param  string  $name
 	 * @return string
 	 */
-	protected static function name($name)
+	protected function name($name)
 	{
 		//remove index number from between round brackets
 		if (preg_match("/\((.*)\)/i", $name, $match)) $name = str_replace($match[0], '', $name);
@@ -950,13 +818,13 @@ class Formation {
 	 * @param  boolean $save
 	 * @return string
 	 */
-	public static function label($name = null, $label = null, $attributes = array(), $save = true)
+	public function label($name = null, $label = null, $attributes = array(), $save = true)
 	{
-		$attributes = static::addErrorClass($name, $attributes);
+		$attributes = $this->addErrorClass($name, $attributes);
 
 		//add tooltip and tooltip attributes if necessary
 		if (Config::get('formation::error.typeLabelTooltip')) {
-			$errorMessage = static::errorMessage($name, false);
+			$errorMessage = $this->errorMessage($name, false);
 
 			if ($errorMessage) {
 				$addAttributes = Config::get('formation::error.typeLabelAttributes');
@@ -973,17 +841,17 @@ class Formation {
 		}
 
 		if (!is_null($name) && $name != "") {
-			if (is_null($label)) $label = static::nameToLabel($name);
+			if (is_null($label)) $label = $this->nameToLabel($name);
 		} else {
 			if (is_null($label)) $label = "";
 		}
 
 		//save label in labels array if a label string contains any characters and $save is true
-		if ($label != "" && $save) static::$labels[$name] = $label;
+		if ($label != "" && $save) $this->labels[$name] = $label;
 
 		//get ID of field for label's "for" attribute
 		if (!isset($attributes['for'])) {
-			$id = static::id($name);
+			$id = $this->id($name);
 			$attributes['for'] = $id;
 		}
 
@@ -999,14 +867,14 @@ class Formation {
 			unset($attributes['suffix']);
 
 		//also do not add accesskey depiction if label already contains HTML tags or HTML special characters
-		if ($label != strip_tags($label) || $label != static::entities($label)) {
+		if ($label != strip_tags($label) || $label != $this->entities($label)) {
 			$attributes['accesskey'] = false;
 		} else {
-			$label = static::entities($label); //since there is no HTML present in label, convert entities to HTML special characters
+			$label = $this->entities($label); //since there is no HTML present in label, convert entities to HTML special characters
 		}
 
 		//add accesskey
-		$attributes = static::addAccessKey($name, $label, $attributes, false);
+		$attributes = $this->addAccessKey($name, $label, $attributes, false);
 
 		//add "control-label" class
 		if (!isset($attributes['control-label-class']) || $attributes['control-label-class']) {
@@ -1032,7 +900,7 @@ class Formation {
 			unset($attributes['accesskey']);
 		}
 
-		$attributes = static::attributes($attributes);
+		$attributes = $this->attributes($attributes);
 
 		return '<label'.$attributes.'>'.$label.'</label>' . "\n";
 	}
@@ -1048,7 +916,7 @@ class Formation {
 	 * @param  string  $name
 	 * @return string
 	 */
-	protected static function nameToLabel($name)
+	protected function nameToLabel($name)
 	{
 		$nameArray = explode('.', $name);
 		if (count($nameArray) < 2) {
@@ -1075,15 +943,15 @@ class Formation {
 	 * @param  boolean $returnLowercase
 	 * @return array
 	 */
-	public static function addAccessKey($name, $label = null, $attributes = array(), $returnLowercase = true)
+	public function addAccessKey($name, $label = null, $attributes = array(), $returnLowercase = true)
 	{
 		if (!isset($attributes['accesskey']) || (!is_string($attributes['accesskey']) && $attributes['accesskey'] === true)) {
 			$accessKey = false;
 			if (is_null($label)) {
-				if (isset(static::$labels[$name])) {
-					$label = static::$labels[$name];
+				if (isset($this->labels[$name])) {
+					$label = $this->labels[$name];
 				} else {
-					$label = static::nameToLabel($name);
+					$label = $this->nameToLabel($name);
 				}
 			}
 
@@ -1091,7 +959,7 @@ class Formation {
 			$ignoreCharacters = array(' ', '/', '!', '@', '#', '$', '%', '^', '*', '(', ')', '-', '_', '+', '=', '\\', '~', '?', '{', '}', '[', ']', '.');
 
 			//first check to see if an accesskey is already set for this field
-			foreach (static::$accessKeys as $character => $nameAccessKey) {
+			foreach ($this->accessKeys as $character => $nameAccessKey) {
 				if ($nameAccessKey == $name) $accessKey = $character;
 			}
 
@@ -1099,8 +967,8 @@ class Formation {
 			for ($l=0; $l < strlen($label); $l++) {
 				if (!$accessKey) {
 					$character = strtolower($label[$l]);
-					if (!isset(static::$accessKeys[$character]) && !in_array($character, $ignoreCharacters)) {
-						static::$accessKeys[$character] = $name;
+					if (!isset($this->accessKeys[$character]) && !in_array($character, $ignoreCharacters)) {
+						$this->accessKeys[$character] = $name;
 						$accessKey = $character;
 					}
 				}
@@ -1123,7 +991,7 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	protected static function id($name, $attributes = array())
+	protected function id($name, $attributes = array())
 	{
 		// If an ID has been explicitly specified in the attributes, we will
 		// use that ID. Otherwise, we will look for an ID in the array of
@@ -1164,7 +1032,7 @@ class Formation {
 	 * @param  string  $type
 	 * @return array
 	 */
-	protected static function setFieldClass($name, $attributes = array(), $type = 'text')
+	protected function setFieldClass($name, $attributes = array(), $type = 'text')
 	{
 		if (!in_array($type, array('hidden', 'checkbox', 'radio'))) {
 			$defaultClass = Config::get('formation::field.class');
@@ -1192,15 +1060,15 @@ class Formation {
 		//remove round brackets that are used to prevent index number from appearing in field name
 		$fieldClass = str_replace('(', '', str_replace(')', '', $fieldClass));
 
-		//replace double dashes with single dash
-		$fieldClass = str_replace('--', '-', $fieldClass);
-
 		//remove end dash if one exists
 		if (substr($fieldClass, -1) == "-")
 			$fieldClass = substr($fieldClass, 0, (strlen($fieldClass) - 1));
 
 		if ($fieldClass != "") {
 			$fieldClass = "field-".$fieldClass;
+
+			//replace double dashes with single dash
+			$fieldClass = str_replace('--', '-', $fieldClass);
 
 			if (isset($attributes['class']) && $attributes['class'] != "") {
 				$attributes['class'] .= ' '.$fieldClass;
@@ -1219,15 +1087,15 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return array
 	 */
-	protected static function setFieldPlaceholder($name, $attributes = array())
+	protected function setFieldPlaceholder($name, $attributes = array())
 	{
 		$placeholder = Config::get('formation::field.autoPlaceholder');
 		if ($placeholder && !isset($attributes['placeholder'])) {
 			$namePlaceholder = $name;
-			if (isset(static::$labels[$name]) && static::$labels[$name] != "") {
-				$namePlaceholder = static::$labels[$name];
+			if (isset($this->labels[$name]) && $this->labels[$name] != "") {
+				$namePlaceholder = $this->labels[$name];
 			} else {
-				$namePlaceholder = static::nameToLabel($name);
+				$namePlaceholder = $this->nameToLabel($name);
 			}
 
 			if (substr($namePlaceholder, -1) == ":")
@@ -1244,7 +1112,7 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function attributes($attributes)
+	public function attributes($attributes)
 	{
 		$html = array();
 
@@ -1257,7 +1125,7 @@ class Formation {
 
 			if ( ! is_null($value))
 			{
-				$html[] = $key.'="'.static::entities($value).'"';
+				$html[] = $key.'="'.$this->entities($value).'"';
 			}
 		}
 
@@ -1272,7 +1140,7 @@ class Formation {
 	 * @param  string  $value
 	 * @return string
 	 */
-	public static function entities($value)
+	public function entities($value)
 	{
 		return htmlentities($value, ENT_QUOTES, Config::get('formation::encoding'), false);
 	}
@@ -1285,7 +1153,7 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function field($name, $type = null, $attributes = array())
+	public function field($name, $type = null, $attributes = array())
 	{
 		//set any field named "submit" to a "submit" field automatically and set it's type to attributes to
 		//to simplify creation of "submit" fields with field() macro
@@ -1307,7 +1175,7 @@ class Formation {
 		//allow label to be set via attributes array (defaults to labels array and then to a label derived from the field's name)
 		$fieldLabel = Config::get('formation::field.autoLabel');
 		if (!is_null($name)) {
-			$label = static::nameToLabel($name);
+			$label = $this->nameToLabel($name);
 		} else {
 			$label = $name;
 		}
@@ -1380,7 +1248,7 @@ class Formation {
 			$attributesFieldContainer['class'] .= ' '.Config::get('formation::fieldContainer.class');
 		}
 		if (!isset($attributesFieldContainer['id'])) {
-			$attributesFieldContainer['id'] = static::id($name, $attributesFieldContainer).'-area';
+			$attributesFieldContainer['id'] = $this->id($name, $attributesFieldContainer).'-area';
 		} else {
 			if (is_null($attributesFieldContainer['id']) || !$attributesFieldContainer['id'])
 				unset($attributesFieldContainer['id']);
@@ -1390,44 +1258,44 @@ class Formation {
 		if ($type == "radio")    $attributesFieldContainer['class'] .= ' radio';
 		if ($type == "hidden")   $attributesFieldContainer['class'] .= ' hidden';
 
-		$attributesFieldContainer = static::addErrorClass($name, $attributesFieldContainer);
+		$attributesFieldContainer = $this->addErrorClass($name, $attributesFieldContainer);
 
-		$html = '<'.Config::get('formation::fieldContainer.element').static::attributes($attributesFieldContainer).'>' . "\n";
+		$html = '<'.Config::get('formation::fieldContainer.element').$this->attributes($attributesFieldContainer).'>' . "\n";
 		switch ($type) {
 			case "text":
-				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
-				$html .= static::text($name, $value, $attributesField) . "\n";
+				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				$html .= $this->text($name, $value, $attributesField) . "\n";
 				break;
 			case "search":
-				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
-				$html .= static::search($name, $value, $attributesField) . "\n";
+				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				$html .= $this->search($name, $value, $attributesField) . "\n";
 				break;
 			case "password":
-				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
-				$html .= static::password($name, $attributesField) . "\n";
+				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				$html .= $this->password($name, $attributesField) . "\n";
 				break;
 			case "url":
-				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
-				$html .= static::url($name, $value, $attributesField) . "\n";
+				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				$html .= $this->url($name, $value, $attributesField) . "\n";
 				break;
 			case "number":
-				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
-				$html .= static::number($name, $value, $attributesField) . "\n";
+				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				$html .= $this->number($name, $value, $attributesField) . "\n";
 				break;
 			case "date":
-				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
-				$html .= static::date($name, $value, $attributesField) . "\n";
+				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				$html .= $this->date($name, $value, $attributesField) . "\n";
 				break;
 			case "textarea":
-				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
-				$html .= static::textarea($name, $value, $attributesField);
+				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				$html .= $this->textarea($name, $value, $attributesField);
 				break;
 			case "hidden":
-				$html .= static::hidden($name, $value, $attributesField);
+				$html .= $this->hidden($name, $value, $attributesField);
 				break;
 			case "select":
-				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
-				$html .= static::select($name, $options, $nullOption, $value, $attributesField);
+				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				$html .= $this->select($name, $options, $nullOption, $value, $attributesField);
 				break;
 			case "checkbox":
 				if (is_null($value)) $value = 1;
@@ -1436,7 +1304,7 @@ class Formation {
 				} else {
 					$attributesLabel['class']  = "checkbox";
 				}
-				$html .= '<label>'.static::checkbox($name, $value, false, $attributesField).' '.$label.'</label>';
+				$html .= '<label>'.$this->checkbox($name, $value, false, $attributesField).' '.$label.'</label>';
 				break;
 			case "radio":
 				if (isset($attributesLabel['class'])) {
@@ -1444,32 +1312,32 @@ class Formation {
 				} else {
 					$attributesLabel['class']  = "radio";
 				}
-				$html .= '<label>'.static::radio($name, $value, false, $attributesField).' '.$label.'</label>';
+				$html .= '<label>'.$this->radio($name, $value, false, $attributesField).' '.$label.'</label>';
 				break;
 			case "checkbox-set":
 				//for checkbox set, use options as array of checkbox names
-				if ($fieldLabel) $html .= static::label(null, $label, $attributesLabel);
+				if ($fieldLabel) $html .= $this->label(null, $label, $attributesLabel);
 
-				$html .= static::checkboxSet($options, $name, $attributesField);
+				$html .= $this->checkboxSet($options, $name, $attributesField);
 				break;
 			case "radio-set":
-				if ($fieldLabel) $html .= static::label(null, $label, $attributesLabel);
-				$html .= static::radioSet($name, $options, null, $attributesField);
+				if ($fieldLabel) $html .= $this->label(null, $label, $attributesLabel);
+				$html .= $this->radioSet($name, $options, null, $attributesField);
 				break;
 			case "file":
-				if ($fieldLabel) $html .= static::label($name, $label, $attributesLabel);
-				$html .= static::file($name, $attributesField) . "\n";
+				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				$html .= $this->file($name, $attributesField) . "\n";
 				break;
 			case "button":
-				$html .= static::button($label, $attributesField);
+				$html .= $this->button($label, $attributesField);
 				break;
 			case "submit":
-				$html .= static::submit($label, $attributesField);
+				$html .= $this->submit($label, $attributesField);
 				break;
 		}
 
 		if (Config::get('formation::fieldContainer.error') && !Config::get('formation::error.typeLabelTooltip'))
-			$html .= static::error($name) . "\n";
+			$html .= $this->error($name) . "\n";
 
 		if (Config::get('formation::fieldContainer.clear'))
 			$html .= '<div class="clear"></div>' . "\n";
@@ -1495,36 +1363,36 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function input($type, $name, $value = null, $attributes = array())
+	public function input($type, $name, $value = null, $attributes = array())
 	{
 		//automatically set placeholder attribute if config option is set
 		if (!in_array($type, array('hidden', 'checkbox', 'radio')))
-			$attributes = static::setFieldPlaceholder($name, $attributes);
+			$attributes = $this->setFieldPlaceholder($name, $attributes);
 
 		//add the field class if config option is set
-		$attributes = static::setFieldClass($name, $attributes, $type);
+		$attributes = $this->setFieldClass($name, $attributes, $type);
 
 		//remove "placeholder" attribute if it is set to false
 		if (isset($attributes['placeholder']) && !$attributes['placeholder'])
 			unset($attributes['placeholder']);
 
 		$name = (isset($attributes['name'])) ? $attributes['name'] : $name;
-		$attributes = static::addErrorClass($name, $attributes);
+		$attributes = $this->addErrorClass($name, $attributes);
 
-		$attributes['id'] = static::id($name, $attributes);
+		$attributes['id'] = $this->id($name, $attributes);
 
-		if ($name == static::$spoofer)
+		if ($name == $this->spoofer || $name == "_token")
 			unset($attributes['id']);
 
-		if (is_null($value) && $type != "password") $value = static::value($name);
+		if (is_null($value) && $type != "password") $value = $this->value($name);
 
-		$name = static::name($name);
+		$name = $this->name($name);
 
-		if ($type != "hidden") $attributes = static::addAccessKey($name, null, $attributes);
+		if ($type != "hidden") $attributes = $this->addAccessKey($name, null, $attributes);
 
 		$attributes = array_merge($attributes, compact('type', 'name', 'value'));
 
-		return '<input'.static::attributes($attributes).'>' . "\n";
+		return '<input'.$this->attributes($attributes).'>' . "\n";
 	}
 
 	/**
@@ -1535,9 +1403,9 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function text($name, $value = null, $attributes = array())
+	public function text($name, $value = null, $attributes = array())
 	{
-		return static::input('text', $name, $value, $attributes);
+		return $this->input('text', $name, $value, $attributes);
 	}
 
 	/**
@@ -1547,9 +1415,9 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function password($name, $attributes = array())
+	public function password($name, $attributes = array())
 	{
-		return static::input('password', $name, null, $attributes);
+		return $this->input('password', $name, null, $attributes);
 	}
 
 	/**
@@ -1560,9 +1428,9 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function hidden($name, $value = null, $attributes = array())
+	public function hidden($name, $value = null, $attributes = array())
 	{
-		return static::input('hidden', $name, $value, $attributes);
+		return $this->input('hidden', $name, $value, $attributes);
 	}
 
 	/**
@@ -1573,9 +1441,9 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function search($name, $value = null, $attributes = array())
+	public function search($name, $value = null, $attributes = array())
 	{
-		return static::input('search', $name, $value, $attributes);
+		return $this->input('search', $name, $value, $attributes);
 	}
 
 	/**
@@ -1586,9 +1454,9 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function email($name, $value = null, $attributes = array())
+	public function email($name, $value = null, $attributes = array())
 	{
-		return static::input('email', $name, $value, $attributes);
+		return $this->input('email', $name, $value, $attributes);
 	}
 
 	/**
@@ -1599,9 +1467,9 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function telephone($name, $value = null, $attributes = array())
+	public function telephone($name, $value = null, $attributes = array())
 	{
-		return static::input('tel', $name, $value, $attributes);
+		return $this->input('tel', $name, $value, $attributes);
 	}
 
 	/**
@@ -1612,9 +1480,9 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function url($name, $value = null, $attributes = array())
+	public function url($name, $value = null, $attributes = array())
 	{
-		return static::input('url', $name, $value, $attributes);
+		return $this->input('url', $name, $value, $attributes);
 	}
 
 	/**
@@ -1625,9 +1493,9 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function number($name, $value = null, $attributes = array())
+	public function number($name, $value = null, $attributes = array())
 	{
-		return static::input('number', $name, $value, $attributes);
+		return $this->input('number', $name, $value, $attributes);
 	}
 
 	/**
@@ -1638,9 +1506,9 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function date($name, $value = null, $attributes = array())
+	public function date($name, $value = null, $attributes = array())
 	{
-		return static::input('date', $name, $value, $attributes);
+		return $this->input('date', $name, $value, $attributes);
 	}
 
 	/**
@@ -1650,9 +1518,9 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function file($name, $attributes = array())
+	public function file($name, $attributes = array())
 	{
-		return static::input('file', $name, null, $attributes);
+		return $this->input('file', $name, null, $attributes);
 	}
 
 	/**
@@ -1663,27 +1531,27 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function textarea($name, $value = null, $attributes = array())
+	public function textarea($name, $value = null, $attributes = array())
 	{
 		$attributes['name'] = $name;
-		$attributes['id'] = static::id($name, $attributes);
+		$attributes['id'] = $this->id($name, $attributes);
 
 		//add the field class if config option is set
-		$attributes = static::setFieldClass($name, $attributes);
+		$attributes = $this->setFieldClass($name, $attributes);
 
 		//automatically set placeholder attribute if config option is set
-		$attributes = static::setFieldPlaceholder($name, $attributes);
+		$attributes = $this->setFieldPlaceholder($name, $attributes);
 
-		$attributes = static::addErrorClass($name, $attributes);
+		$attributes = $this->addErrorClass($name, $attributes);
 
-		if (is_null($value)) $value = static::value($name);
+		if (is_null($value)) $value = $this->value($name);
 		if (is_null($value)) $value = ''; //if value is still null, set it to an empty string
 
-		$attributes['name'] = static::name($attributes['name']);
+		$attributes['name'] = $this->name($attributes['name']);
 
-		$attributes = static::addAccessKey($name, null, $attributes);
+		$attributes = $this->addAccessKey($name, null, $attributes);
 
-		return '<textarea'.static::attributes($attributes).'>'.static::entities($value).'</textarea>' . "\n";
+		return '<textarea'.$this->attributes($attributes).'>'.$this->entities($value).'</textarea>' . "\n";
 	}
 
 	/**
@@ -1704,20 +1572,20 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function select($name, $options = array(), $nullOption = null, $selected = null, $attributes = array())
+	public function select($name, $options = array(), $nullOption = null, $selected = null, $attributes = array())
 	{
-		if (!isset($attributes['id'])) $attributes['id'] = static::id($name, $attributes);
+		if (!isset($attributes['id'])) $attributes['id'] = $this->id($name, $attributes);
 		$attributes['name'] = $name;
-		$attributes = static::addErrorClass($name, $attributes);
+		$attributes = $this->addErrorClass($name, $attributes);
 
 		//add the field class if config option is set
-		$attributes = static::setFieldClass($name, $attributes);
+		$attributes = $this->setFieldClass($name, $attributes);
 
-		if (is_null($selected)) $selected = static::value($name);
+		if (is_null($selected)) $selected = $this->value($name);
 
 		$html = array();
 		if (!is_null($nullOption)) {
-			$html[] = static::option('', $nullOption, $selected);
+			$html[] = $this->option('', $nullOption, $selected);
 
 			$attributes['data-null-option'] = $nullOption;
 		}
@@ -1726,17 +1594,17 @@ class Formation {
 			$value = str_replace('[DUPLICATE]', '', $value); //allow the possibility of the same value appearing in the options array twice by appending "[DUPLICATE]" to its key
 
 			if (is_array($display)) {
-				$html[] = static::optgroup($display, $value, $selected);
+				$html[] = $this->optgroup($display, $value, $selected);
 			} else {
-				$html[] = static::option($value, $display, $selected);
+				$html[] = $this->option($value, $display, $selected);
 			}
 		}
 
-		$attributes['name'] = static::name($attributes['name']);
+		$attributes['name'] = $this->name($attributes['name']);
 
-		$attributes = static::addAccessKey($name, null, $attributes);
+		$attributes = $this->addAccessKey($name, null, $attributes);
 
-		return '<select'.static::attributes($attributes).'>'.implode("\n", $html). "\n" .'</select>' . "\n";
+		return '<select'.$this->attributes($attributes).'>'.implode("\n", $html). "\n" .'</select>' . "\n";
 	}
 
 	/**
@@ -1747,15 +1615,15 @@ class Formation {
 	 * @param  string  $selected
 	 * @return string
 	 */
-	protected static function optgroup($options, $label, $selected)
+	protected function optgroup($options, $label, $selected)
 	{
 		$html = array();
 
 		foreach ($options as $value => $display) {
-			$html[] = static::option($value, $display, $selected);
+			$html[] = $this->option($value, $display, $selected);
 		}
 
-		return '<optgroup label="'.static::entities($label).'">'.implode('', $html).'</optgroup>';
+		return '<optgroup label="'.$this->entities($label).'">'.implode('', $html).'</optgroup>';
 	}
 
 	/**
@@ -1766,16 +1634,16 @@ class Formation {
 	 * @param  string  $selected
 	 * @return string
 	 */
-	protected static function option($value, $display, $selected)
+	protected function option($value, $display, $selected)
 	{
 		if (is_array($selected)) {
 			$selected = (in_array($value, $selected)) ? 'selected' : null;
 		} else {
 			$selected = ((string) $value == (string) $selected) ? 'selected' : null;
 		}
-		$attributes = array('value' => static::entities($value), 'selected' => $selected);
+		$attributes = array('value' => $this->entities($value), 'selected' => $selected);
 
-		return '<option'.static::attributes($attributes).'>'.static::entities($display).'</option>';
+		return '<option'.$this->attributes($attributes).'>'.$this->entities($display).'</option>';
 	}
 
 	/**
@@ -1788,7 +1656,7 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function selectTime($namePrefix = 'time', $selected = null, $attributes = array())
+	public function selectTime($namePrefix = 'time', $selected = null, $attributes = array())
 	{
 		$html = "";
 		if ($namePrefix != "" && substr($namePrefix, -1) != "_") $namePrefix .= "_";
@@ -1810,7 +1678,7 @@ class Formation {
 		} else {
 			$attributesHour['class'] = "time time-hour";
 		}
-		$html .= static::select($namePrefix.'hour', $hoursOptions, null, null, $attributesHour);
+		$html .= $this->select($namePrefix.'hour', $hoursOptions, null, null, $attributesHour);
 
 		$html .= '<span class="time-hour-minutes-separator">:</span>' . "\n";
 
@@ -1826,17 +1694,17 @@ class Formation {
 		} else {
 			$attributesMinutes['class'] = "time time-minutes";
 		}
-		$html .= static::select($namePrefix.'minutes', $minutesOptions, null, null, $attributesMinutes);
+		$html .= $this->select($namePrefix.'minutes', $minutesOptions, null, null, $attributesMinutes);
 
 		//create meridiem field
-		$meridiemOptions = static::simpleOptions(array('am', 'pm'));
+		$meridiemOptions = $this->simpleOptions(array('am', 'pm'));
 		$attributesMeridiem = $attributes;
 		if (isset($attributesMeridiem['class'])) {
 			$attributesMeridiem['class'] .= " time time-meridiem";
 		} else {
 			$attributesMeridiem['class'] = "time time-meridiem";
 		}
-		$html .= static::select($namePrefix.'meridiem', $meridiemOptions, null, null, $attributesMeridiem);
+		$html .= $this->select($namePrefix.'meridiem', $meridiemOptions, null, null, $attributesMeridiem);
 
 		return $html;
 	}
@@ -1849,7 +1717,7 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function checkboxSet($names = array(), $namePrefix = null, $attributes = array())
+	public function checkboxSet($names = array(), $namePrefix = null, $attributes = array())
 	{
 		if (!empty($names) && is_array($names)) {
 			$containerAttributes = array('class'=> 'checkbox-set');
@@ -1866,8 +1734,8 @@ class Formation {
 					unset($attributes[$attribute]);
 				}
 			}
-			$containerAttributes = static::addErrorClass('roles', $containerAttributes);
-			$html = '<div'.static::attributes($containerAttributes).'>';
+			$containerAttributes = $this->addErrorClass('roles', $containerAttributes);
+			$html = '<div'.$this->attributes($containerAttributes).'>';
 
 			foreach ($names as $name => $display) {
 				//if a simple array is used, automatically create the label from the name
@@ -1881,7 +1749,7 @@ class Formation {
 				}
 				if (!$associativeArray) {
 					$name = $display;
-					$display = static::nameToLabel($name);
+					$display = $this->nameToLabel($name);
 				}
 
 				if (isset($attributes['name-values']) && $attributes['name-values']) {
@@ -1900,11 +1768,11 @@ class Formation {
 					}
 				}
 
-				$valueToCheck = static::value($nameToCheck);
+				$valueToCheck = $this->value($nameToCheck);
 				$checked      = false;
 				if (is_array($valueToCheck) && in_array($value, $valueToCheck)) {
 					$checked = true;
-				} else if (is_bool($value) && $value == static::value($nameToCheck, 'checkbox')) {
+				} else if (is_bool($value) && $value == $this->value($nameToCheck, 'checkbox')) {
 					$checked = true;
 				} else if (is_string($value) && $value == $valueToCheck) {
 					$checked = true;
@@ -1913,16 +1781,16 @@ class Formation {
 				//add selected class to list item if checkbox is checked to allow styling for selected checkboxes in set
 				$subContainerAttributes = array('class' => 'checkbox');
 				if ($checked) $subContainerAttributes['class'] .= ' selected';
-				$checkbox = '<div'.static::attributes($subContainerAttributes).'>' . "\n";
+				$checkbox = '<div'.$this->attributes($subContainerAttributes).'>' . "\n";
 
 				$checkboxAttributes = $attributes;
-				$checkboxAttributes['id'] = static::id($name);
+				$checkboxAttributes['id'] = $this->id($name);
 
 				if (isset($checkboxAttributes['associative'])) unset($checkboxAttributes['associative']);
 				if (isset($checkboxAttributes['name-values'])) unset($checkboxAttributes['name-values']);
 
-				$checkbox .= static::checkbox($name, $value, $checked, $checkboxAttributes);
-				$checkbox .= static::label($name, $display, array('accesskey' => false));
+				$checkbox .= $this->checkbox($name, $value, $checked, $checkboxAttributes);
+				$checkbox .= $this->label($name, $display, array('accesskey' => false));
 
 				$checkbox .= '</div>' . "\n";
 				$html .= $checkbox;
@@ -1950,15 +1818,15 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function checkbox($name, $value = 1, $checked = false, $attributes = array())
+	public function checkbox($name, $value = 1, $checked = false, $attributes = array())
 	{
-		if ($value == static::value($name))
+		if ($value == $this->value($name))
 			$checked = true;
 
 		if (!isset($attributes['id']))
-			$attributes['id'] = static::id($name, $attributes);
+			$attributes['id'] = $this->id($name, $attributes);
 
-		return static::checkable('checkbox', $name, $value, $checked, $attributes);
+		return $this->checkable('checkbox', $name, $value, $checked, $attributes);
 	}
 
 	/**
@@ -1970,7 +1838,7 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function radioSet($name, $options = array(), $selected = null, $attributes = array())
+	public function radioSet($name, $options = array(), $selected = null, $attributes = array())
 	{
 		if (!empty($options) && is_array($options)) {
 			$containerAttributes = array('class'=> 'radio-set');
@@ -1987,13 +1855,13 @@ class Formation {
 					unset($attributes[$attribute]);
 				}
 			}
-			$containerAttributes = static::addErrorClass($name, $containerAttributes);
-			$html = '<div'.static::attributes($containerAttributes).'>';
+			$containerAttributes = $this->addErrorClass($name, $containerAttributes);
+			$html = '<div'.$this->attributes($containerAttributes).'>';
 
-			$label = static::label($name); //set dummy label so ID can be created in line below
-			$idPrefix = static::id($name, $attributes);
+			$label = $this->label($name); //set dummy label so ID can be created in line below
+			$idPrefix = $this->id($name, $attributes);
 
-			if (is_null($selected)) $selected = static::value($name);
+			if (is_null($selected)) $selected = $this->value($name);
 			foreach ($options as $value => $display) {
 				if ($selected === (string) $value) {
 					$checked = true;
@@ -2004,14 +1872,14 @@ class Formation {
 				//add selected class to list item if radio button is set to allow styling for selected radio buttons in set
 				$subContainerAttributes = array('class' => 'radio');
 				if ($checked) $subContainerAttributes['class'] .= ' selected';
-				$radioButton = '<div'.static::attributes($subContainerAttributes).'>' . "\n";
+				$radioButton = '<div'.$this->attributes($subContainerAttributes).'>' . "\n";
 
 				//append radio button value to the end of ID to prevent all radio buttons from having the same ID
 				$idSuffix = str_replace('.', '-', str_replace(' ', '-', str_replace('_', '-', strtolower($value))));
 				if ($idSuffix == "") $idSuffix = "blank";
 				$attributes['id'] = $idPrefix.'-'.$idSuffix;
 
-				$radioButton .= '<label>'.static::radio($name, $value, $checked, $attributes).' '.$display.'</label></div>' . "\n";
+				$radioButton .= '<label>'.$this->radio($name, $value, $checked, $attributes).' '.$display.'</label></div>' . "\n";
 				$html .= $radioButton;
 			}
 
@@ -2037,15 +1905,15 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function radio($name, $value = null, $checked = false, $attributes = array())
+	public function radio($name, $value = null, $checked = false, $attributes = array())
 	{
 		if (is_null($value)) $value = $name;
-		if ((string) $value === static::value($name)) $checked = true;
+		if ((string) $value === $this->value($name)) $checked = true;
 
-		if (!isset($attributes['id'])) $attributes['id'] = static::id($name.'-'.strtolower($value), $attributes);
-		$name = static::name($name);
+		if (!isset($attributes['id'])) $attributes['id'] = $this->id($name.'-'.strtolower($value), $attributes);
+		$name = $this->name($name);
 
-		return static::checkable('radio', $name, $value, $checked, $attributes);
+		return $this->checkable('radio', $name, $value, $checked, $attributes);
 	}
 
 	/**
@@ -2058,11 +1926,11 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	protected static function checkable($type, $name, $value, $checked, $attributes)
+	protected function checkable($type, $name, $value, $checked, $attributes)
 	{
 		if ($checked) $attributes['checked'] = 'checked';
 
-		return static::input($type, $name, $value, $attributes);
+		return $this->input($type, $name, $value, $attributes);
 	}
 
 	/**
@@ -2073,7 +1941,7 @@ class Formation {
 	 * @param  array   $vars
 	 * @return array
 	 */
-	public static function prepOptions($options = array(), $vars = array())
+	public function prepOptions($options = array(), $vars = array())
 	{
 		$optionsFormatted = array();
 
@@ -2107,7 +1975,7 @@ class Formation {
 				if (isset($optionValue)) unset($optionValue);
 				if (!empty($functionMatch)) { //value is a method of object; call it
 					$function = str_replace('()', '', $value);
-					$optionValue = $options[$key]->$function();
+					$optionValue = $options[$key]->function();
 				} else if (isset($optionArray[$value])) {
 					$optionValue = $optionArray[$value];
 				}
@@ -2127,7 +1995,7 @@ class Formation {
 	 * @param  array   $options
 	 * @return array
 	 */
-	public static function simpleOptions($options = array())
+	public function simpleOptions($options = array())
 	{
 		$optionsFormatted = array();
 		foreach ($options as $option) {
@@ -2143,7 +2011,7 @@ class Formation {
 	 * @param  array   $options
 	 * @return array
 	 */
-	public static function offsetOptions($options = array())
+	public function offsetOptions($options = array())
 	{
 		$optionsFormatted = array();
 		for ($o=0; $o < count($options); $o++) {
@@ -2162,7 +2030,7 @@ class Formation {
 	 * @param  integer $decimals
 	 * @return array
 	 */
-	public static function numberOptions($start = 1, $end = 10, $increment = 1, $decimals = 0)
+	public function numberOptions($start = 1, $end = 10, $increment = 1, $decimals = 0)
 	{
 		$options = array();
 		if (is_numeric($start) && is_numeric($end)) {
@@ -2194,9 +2062,9 @@ class Formation {
 	 *
 	 * @return array
 	 */
-	public static function countryOptions()
+	public function countryOptions()
 	{
-		return static::simpleOptions(array(
+		return $this->simpleOptions(array(
 			'Canada', 'United States', 'Afghanistan', 'Albania', 'Algeria', 'American Samoa', 'Andorra', 'Angola', 'Anguilla', 'Antarctica', 'Antigua And Barbuda', 'Argentina', 'Armenia', 'Aruba',
 			'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bermuda', 'Bhutan', 'Bolivia', 'Bosnia And Herzegowina',
 		 	'Botswana', 'Bouvet Island', 'Brazil', 'British Indian Ocean Territory', 'Brunei Darussalam', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Cape Verde', 'Cayman Islands',
@@ -2226,7 +2094,7 @@ class Formation {
 	 * @param  bool    $useAbbrev
 	 * @return array
 	 */
-	public static function provinceOptions($useAbbrev = true)
+	public function provinceOptions($useAbbrev = true)
 	{
 		$provinces = array(
 			'AB' => 'Alberta', 'BC' => 'British Columbia', 'MB' => 'Manitoba', 'NB' => 'New Brunswick', 'NL' => 'Newfoundland', 'NT' => 'Northwest Territories', 'NS' => 'Nova Scotia',
@@ -2235,7 +2103,7 @@ class Formation {
 		if ($useAbbrev) {
 			return $provinces;
 		} else {
-			return static::simpleOptions(array_values($provinces)); //remove abbreviation keys
+			return $this->simpleOptions(array_values($provinces)); //remove abbreviation keys
 		}
 	}
 
@@ -2245,7 +2113,7 @@ class Formation {
 	 * @param  bool    $useAbbrev
 	 * @return array
 	 */
-	public static function stateOptions($useAbbrev = true)
+	public function stateOptions($useAbbrev = true)
 	{
 		$states = array(
 			'AL' => 'Alabama', 'AK' => 'Alaska', 'AZ' => 'Arizona', 'AR' => 'Arkansas', 'CA' => 'California', 'CO' => 'Colorado', 'CT' => 'Connecticut', 'DE' => 'Delaware', 'DC' => 'District of Columbia',
@@ -2258,7 +2126,7 @@ class Formation {
 		if ($useAbbrev) {
 			return $states;
 		} else {
-			return static::simpleOptions(array_values($states)); //remove abbreviation keys
+			return $this->simpleOptions(array_values($states)); //remove abbreviation keys
 		}
 	}
 
@@ -2269,7 +2137,7 @@ class Formation {
 	 * @param  bool    $useAbbrev
 	 * @return array
 	 */
-	public static function timeOptions($minutes = 'half')
+	public function timeOptions($minutes = 'half')
 	{
 		$times = array();
 		$minutesOptions = array('00');
@@ -2315,7 +2183,7 @@ class Formation {
 	 * @param  string  $format
 	 * @return array
 	 */
-	public static function monthOptions($start = 'current', $end = -12, $endDate = false, $format = 'F Y')
+	public function monthOptions($start = 'current', $end = -12, $endDate = false, $format = 'F Y')
 	{
 		//prepare start & end months
 		if ($start == "current" || is_null($start) || !is_string($start)) $start = date('Y-m-01');
@@ -2344,7 +2212,7 @@ class Formation {
 			while (strtotime($month) <= strtotime($end)) {
 				$monthMid = date('Y-m-15', strtotime($month));
 				if ($endDate) {
-					$date = static::lastDayOfMonth($month);
+					$date = $this->lastDayOfMonth($month);
 				} else {
 					$date = $month;
 				}
@@ -2356,7 +2224,7 @@ class Formation {
 			while (strtotime($month) >= strtotime($end)) {
 				$monthMid = date('Y-m-15', strtotime($month));
 				if ($endDate) {
-					$date = static::lastDayOfMonth($month);
+					$date = $this->lastDayOfMonth($month);
 				} else {
 					$date = $month;
 				}
@@ -2374,7 +2242,7 @@ class Formation {
 	 * @param  string  $date
 	 * @return string
 	 */
-	private static function lastDayOfMonth($date = 'current')
+	private function lastDayOfMonth($date = 'current')
 	{
 		if ($date == "current") {
 			$date = date('Y-m-d');
@@ -2414,7 +2282,7 @@ class Formation {
 	 * @param  boolean $startWithOne
 	 * @return array
 	 */
-	public static function booleanOptions($options = array('Yes', 'No'), $startWithOne = true)
+	public function booleanOptions($options = array('Yes', 'No'), $startWithOne = true)
 	{
 		if (is_string($options)) $options = explode('/', $options); //allow options to be set as a string like "Yes/No"
 		if (!isset($options[1])) $options[1] = "";
@@ -2437,17 +2305,17 @@ class Formation {
 	 *
 	 * @return array
 	 */
-	public static function getErrors()
+	public function getErrors()
 	{
-		if (empty(static::$errors)) {
-			foreach (static::$validationFields as $fieldName) {
-				$error = static::errorMessage($fieldName);
+		if (empty($this->errors)) {
+			foreach ($this->validationFields as $fieldName) {
+				$error = $this->errorMessage($fieldName);
 				if ($error)
-					static::$errors[$fieldName] = $error;
+					$this->errors[$fieldName] = $error;
 			}
 		}
 
-		return static::$errors;
+		return $this->errors;
 	}
 
 	/**
@@ -2456,11 +2324,11 @@ class Formation {
 	 * @param  string  $errors
 	 * @return array
 	 */
-	public static function setErrors($session = 'errors')
+	public function setErrors($session = 'errors')
 	{
-		static::$errors = Session::get($session);
+		$this->errors = Session::get($session);
 
-		return static::$errors;
+		return $this->errors;
 	}
 
 	/**
@@ -2469,12 +2337,12 @@ class Formation {
 	 * @param  string  $errors
 	 * @return array
 	 */
-	public static function resetErrors($session = 'errors')
+	public function resetErrors($session = 'errors')
 	{
 		if ($session)
 			Session::forget($session);
 
-		static::$errors = array();
+		$this->errors = array();
 	}
 
 	/**
@@ -2484,13 +2352,13 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return array
 	 */
-	public static function addErrorClass($name, $attributes = array())
+	public function addErrorClass($name, $attributes = array())
 	{
-		if (static::errorMessage($name)) { //an error exists; add the error class
+		if ($this->errorMessage($name)) { //an error exists; add the error class
 			if (!isset($attributes['class'])) {
-				$attributes['class'] = static::getErrorClass();
+				$attributes['class'] = $this->getErrorClass();
 			} else {
-				$attributes['class'] .= " ".static::getErrorClass();
+				$attributes['class'] .= " ".$this->getErrorClass();
 			}
 		}
 		return $attributes;
@@ -2503,7 +2371,7 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return array
 	 */
-	public static function getErrorClass()
+	public function getErrorClass()
 	{
 		return Config::get('formation::error.class');
 	}
@@ -2517,16 +2385,16 @@ class Formation {
 	 * @param  mixed   $customMessage
 	 * @return string
 	 */
-	public static function error($name, $alwaysExists = false, $replacementFieldName = false, $customMessage = null)
+	public function error($name, $alwaysExists = false, $replacementFieldName = false, $customMessage = null)
 	{
 		if (substr($name, -1) == ".") $name = substr($name, 0, (strlen($name) - 1));
 
 		if ($alwaysExists)
-			$attr = ' id="'.static::id($name).'-error"';
+			$attr = ' id="'.$this->id($name).'-error"';
 		else
 			$attr = "";
 
-		$message = static::errorMessage($name, $replacementFieldName);
+		$message = $this->errorMessage($name, $replacementFieldName);
 
 		if (!is_null($customMessage))
 			$message = $customMessage;
@@ -2549,7 +2417,7 @@ class Formation {
 	 * @param  boolean $ignoreIcon
 	 * @return string
 	 */
-	public static function errorMessage($name, $replacementFieldName = false, $ignoreIcon = false)
+	public function errorMessage($name, $replacementFieldName = false, $ignoreIcon = false)
 	{
 		$errorMessage = false;
 
@@ -2563,27 +2431,27 @@ class Formation {
 		&& !in_array($replacementFieldName, $specialReplacementNames)) {
 			$nameFormatted = $replacementFieldName;
 		} else {
-			if (isset(static::$labels[$name]) && static::$labels[$name] != "")
-				$nameFormatted = static::$labels[$name];
+			if (isset($this->labels[$name]) && $this->labels[$name] != "")
+				$nameFormatted = $this->labels[$name];
 			else
-				$nameFormatted = static::nameToLabel($nameFormatted);
+				$nameFormatted = $this->nameToLabel($nameFormatted);
 
 			if (substr($nameFormatted, -1) == ":")
 				$nameFormatted = substr($nameFormatted, 0, (strlen($nameFormatted) - 1));
 
-			$nameFormatted = static::formatReplacementName($nameFormatted, $replacementFieldName);
+			$nameFormatted = $this->formatReplacementName($nameFormatted, $replacementFieldName);
 		}
 
 		if ($nameFormatted == strip_tags($nameFormatted))
-			$nameFormatted = static::entities($nameFormatted);
+			$nameFormatted = $this->entities($nameFormatted);
 
 		//return error message if it already exists
-		if (isset(static::$errors[$name]))
-			$errorMessage = str_replace($name, $nameFormatted, static::$errors[$name]);
+		if (isset($this->errors[$name]))
+			$errorMessage = str_replace($name, $nameFormatted, $this->errors[$name]);
 
 		//cycle through all validation instances to allow the ability to get error messages in root fields
 		//as well as field arrays like "field[array]" (passed to errorMessage in the form of "field.array")
-		foreach (static::$validation as $fieldName => $validation) {
+		foreach ($this->validation as $fieldName => $validation) {
 			$valid = $validation->passes();
 
 			if ($validation->messages()) {
@@ -2591,8 +2459,8 @@ class Formation {
 				$nameArray = explode('.', $name);
 				if (count($nameArray) < 2) {
 					if ($_POST && $fieldName == "root" && $messages->first($name) != "") {
-						static::$errors[$name] = str_replace(str_replace('_', ' ', $name), $nameFormatted, $messages->first($name));
-						$errorMessage = static::$errors[$name];
+						$this->errors[$name] = str_replace(str_replace('_', ' ', $name), $nameFormatted, $messages->first($name));
+						$errorMessage = $this->errors[$name];
 					}
 				} else {
 					$last =	$nameArray[(count($nameArray) - 1)];
@@ -2603,17 +2471,17 @@ class Formation {
 						$nameFormatted = $replacementFieldName;
 					} else {
 						if ($nameFormatted == $name) {
-							$nameFormatted = static::entities(ucwords($last));
+							$nameFormatted = $this->entities(ucwords($last));
 						}
 						if (substr($nameFormatted, -1) == ":")
 							$nameFormatted = substr($nameFormatted, 0, (strlen($nameFormatted) - 2));
 
-						$nameFormatted = static::formatReplacementName($nameFormatted, $replacementFieldName);
+						$nameFormatted = $this->formatReplacementName($nameFormatted, $replacementFieldName);
 					}
 
 					if ($_POST && $fieldName == $first && $messages->first($last) != "") {
-						static::$errors[$name] = str_replace(str_replace('_', ' ', $last), $nameFormatted, $messages->first($last));
-						$errorMessage = static::$errors[$name];
+						$this->errors[$name] = str_replace(str_replace('_', ' ', $last), $nameFormatted, $messages->first($last));
+						$errorMessage = $this->errors[$name];
 					}
 				}
 			}
@@ -2637,7 +2505,7 @@ class Formation {
 	 * @param  mixed   $replacementName
 	 * @return string
 	 */
-	private static function formatReplacementName($name, $replacementName) {
+	private function formatReplacementName($name, $replacementName) {
 		if ($replacementName == "LOWERCASE")
 			$name = strtolower($name);
 
@@ -2656,9 +2524,9 @@ class Formation {
 	 * @param  string  $errors
 	 * @return string
 	 */
-	public static function getJsonErrors($session = 'errors')
+	public function getJsonErrors($session = 'errors')
 	{
-		return str_replace('\\"', '\\\"', json_encode(static::setErrors($session)));
+		return str_replace('\\"', '\\\"', json_encode($this->setErrors($session)));
 	}
 
 	/**
@@ -2667,9 +2535,9 @@ class Formation {
 	 * @param  string  $errors
 	 * @return string
 	 */
-	public static function getJsonErrorSettings($session = 'errors')
+	public function getJsonErrorSettings($session = 'errors')
 	{
-		$errorSettings = static::formatSettingsForJs(Config::get('formation::error'));
+		$errorSettings = $this->formatSettingsForJs(Config::get('formation::error'));
 		return json_encode($errorSettings);
 	}
 
@@ -2679,7 +2547,7 @@ class Formation {
 	 * @param  array   $settings
 	 * @return array
 	 */
-	private static function formatSettingsForJs($settings) {
+	private function formatSettingsForJs($settings) {
 		if (is_array($settings)) {
 			foreach ($settings as $setting => $value) {
 				$settingOriginal = $setting;
@@ -2687,12 +2555,12 @@ class Formation {
 				if ($setting == "class")
 					$setting = "classAttribute";
 
-				$setting = static::dashedToCamelCase($setting);
+				$setting = $this->dashedToCamelCase($setting);
 
 				if ($setting != $settingOriginal && isset($settings[$settingOriginal]))
 					unset($settings[$settingOriginal]);
 
-				$settings[$setting] = static::formatSettingsForJs($value);
+				$settings[$setting] = $this->formatSettingsForJs($value);
 			}
 		}
 		return $settings;
@@ -2704,7 +2572,7 @@ class Formation {
 	 * @param  string  $string
 	 * @return string
 	 */
-	public static function dashedToCamelCase($string) {
+	public function dashedToCamelCase($string) {
 		$string    = str_replace(' ', '', ucwords(str_replace('-', ' ', $string)));
 		$string[0] = strtolower($string[0]);
 
@@ -2717,7 +2585,7 @@ class Formation {
 	 * @param  string  $string
 	 * @return string
 	 */
-	public static function underscoredToCamelCase($string) {
+	public function underscoredToCamelCase($string) {
 		$string    = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
 		$string[0] = strtolower($string[0]);
 
@@ -2730,7 +2598,7 @@ class Formation {
 	 * @param  string  $string
 	 * @return string
 	 */
-	public static function camelCaseToUnderscore($string) {
+	public function camelCaseToUnderscore($string) {
 		return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $string));
 	}
 
@@ -2738,9 +2606,9 @@ class Formation {
 	 * Get the validators array.
 	 *
 	 */
-	public static function getValidation()
+	public function getValidation()
 	{
-		return static::$validation;
+		return $this->validation;
 	}
 
 	/**
@@ -2750,9 +2618,9 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function submit($value = 'Submit', $attributes = array())
+	public function submit($value = 'Submit', $attributes = array())
 	{
-		return static::input('submit', null, $value, $attributes);
+		return $this->input('submit', null, $value, $attributes);
 	}
 
 	/**
@@ -2762,9 +2630,9 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function reset($value = null, $attributes = array())
+	public function reset($value = null, $attributes = array())
 	{
-		return static::input('reset', null, $value, $attributes);
+		return $this->input('reset', null, $value, $attributes);
 	}
 
 	/**
@@ -2780,11 +2648,11 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function image($url, $name = null, $attributes = array())
+	public function image($url, $name = null, $attributes = array())
 	{
 		$attributes['src'] = URL::toAsset($url);
 
-		return static::input('image', $name, null, $attributes);
+		return $this->input('image', $name, null, $attributes);
 	}
 
 	/**
@@ -2794,7 +2662,7 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public static function button($value = null, $attributes = array())
+	public function button($value = null, $attributes = array())
 	{
 		if (!isset($attributes['class'])) {
 			$attributes['class'] = 'btn btn-default';
@@ -2802,26 +2670,26 @@ class Formation {
 			$attributes['class'] .= ' btn btn-default';
 		}
 
-		if ($value == strip_tags($value)) $value = static::entities($value);
-		return '<button'.static::attributes($attributes).'>'.$value.'</button>' . "\n";
+		if ($value == strip_tags($value)) $value = $this->entities($value);
+		return '<button'.$this->attributes($attributes).'>'.$value.'</button>' . "\n";
 	}
 
 	/**
 	 * Create a label for a submit function based on a resource controller URL.
 	 *
 	 * @param  mixed   $itemName
-	 * @param  mixed   $action
 	 * @param  mixed   $update
+	 * @param  mixed   $icon
 	 * @return string
 	 */
-	public static function submitResource($itemName = null, $action = null, $update = null, $icon = null)
+	public function submitResource($itemName = null, $update = null, $icon = null)
 	{
 		//if null, check config button icon config setting
 		if (is_null($icon))
 			$icon = Config::get('formation::autoButtonIcon');
 
 		if (is_null($update))
-			$update = static::updateResource($action);
+			$update = $this->updateResource();
 
 		if ($update) {
 			$label = 'Update';
@@ -2846,21 +2714,18 @@ class Formation {
 	/**
 	 * Get the status create / update status from the resource controller URL.
 	 *
-	 * @param  mixed   $action
+	 * @param  mixed   $route
 	 * @return bool
 	 */
-	public static function updateResource($action = null)
+	public function updateResource($route = null)
 	{
-		$action = static::action($action);
+		$route = $this->route($route);
 
-		//set method based on action
-		$actionArray = explode('/', $action);
-		$actionLastSegment = $actionArray[(count($actionArray) - 1)];
-		if (is_numeric($actionLastSegment) || $actionLastSegment == "edit") {
+		//set method based on route
+		if (substr($route[0], -5) == ".edit")
 			return true;
-		} else {
+		else
 			return false;
-		}
 	}
 
 	/**
@@ -2868,7 +2733,7 @@ class Formation {
 	 *
 	 * @return string
 	 */
-	public static function getDateFormat()
+	public function getDateFormat()
 	{
 		return Config::get('formation::dateFormat');
 	}
@@ -2878,7 +2743,7 @@ class Formation {
 	 *
 	 * @return string
 	 */
-	public static function getDateTimeFormat()
+	public function getDateTimeFormat()
 	{
 		return Config::get('formation::dateTimeFormat');
 	}
@@ -2888,26 +2753,9 @@ class Formation {
 	 *
 	 * @return string
 	 */
-	protected static function encoding()
+	protected function encoding()
 	{
-		return static::$encoding ?: static::$encoding = Config::get('site.encoding');
-	}
-
-	/**
-	 * Dynamically handle calls to custom macros.
-	 *
-	 * @param  string  $method
-	 * @param  array   $parameters
-	 * @return mixed
-	 */
-	public static function __callStatic($method, $parameters)
-	{
-		if (isset(static::$macros[$method]))
-		{
-			return call_user_func_array(static::$macros[$method], $parameters);
-		}
-
-		throw new \Exception("Method [$method] does not exist.");
+		return $this->encoding ?: $this->encoding = Config::get('site.encoding');
 	}
 
 }

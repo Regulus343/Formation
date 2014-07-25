@@ -28,7 +28,9 @@ class FormationServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-		//
+		$this->app['formation'] = $this->app->share(function($app) {
+			return new Formation($app['html'], $app['url'], $app['session.store']->getToken());
+		});
 	}
 
 	/**

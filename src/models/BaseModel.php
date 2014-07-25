@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
 
-use Aquanode\Formation\Formation as Form;
+use Aquanode\Formation\Facade as Form;
 
 use Regulus\TetraText\TetraText as Format;
 
