@@ -17,7 +17,9 @@ All of this can be achieved with a minimal amount of code:
 	<?php
 	echo Form::field('first_name');
 	echo Form::field('password');
-	echo Form::field('user.item', 'select', array('options' => Form::prepOptions(Item::all(), array('id', 'name'))));
+	echo Form::field('user.item', 'select', array(
+		'options' => Form::prepOptions(Item::all(), array('id', 'name'))
+	));
 	?>
 
 	<?php //simply typing Form::field('first_name') is the same as the following code: ?>
@@ -438,10 +440,12 @@ The field container element can be changed from a div to another HTML element an
 
 You will notice that the third parameter, `attributes`, has some options for special attributes such as `label` and `options` that don't work like any other attribute declaration. The combination of these into the attributes array makes sense because of the generic, many-use nature of the field macro. This prevents simple fields from requiring a bunch of `null` parameters. In addition to `label` and `options`, you can use `nullOption` for a prepended null option for a select box. Lastly, `value` can be used to manually set the value of the field. This is unnecessary if you are using the `setDefaults()` or `setup` methods to pre-populate your form with data.
 
-	$attributes = array('class'      => 'select-number',
-						'options'    => Form::numberOptions(1, 10),
-						'nullOption' => 'Select a number',
-						'value'      => 3);
+	$attributes = array(
+		'class'      => 'select-number',
+		'options'    => Form::numberOptions(1, 10),
+		'nullOption' => 'Select a number',
+		'value'      => 3,
+	);
 	echo Form::field('number', 'select', $attributes);
 
 <a name="custom-macros"></a>

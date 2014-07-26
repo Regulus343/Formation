@@ -6,10 +6,11 @@
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
 		version 0.6.0
-		last updated on July 24, 2014
+		last updated on July 25, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\FormBuilder;
+
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Lang;
