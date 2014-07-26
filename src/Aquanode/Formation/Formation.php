@@ -5,8 +5,8 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		version 0.6.0
-		last updated on July 25, 2014
+		version 0.6.1
+		last updated on July 26, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\FormBuilder;
@@ -138,7 +138,12 @@ class Formation extends FormBuilder {
 			$defaultsFormatted = $defaults;
 
 		foreach ($defaultsFormatted as $field => $value) {
-			$defaultsArray[$prefix.$field] = $value;
+			$addValue = true;
+			if ((is_array($value) || is_object($value)) && ! (int) $field)
+				$addValue = false;
+
+			if ($addValue)
+				$defaultsArray[$prefix.$field] = $value;
 		}
 
 		//the suffix that formatted values will have if Formation's BaseModel is used as the model
