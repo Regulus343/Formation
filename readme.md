@@ -82,7 +82,7 @@ Then run `php composer.phar update` from the command line. Composer will install
 
 And add this to the `aliases` array:
 
-	'Form' => 'Aquanode\Formation\Formation',
+	'Form' => 'Aquanode\Formation\Facade',
 
 You may use 'Formation', or another alias, but 'Form' is recommended for the sake of simplicity. Formation is now ready to go.
 
