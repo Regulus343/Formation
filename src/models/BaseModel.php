@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Input;
 
 use Aquanode\Formation\Facade as Form;
 
-use Regulus\TetraText\TetraText as Format;
+use Regulus\TetraText\Facade as Format;
 
 class BaseModel extends Eloquent {
 
