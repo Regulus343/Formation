@@ -17,7 +17,21 @@ class BaseModel extends Eloquent {
 	 *
 	 * @var    array
 	 */
-	protected static $types = array();
+	protected $types = array();
+
+	/**
+	 * The special formatted fields for the model.
+	 *
+	 * @var    array
+	 */
+	protected $formats = array();
+
+	/**
+	 * The special formatted fields for the model for saving to the database.
+	 *
+	 * @var    array
+	 */
+	protected $formatsForDb = array();
 
 	/**
 	 * The foreign key for the model.
@@ -46,7 +60,27 @@ class BaseModel extends Eloquent {
 	 */
 	public function getFieldTypes()
 	{
-		return static::$types;
+		return $this->types;
+	}
+
+	/**
+	 * Get the special formatted values for the model.
+	 *
+	 * @return array
+	 */
+	public function getFieldFormats()
+	{
+		return $this->formats;
+	}
+
+	/**
+	 * Get the special formatted values for DB insertion for the model.
+	 *
+	 * @return array
+	 */
+	public function getFieldFormatsForDb()
+	{
+		return $this->formatsForDb;
 	}
 
 	/**
@@ -88,11 +122,20 @@ class BaseModel extends Eloquent {
 	 */
 	public function getFormattedValues($relations = array())
 	{
+		//format fields based on field types
 		foreach ($this->getFieldTypes() as $field => $type) {
 			if (isset($this->{$field})) {
 				$value = $this->{$field};
 				$this->{$field} = static::formatValue($value, $type);
 			}
+		}
+
+		//format fields based on special format rules
+		foreach ($this->getFieldFormats() as $field => $formats) {
+			$fieldTested = isset($format[1]) ? $format[1] : $field;
+			$valueTested = $this->{$fieldTested} ? isset($this->{$field}) : null;
+
+			$this->{$field} = $this->formatValueFromSpecialFormats($field, $this->toArray(), $formats);
 		}
 
 		foreach ($relations as $relation) {
@@ -103,6 +146,11 @@ class BaseModel extends Eloquent {
 							$value = $item->{$field};
 							$item->{$field.'_formatted'} = static::formatValue($value, $type);
 						}
+					}
+
+					foreach ($item->getFieldFormats() as $field => $formats) {
+						if (isset($this->{$field}))
+							$this->{$field} = $this->formatValueFromSpecialFormats($this->{$field}, $formats);
 					}
 				}
 			}
@@ -121,8 +169,8 @@ class BaseModel extends Eloquent {
 	private static function formatValue($value, $type)
 	{
 		switch ($type) {
-			case "date":      $value = ($value != "0000-00-00" ? date(Form::getDateFormat(), strtotime($value)) : ""); break;
-			case "date-time": $value = ($value != "0000-00-00 00:00:00" ? date(Form::getDateTimeFormat(), strtotime($value)) : ""); break;
+			case "date":      $value = ($value != "0000-00-00" && $value != "" && !is_null($value) ? date(Form::getDateFormat(), strtotime($value)) : ""); break;
+			case "date-time": $value = ($value != "0000-00-00 00:00:00" && $value != "" && !is_null($value) ? date(Form::getDateTimeFormat(), strtotime($value)) : ""); break;
 		}
 
 		return $value;
@@ -183,18 +231,20 @@ class BaseModel extends Eloquent {
 		if (is_null($input))
 			$input = Input::all();
 
+		//format data for special types and special formats
 		$input = $this->formatValuesForTypes($input);
+		$input = $this->formatValuesForSpecialFormats($input);
 
 		foreach ($input as $field => $value) {
 			if (is_array($value)) {
 				$fieldCamelCase = Form::underscoredToCamelCase($field);
-				if (isset($this->{$fieldCamelCase}) || $this->{$fieldCamelCase}) {
+				if (isset($this->{$fieldCamelCase}) || $this->{$fieldCamelCase})
 					$this->saveRelationalData($value, $fieldCamelCase);
-				}
 			}
 		}
 
 		$this->fill($input);
+
 		$this->save();
 	}
 
@@ -232,8 +282,9 @@ class BaseModel extends Eloquent {
 								unset($item->{$field});
 						}
 
-						//format data for special types
+						//format data for special types and special formats
 						$itemData = $item->formatValuesForTypes($itemData);
+						$itemData = $item->formatValuesForSpecialFormats($itemData);
 
 						//save data
 						$item->fill($itemData)->save();
@@ -358,6 +409,103 @@ class BaseModel extends Eloquent {
 		}
 
 		return $values;
+	}
+
+	/**
+	 * Format values based on the model's special field types for data insertion into database.
+	 *
+	 * @param  array    $values
+	 * @return array
+	 */
+	public function formatValuesForSpecialFormats($values)
+	{
+		foreach ($this->getFieldFormatsForDb() as $field => $formats) {
+			if (isset($values[$field]))
+				$values[$field] = $this->formatValueFromSpecialFormats($field, $values, $formats);
+		}
+
+		return $values;
+	}
+
+	/**
+	 * Format values based on the model's special formats for data insertion into database.
+	 *
+	 * @param  string   $field
+	 * @param  array    $values
+	 * @param  array    $formats
+	 * @return array
+	 */
+	public function formatValueFromSpecialFormats($field, $values, $formats)
+	{
+		if (is_object($values))
+			$value = isset($values->{$field}) ? $values->{$field} : null;
+		else
+			$value = isset($values[$field]) ? $values[$field] : null;
+
+		if (is_string($formats))
+			$formats = [$formats];
+
+		foreach ($formats as $format) {
+			$format = explode(':', $format);
+
+			$fieldTested = isset($format[1]) && $format[1] != "" ? $format[1] : $field;
+			$valueTested = isset($values[$fieldTested]) ? $values[$fieldTested] : null;
+
+			switch ($format[0]) {
+				case "falseIfNull":
+					if (is_null($valueTested))
+						$value = false;
+
+					break;
+				case "trueIfNull":
+					if (is_null($valueTested))
+						$value = true;
+
+					break;
+				case "falseIfNotNull":
+					if (!is_null($valueTested))
+						$value = false;
+
+					break;
+				case "trueIfNotNull":
+					if (!is_null($valueTested))
+						$value = true;
+
+					break;
+				case "falseIfBlank":
+					if ($valueTested == "" || $valueTested == "0000-00-00" || $valueTested == "0000-00-00 00:00:00")
+						$value = false;
+
+					break;
+				case "trueIfBlank":
+					if ($valueTested == "" || $valueTested == "0000-00-00" || $valueTested == "0000-00-00 00:00:00")
+						$value = true;
+
+					break;
+				case "nullIfBlank":
+					if ($valueTested == "" || $valueTested == "0000-00-00" || $valueTested == "0000-00-00 00:00:00")
+						$value = null;
+
+					break;
+				case "falseIfNotBlank":
+					if ($valueTested != "")
+						$value = false;
+
+					break;
+				case "trueIfNotBlank":
+					if ($valueTested != "")
+						$value = true;
+
+					break;
+				case "nullIfNotBlank":
+					if ($valueTested != "")
+						$value = null;
+
+					break;
+			}
+		}
+
+		return $value;
 	}
 
 	/**
