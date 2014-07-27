@@ -3,7 +3,7 @@
 | Formation.js
 |------------------------------------------------------------------------------
 |
-| Last Updated: July 6, 2014
+| Last Updated: July 26, 2014
 |
 */
 
@@ -295,7 +295,8 @@ var Formation = {
 			optionValue:          'id',
 			optionLabel:          'name',
 			nullOption:           'Select an option',
-			optionsToggleElement: '#select-option-area'
+			optionsToggleElement: '#select-option-area',
+			callbackFunction:     'updateSomething'
 		});
 
 		You may use an array like [{id: 1, name: 'Option 1'}, {id: 2, name: 'Option 2'}] and set settings.optionValue and settings.optionValue
@@ -339,6 +340,10 @@ var Formation = {
 				$(settings.optionsToggleElement).addClass('hidden');
 			}
 		}
+
+		//show or hide an element depending on whether options are available in select box
+		if (settings.callbackFunction !== undefined)
+			settings.callbackFunction();
 	},
 
 	/*

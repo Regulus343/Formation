@@ -5,7 +5,7 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman / Aquanode - http://aquanode.com
-		version 0.6.2
+		version 0.6.3
 		last updated on July 26, 2014
 ----------------------------------------------------------------------------------------------------------*/
 

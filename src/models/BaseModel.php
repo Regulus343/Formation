@@ -235,6 +235,9 @@ class BaseModel extends Eloquent {
 		$input = $this->formatValuesForTypes($input);
 		$input = $this->formatValuesForSpecialFormats($input);
 
+		$this->fill($input);
+		$this->save();
+
 		foreach ($input as $field => $value) {
 			if (is_array($value)) {
 				$fieldCamelCase = Form::underscoredToCamelCase($field);
@@ -242,10 +245,6 @@ class BaseModel extends Eloquent {
 					$this->saveRelationalData($value, $fieldCamelCase);
 			}
 		}
-
-		$this->fill($input);
-
-		$this->save();
 	}
 
 	/**
@@ -326,6 +325,8 @@ class BaseModel extends Eloquent {
 				$itemData = $item->formatValuesForTypes($itemData);
 
 				$item->fill($itemData)->save();
+
+				$currentItem = $item;
 
 				if (!in_array((int) $item->id, $idsSaved))
 					$idsSaved[] = (int) $item->id;
