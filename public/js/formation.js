@@ -3,7 +3,7 @@
 | Formation.js
 |------------------------------------------------------------------------------
 |
-| Last Updated: July 26, 2014
+| Last Updated: September 9, 2014
 |
 */
 
@@ -367,9 +367,15 @@ var Formation = {
 		if there are select options and hidden if there are none.
 	*/
 	ajaxForSelect: function(settings) {
+		if (settings.type === undefined)
+			settings.type = 'post';
+
+		if (settings.postData === undefined)
+			settings.postData = {};
+
 		return $.ajax({
 			url: settings.url,
-			type: 'post',
+			type: settings.type,
 			data: settings.postData,
 			dataType: 'json',
 			success: function(data) {
