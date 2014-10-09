@@ -1,4 +1,4 @@
-<?php namespace Aquanode\Formation;
+<?php namespace Regulus\Formation;
 
 use Illuminate\Database\Eloquent\Model as Eloquent;
 
@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
 
-use Aquanode\Formation\Facade as Form;
+use Regulus\Formation\Facade as Form;
 
 use Regulus\TetraText\Facade as Format;
 

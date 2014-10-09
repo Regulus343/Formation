@@ -1,11 +1,11 @@
 {
-	"name": "aquanode/formation",
+	"name": "regulus/formation",
 	"description": "A powerful form creation composer package for Laravel 4.",
 	"license": "MIT",
 	"authors": [
 		{
 			"name": "Cody Jassman",
-			"email": "cody@aquanode.com"
+			"email": "me@codyjassman.com"
 		}
 	],
 	"require": {
@@ -19,7 +19,7 @@
 			"src/models"
 		],
 		"psr-0": {
-			"Aquanode\\Formation": "src/"
+			"Regulus\\Formation": "src/"
 		}
 	},
 	"minimum-stability": "dev"
