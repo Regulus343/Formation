@@ -70,19 +70,19 @@ With this form, we can validate just the fields in the user array with `Form::va
 <a name="installation"></a>
 ## Installation
 
-To install Formation, make sure "aquanode/formation" has been added to Laravel 4's `composer.json` file.
+To install Formation, make sure `regulus/formation` has been added to Laravel 4's `composer.json` file.
 
 	"require": {
-		"aquanode/formation": "dev-master"
+		"regulus/formation": "dev-master"
 	},
 
 Then run `php composer.phar update` from the command line. Composer will install the Formation package. Now, all you have to do is register the service provider and set up Formation's alias in `app/config/app.php`. Add this to the `providers` array:
 
-	'Aquanode\Formation\FormationServiceProvider',
+	'Regulus\Formation\FormationServiceProvider',
 
 And add this to the `aliases` array:
 
-	'Form' => 'Aquanode\Formation\Facade',
+	'Form' => 'Regulus\Formation\Facade',
 
 You may use 'Formation', or another alias, but 'Form' is recommended for the sake of simplicity. Formation is now ready to go.
 
@@ -138,8 +138,10 @@ Laravel provides an easy method of protecting your application from cross-site r
 
 One of the most useful features of Formation is its ability to take an array, object, or Eloquent model and use it to populate form fields automatically. When the form is posted, it will automatically make use of the values in the POSt array instead.
 
-	$defaults = array('name' =>  'Cody Jassman',
-					  'email' => 'cody@aquanode.com');
+	$defaults = array(
+		'name'  => 'Cody Jassman',
+		'email' => 'me@codyjassman.com',
+	);
 	Form::setDefaults($defaults);
 
 > **Note:** If you want to use array fields names instead, use, for example, `user.name` and `user.email` instead of `name` and `email`.
