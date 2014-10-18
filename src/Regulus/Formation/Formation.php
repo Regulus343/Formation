@@ -5,8 +5,8 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.6.3
-		last updated on October 8, 2014
+		version 0.6.4
+		last updated on October 18, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\FormBuilder;
@@ -27,21 +27,21 @@ class Formation extends FormBuilder {
 	 *
 	 * @var array
 	 */
-	protected $defaults = array();
+	protected $defaults = [];
 
 	/**
 	 * The labels for form fields.
 	 *
 	 * @var array
 	 */
-	protected $labels = array();
+	protected $labels = [];
 
 	/**
 	 * The access keys for form fields.
 	 *
 	 * @var array
 	 */
-	protected $accessKeys = array();
+	protected $accessKeys = [];
 
 	/**
 	 * The validation rules (routed through Formation's validation() method to Validator library to allow
@@ -49,28 +49,28 @@ class Formation extends FormBuilder {
 	 *
 	 * @var array
 	 */
-	protected $validation = array();
+	protected $validation = [];
 
 	/**
 	 * The form fields to be validated.
 	 *
 	 * @var array
 	 */
-	protected $validationFields = array();
+	protected $validationFields = [];
 
 	/**
 	 * The form values array or object.
 	 *
 	 * @var array
 	 */
-	protected $values = array();
+	protected $values = [];
 
 	/**
 	 * The form errors.
 	 *
 	 * @var array
 	 */
-	protected $errors = array();
+	protected $errors = [];
 
 	/**
 	 * Whether form fields are being reset to their default values rather than the POSTed values.
@@ -114,7 +114,7 @@ class Formation extends FormBuilder {
 	 * @param  mixed    $prefix
 	 * @return array
 	 */
-	public function setDefaults($defaults = array(), $relations = array(), $prefix = null)
+	public function setDefaults($defaults = [], $relations = [], $prefix = null)
 	{
 		//check if relations is an associative array
 		$associative = (bool) count(array_filter(array_keys((array) $relations), 'is_string'));
@@ -217,7 +217,7 @@ class Formation extends FormBuilder {
 	 * @param  array    $defaults
 	 * @return void
 	 */
-	private function formatDefaults($defaults = array())
+	private function formatDefaults($defaults = [])
 	{
 		foreach ($defaults as $field => $value) {
 			$fieldArray = explode('.', $field);
@@ -258,7 +258,7 @@ class Formation extends FormBuilder {
 	 * @return mixed
 	 */
 	public function getValuesArray($name = null, $object = false, $defaults = false) {
-		$result = array();
+		$result = [];
 
 		if (!$defaults && Input::all() || Input::old()) {
 			if (Input::all())
@@ -289,7 +289,7 @@ class Formation extends FormBuilder {
 			if (isset($result[$name]))
 				$result = $result[$name];
 			else
-				$result = array();
+				$result = [];
 		}
 
 		if ($object)
@@ -396,7 +396,7 @@ class Formation extends FormBuilder {
 	 * @param  array    $defaults
 	 * @return void
 	 */
-	public function resetDefaults($defaults = array())
+	public function resetDefaults($defaults = [])
 	{
 		if (!empty($defaults)) $this->setDefaults($defaults); //if new defaults are set, pass them to $this->defaults
 		$this->reset = true;
@@ -408,9 +408,11 @@ class Formation extends FormBuilder {
 	 * @param  array    $labels
 	 * @return void
 	 */
-	public function setLabels($labels = array())
+	public function setLabels($labels = [])
 	{
-		if (is_object($labels)) $labels = (array) $labels;
+		if (is_object($labels))
+			$labels = (array) $labels;
+
 		$this->labels = $labels;
 	}
 
@@ -422,9 +424,9 @@ class Formation extends FormBuilder {
 	 * @param  mixed    $prefix
 	 * @return array
 	 */
-	public function setValidationRules($rules = array(), $prefix = null)
+	public function setValidationRules($rules = [], $prefix = null)
 	{
-		$rulesFormatted = array();
+		$rulesFormatted = [];
 		foreach ($rules as $name => $rulesItem) {
 			if (!is_null($prefix))
 				$name = $prefix.'.'.$name;
@@ -445,7 +447,9 @@ class Formation extends FormBuilder {
 				$this->validation['root'] = Validator::make(Input::all(), $rules);
 			} else {
 				$data = Input::get($name);
-				if (is_null($data)) $data = array();
+				if (is_null($data))
+					$data = [];
+
 				$this->validation[$name] = Validator::make($data, $rules);
 			}
 		}
@@ -490,11 +494,11 @@ class Formation extends FormBuilder {
 	 * @param  array    $form
 	 * @return array
 	 */
-	public function setup($form = array())
+	public function setup($form = [])
 	{
-		$labels   = array();
-		$rules    = array();
-		$defaults = array();
+		$labels   = [];
+		$rules    = [];
+		$defaults = [];
 
 		if (is_object($form))
 			$form = (array) $form;
@@ -558,7 +562,7 @@ class Formation extends FormBuilder {
 			return $route;
 
 		return array_merge(
-			array(Route::currentRouteName()),
+			[Route::currentRouteName()],
 			array_values(Route::getCurrentRoute()->parameters())
 		);
 	}
@@ -569,7 +573,7 @@ class Formation extends FormBuilder {
 	 * @param  array    $options
 	 * @return string
 	 */
-	public function open(array $options = array())
+	public function open(array $options = [])
 	{
 		$method = array_get($options, 'method', 'post');
 
@@ -616,8 +620,9 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function openResource(array $attributes = array())
+	public function openResource(array $attributes = [])
 	{
+		var_dump('x'); exit;
 		$route = $this->route();
 
 		//set method based on action
@@ -626,10 +631,10 @@ class Formation extends FormBuilder {
 		$route[0] = str_replace('create', 'store', $route[0]);
 		$route[0] = str_replace('edit', 'update', $route[0]);
 
-		$options = array_merge(array(
+		$options = array_merge([
 			'route'  => $route,
 			'method' => $method,
-		), $attributes);
+		], $attributes);
 
 		return $this->open($options);
 	}
@@ -714,7 +719,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $fields
 	 * @return mixed
 	 */
-	public function addValues($data = array(), $fields = array())
+	public function addValues($data = [], $fields = [])
 	{
 		$associative = (bool) count(array_filter(array_keys((array) $fields), 'is_string'));
 
@@ -764,7 +769,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $checkboxes
 	 * @return mixed
 	 */
-	public function addCheckboxValues($data = array(), $checkboxes = array())
+	public function addCheckboxValues($data = [], $checkboxes = [])
 	{
 		foreach ($checkboxes as $checkbox) {
 			$value = $this->value($checkbox, 'checkbox');
@@ -824,7 +829,7 @@ class Formation extends FormBuilder {
 	 * @param  boolean $save
 	 * @return string
 	 */
-	public function label($name = null, $label = null, $attributes = array(), $save = true)
+	public function label($name = null, $label = null, $attributes = [], $save = true)
 	{
 		$attributes = $this->addErrorClass($name, $attributes);
 
@@ -949,7 +954,7 @@ class Formation extends FormBuilder {
 	 * @param  boolean $returnLowercase
 	 * @return array
 	 */
-	public function addAccessKey($name, $label = null, $attributes = array(), $returnLowercase = true)
+	public function addAccessKey($name, $label = null, $attributes = [], $returnLowercase = true)
 	{
 		if (!isset($attributes['accesskey']) || (!is_string($attributes['accesskey']) && $attributes['accesskey'] === true)) {
 			$accessKey = false;
@@ -962,7 +967,7 @@ class Formation extends FormBuilder {
 			}
 
 			$label = strtr($label, 'Ã Ã¡Ã¢Ã£Ã¤Ã§Ã¨Ã©ÃªÃ«Ã¬Ã­Ã®Ã¯Ã±Ã²Ã³Ã´ÃµÃ¶Ã¹ÃºÃ»Ã¼Ã½Ã¿Ã€ÃÃ‚ÃƒÃ„Ã‡ÃˆÃ‰ÃŠÃ‹ÃŒÃÃŽÃÃ‘Ã’Ã“Ã”Ã•Ã–Ã™ÃšÃ›ÃœÃ', 'aaaaaceeeeiiiinooooouuuuyyAAAAACEEEEIIIINOOOOOUUUUY');
-			$ignoreCharacters = array(' ', '/', '!', '@', '#', '$', '%', '^', '*', '(', ')', '-', '_', '+', '=', '\\', '~', '?', '{', '}', '[', ']', '.');
+			$ignoreCharacters = [' ', '/', '!', '@', '#', '$', '%', '^', '*', '(', ')', '-', '_', '+', '=', '\\', '~', '?', '{', '}', '[', ']', '.'];
 
 			//first check to see if an accesskey is already set for this field
 			foreach ($this->accessKeys as $character => $nameAccessKey) {
@@ -997,7 +1002,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	protected function id($name, $attributes = array())
+	protected function id($name, $attributes = [])
 	{
 		// If an ID has been explicitly specified in the attributes, we will
 		// use that ID. Otherwise, we will look for an ID in the array of
@@ -1038,9 +1043,9 @@ class Formation extends FormBuilder {
 	 * @param  string  $type
 	 * @return array
 	 */
-	protected function setFieldClass($name, $attributes = array(), $type = 'text')
+	protected function setFieldClass($name, $attributes = [], $type = 'text')
 	{
-		if (!in_array($type, array('hidden', 'checkbox', 'radio'))) {
+		if (!in_array($type, ['hidden', 'checkbox', 'radio'])) {
 			$defaultClass = Config::get('formation::field.class');
 			if ($defaultClass != "") {
 				if (isset($attributes['class']) && $attributes['class'] != "") {
@@ -1093,7 +1098,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return array
 	 */
-	protected function setFieldPlaceholder($name, $attributes = array())
+	protected function setFieldPlaceholder($name, $attributes = [])
 	{
 		$placeholder = Config::get('formation::field.autoPlaceholder');
 		if ($placeholder && !isset($attributes['placeholder'])) {
@@ -1120,7 +1125,7 @@ class Formation extends FormBuilder {
 	 */
 	public function attributes($attributes)
 	{
-		$html = array();
+		$html = [];
 
 		foreach ((array) $attributes as $key => $value)
 		{
@@ -1159,7 +1164,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function field($name, $type = null, $attributes = array())
+	public function field($name, $type = null, $attributes = [])
 	{
 		//set any field named "submit" to a "submit" field automatically and set it's type to attributes to
 		//to simplify creation of "submit" fields with field() macro
@@ -1170,11 +1175,29 @@ class Formation extends FormBuilder {
 				$type = "submit";
 			}
 
-			$types = array('text', 'search', 'password', 'url', 'number', 'date', 'textarea', 'hidden', 'select', 'checkbox', 'radio', 'checkbox-set', 'radio-set', 'file', 'button', 'submit');
-			if (!is_array($type) && !in_array($type, array($types))) {
+			$types = [
+				'text',
+				'search',
+				'password',
+				'url',
+				'number',
+				'date',
+				'textarea',
+				'hidden',
+				'select',
+				'checkbox',
+				'radio',
+				'checkbox-set',
+				'radio-set',
+				'file',
+				'button',
+				'submit',
+			];
+
+			if (!is_array($type) && !in_array($type, $types)) {
 				$name = $type;
 				$type = "submit";
-				$attributes = array();
+				$attributes = [];
 			}
 		}
 
@@ -1192,10 +1215,10 @@ class Formation extends FormBuilder {
 		}
 		if (is_null($label)) $fieldLabel = false;
 
-		if (!is_array($attributes)) $attributes = array();
+		if (!is_array($attributes)) $attributes = [];
 
 		//allow options for select, radio-set, and checkbox-set to be set via attributes array
-		$options = array();
+		$options = [];
 		if (isset($attributes['options'])) {
 			$options = $attributes['options'];
 			unset($attributes['options']);
@@ -1222,7 +1245,7 @@ class Formation extends FormBuilder {
 		if (is_null($type)) $type = "text";
 
 		//set attributes up for label and field (remove element-specific attributes from label and vice versa)
-		$attributesLabel = array();
+		$attributesLabel = [];
 		foreach ($attributes as $key => $attribute) {
 			if (substr($key, -6) != "-field" && substr($key, -10) != "-container" && $key != "id") {
 				$key = str_replace('-label', '', $key);
@@ -1233,7 +1256,7 @@ class Formation extends FormBuilder {
 			}
 		}
 
-		$attributesField = array();
+		$attributesField = [];
 		foreach ($attributes as $key => $attribute) {
 			if (substr($key, -6) != "-label" && substr($key, -16) != "-field-container") {
 				$key = str_replace('-field', '', $key);
@@ -1241,7 +1264,7 @@ class Formation extends FormBuilder {
 			}
 		}
 
-		$attributesFieldContainer = array();
+		$attributesFieldContainer = [];
 		foreach ($attributes as $key => $attribute) {
 			if (substr($key, -16) == "-field-container") {
 				$key = str_replace('-field-container', '', $key);
@@ -1369,10 +1392,10 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function input($type, $name, $value = null, $attributes = array())
+	public function input($type, $name, $value = null, $attributes = [])
 	{
 		//automatically set placeholder attribute if config option is set
-		if (!in_array($type, array('hidden', 'checkbox', 'radio')))
+		if (!in_array($type, ['hidden', 'checkbox', 'radio']))
 			$attributes = $this->setFieldPlaceholder($name, $attributes);
 
 		//add the field class if config option is set
@@ -1409,7 +1432,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function text($name, $value = null, $attributes = array())
+	public function text($name, $value = null, $attributes = [])
 	{
 		return $this->input('text', $name, $value, $attributes);
 	}
@@ -1421,7 +1444,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function password($name, $attributes = array())
+	public function password($name, $attributes = [])
 	{
 		return $this->input('password', $name, null, $attributes);
 	}
@@ -1434,7 +1457,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function hidden($name, $value = null, $attributes = array())
+	public function hidden($name, $value = null, $attributes = [])
 	{
 		return $this->input('hidden', $name, $value, $attributes);
 	}
@@ -1447,7 +1470,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function search($name, $value = null, $attributes = array())
+	public function search($name, $value = null, $attributes = [])
 	{
 		return $this->input('search', $name, $value, $attributes);
 	}
@@ -1460,7 +1483,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function email($name, $value = null, $attributes = array())
+	public function email($name, $value = null, $attributes = [])
 	{
 		return $this->input('email', $name, $value, $attributes);
 	}
@@ -1473,7 +1496,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function telephone($name, $value = null, $attributes = array())
+	public function telephone($name, $value = null, $attributes = [])
 	{
 		return $this->input('tel', $name, $value, $attributes);
 	}
@@ -1486,7 +1509,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function url($name, $value = null, $attributes = array())
+	public function url($name, $value = null, $attributes = [])
 	{
 		return $this->input('url', $name, $value, $attributes);
 	}
@@ -1499,7 +1522,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function number($name, $value = null, $attributes = array())
+	public function number($name, $value = null, $attributes = [])
 	{
 		return $this->input('number', $name, $value, $attributes);
 	}
@@ -1512,7 +1535,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function date($name, $value = null, $attributes = array())
+	public function date($name, $value = null, $attributes = [])
 	{
 		return $this->input('date', $name, $value, $attributes);
 	}
@@ -1524,7 +1547,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function file($name, $attributes = array())
+	public function file($name, $attributes = [])
 	{
 		return $this->input('file', $name, null, $attributes);
 	}
@@ -1537,7 +1560,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function textarea($name, $value = null, $attributes = array())
+	public function textarea($name, $value = null, $attributes = [])
 	{
 		$attributes['name'] = $name;
 		$attributes['id'] = $this->id($name, $attributes);
@@ -1565,10 +1588,10 @@ class Formation extends FormBuilder {
 	 *
 	 * <code>
 	 *		// Create a HTML select element filled with options
-	 *		echo Form::select('sizes', array('S' => 'Small', 'L' => 'Large'));
+	 *		echo Form::select('sizes', [('S' => 'Small', 'L' => 'Large']);
 	 *
 	 *		// Create a select element with a default selected value
-	 *		echo Form::select('sizes', array('S' => 'Small', 'L' => 'Large'), 'Select a size', 'L');
+	 *		echo Form::select('sizes', ['S' => 'Small', 'L' => 'Large'], 'Select a size', 'L');
 	 * </code>
 	 *
 	 * @param  string  $name
@@ -1578,7 +1601,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function select($name, $options = array(), $nullOption = null, $selected = null, $attributes = array())
+	public function select($name, $options = [], $nullOption = null, $selected = null, $attributes = [])
 	{
 		if (!isset($attributes['id'])) $attributes['id'] = $this->id($name, $attributes);
 		$attributes['name'] = $name;
@@ -1589,7 +1612,7 @@ class Formation extends FormBuilder {
 
 		if (is_null($selected)) $selected = $this->value($name);
 
-		$html = array();
+		$html = [];
 		if (!is_null($nullOption)) {
 			$html[] = $this->option('', $nullOption, $selected);
 
@@ -1623,7 +1646,7 @@ class Formation extends FormBuilder {
 	 */
 	protected function optgroup($options, $label, $selected)
 	{
-		$html = array();
+		$html = [];
 
 		foreach ($options as $value => $display) {
 			$html[] = $this->option($value, $display, $selected);
@@ -1642,12 +1665,15 @@ class Formation extends FormBuilder {
 	 */
 	protected function option($value, $display, $selected)
 	{
-		if (is_array($selected)) {
+		if (is_array($selected))
 			$selected = (in_array($value, $selected)) ? 'selected' : null;
-		} else {
+		else
 			$selected = ((string) $value == (string) $selected) ? 'selected' : null;
-		}
-		$attributes = array('value' => $this->entities($value), 'selected' => $selected);
+
+		$attributes = [
+			'value'    => $this->entities($value),
+			'selected' => $selected,
+		];
 
 		return '<option'.$this->attributes($attributes).'>'.$this->entities($display).'</option>';
 	}
@@ -1662,13 +1688,13 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function selectTime($namePrefix = 'time', $selected = null, $attributes = array())
+	public function selectTime($namePrefix = 'time', $selected = null, $attributes = [])
 	{
 		$html = "";
 		if ($namePrefix != "" && substr($namePrefix, -1) != "_") $namePrefix .= "_";
 
 		//create hour field
-		$hoursOptions = array();
+		$hoursOptions = [];
 		for ($h=0; $h <= 12; $h++) {
 			$hour = sprintf('%02d', $h);
 			if ($hour == 12) {
@@ -1689,7 +1715,7 @@ class Formation extends FormBuilder {
 		$html .= '<span class="time-hour-minutes-separator">:</span>' . "\n";
 
 		//create minutes field
-		$minutesOptions = array();
+		$minutesOptions = [];
 		for ($m=0; $m < 60; $m++) {
 			$minute = sprintf('%02d', $m);
 			$minutesOptions[$minute] = $minute;
@@ -1703,7 +1729,7 @@ class Formation extends FormBuilder {
 		$html .= $this->select($namePrefix.'minutes', $minutesOptions, null, null, $attributesMinutes);
 
 		//create meridiem field
-		$meridiemOptions = $this->simpleOptions(array('am', 'pm'));
+		$meridiemOptions = $this->simpleOptions(['am', 'pm']);
 		$attributesMeridiem = $attributes;
 		if (isset($attributesMeridiem['class'])) {
 			$attributesMeridiem['class'] .= " time time-meridiem";
@@ -1723,10 +1749,10 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function checkboxSet($names = array(), $namePrefix = null, $attributes = array())
+	public function checkboxSet($names = [], $namePrefix = null, $attributes = [])
 	{
 		if (!empty($names) && is_array($names)) {
-			$containerAttributes = array('class'=> 'checkbox-set');
+			$containerAttributes = ['class' => 'checkbox-set'];
 			foreach ($attributes as $attribute => $value) {
 
 				//appending "-container" to attributes means they apply to the
@@ -1785,8 +1811,10 @@ class Formation extends FormBuilder {
 				}
 
 				//add selected class to list item if checkbox is checked to allow styling for selected checkboxes in set
-				$subContainerAttributes = array('class' => 'checkbox');
-				if ($checked) $subContainerAttributes['class'] .= ' selected';
+				$subContainerAttributes = ['class' => 'checkbox'];
+				if ($checked)
+					$subContainerAttributes['class'] .= ' selected';
+
 				$checkbox = '<div'.$this->attributes($subContainerAttributes).'>' . "\n";
 
 				$checkboxAttributes = $attributes;
@@ -1796,7 +1824,7 @@ class Formation extends FormBuilder {
 				if (isset($checkboxAttributes['name-values'])) unset($checkboxAttributes['name-values']);
 
 				$checkbox .= $this->checkbox($name, $value, $checked, $checkboxAttributes);
-				$checkbox .= $this->label($name, $display, array('accesskey' => false));
+				$checkbox .= $this->label($name, $display, ['accesskey' => false]);
 
 				$checkbox .= '</div>' . "\n";
 				$html .= $checkbox;
@@ -1824,7 +1852,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function checkbox($name, $value = 1, $checked = false, $attributes = array())
+	public function checkbox($name, $value = 1, $checked = false, $attributes = [])
 	{
 		if ($value == $this->value($name))
 			$checked = true;
@@ -1844,10 +1872,10 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function radioSet($name, $options = array(), $selected = null, $attributes = array())
+	public function radioSet($name, $options = [], $selected = null, $attributes = [])
 	{
 		if (!empty($options) && is_array($options)) {
-			$containerAttributes = array('class'=> 'radio-set');
+			$containerAttributes = ['class' => 'radio-set'];
 			foreach ($attributes as $attribute => $value) {
 
 				//appending "-container" to attributes means they apply to the
@@ -1876,8 +1904,10 @@ class Formation extends FormBuilder {
 				}
 
 				//add selected class to list item if radio button is set to allow styling for selected radio buttons in set
-				$subContainerAttributes = array('class' => 'radio');
-				if ($checked) $subContainerAttributes['class'] .= ' selected';
+				$subContainerAttributes = ['class' => 'radio'];
+				if ($checked)
+					$subContainerAttributes['class'] .= ' selected';
+
 				$radioButton = '<div'.$this->attributes($subContainerAttributes).'>' . "\n";
 
 				//append radio button value to the end of ID to prevent all radio buttons from having the same ID
@@ -1911,7 +1941,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function radio($name, $value = null, $checked = false, $attributes = array())
+	public function radio($name, $value = null, $checked = false, $attributes = [])
 	{
 		if (is_null($value)) $value = $name;
 		if ((string) $value === $this->value($name)) $checked = true;
@@ -1947,9 +1977,9 @@ class Formation extends FormBuilder {
 	 * @param  array   $vars
 	 * @return array
 	 */
-	public function prepOptions($options = array(), $vars = array())
+	public function prepOptions($options = [], $vars = [])
 	{
-		$optionsFormatted = array();
+		$optionsFormatted = [];
 
 		//turn Eloquent instances into an array
 		$optionsArray = $options;
@@ -2001,12 +2031,13 @@ class Formation extends FormBuilder {
 	 * @param  array   $options
 	 * @return array
 	 */
-	public function simpleOptions($options = array())
+	public function simpleOptions($options = [])
 	{
-		$optionsFormatted = array();
+		$optionsFormatted = [];
 		foreach ($options as $option) {
 			$optionsFormatted[$option] = $option;
 		}
+
 		return $optionsFormatted;
 	}
 
@@ -2017,12 +2048,13 @@ class Formation extends FormBuilder {
 	 * @param  array   $options
 	 * @return array
 	 */
-	public function offsetOptions($options = array())
+	public function offsetOptions($options = [])
 	{
-		$optionsFormatted = array();
+		$optionsFormatted = [];
 		for ($o=0; $o < count($options); $o++) {
 			$optionsFormatted[($o + 1)] = $options[$o];
 		}
+
 		return $optionsFormatted;
 	}
 
@@ -2038,7 +2070,7 @@ class Formation extends FormBuilder {
 	 */
 	public function numberOptions($start = 1, $end = 10, $increment = 1, $decimals = 0)
 	{
-		$options = array();
+		$options = [];
 		if (is_numeric($start) && is_numeric($end)) {
 			if ($start <= $end) {
 				for ($o = $start; $o <= $end; $o += $increment) {
@@ -2070,7 +2102,7 @@ class Formation extends FormBuilder {
 	 */
 	public function countryOptions()
 	{
-		return $this->simpleOptions(array(
+		return $this->simpleOptions([
 			'Canada', 'United States', 'Afghanistan', 'Albania', 'Algeria', 'American Samoa', 'Andorra', 'Angola', 'Anguilla', 'Antarctica', 'Antigua And Barbuda', 'Argentina', 'Armenia', 'Aruba',
 			'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bermuda', 'Bhutan', 'Bolivia', 'Bosnia And Herzegowina',
 		 	'Botswana', 'Bouvet Island', 'Brazil', 'British Indian Ocean Territory', 'Brunei Darussalam', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Cape Verde', 'Cayman Islands',
@@ -2090,8 +2122,8 @@ class Formation extends FormBuilder {
 		 	'Svalbard And Jan Mayen Islands', 'Swaziland', 'Sweden', 'Switzerland', 'Syrian Arab Republic', 'Taiwan', 'Tajikistan', 'Tanzania, United Republic Of', 'Thailand', 'Togo', 'Tokelau', 'Tonga',
 		 	'Trinidad And Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Turks And Caicos Islands', 'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom',
 		 	'United States Minor Outlying Islands', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Venezuela', 'Viet Nam', 'Virgin Islands (British)', 'Virgin Islands (U.S.)', 'Wallis And Futuna Islands',
-		 	'Western Sahara', 'Yemen', 'Yugoslavia', 'Zambia', 'Zimbabwe'
-		));
+		 	'Western Sahara', 'Yemen', 'Yugoslavia', 'Zambia', 'Zimbabwe',
+		]);
 	}
 
 	/**
@@ -2102,15 +2134,26 @@ class Formation extends FormBuilder {
 	 */
 	public function provinceOptions($useAbbrev = true)
 	{
-		$provinces = array(
-			'AB' => 'Alberta', 'BC' => 'British Columbia', 'MB' => 'Manitoba', 'NB' => 'New Brunswick', 'NL' => 'Newfoundland', 'NT' => 'Northwest Territories', 'NS' => 'Nova Scotia',
-			'NU' => 'Nunavut', 'ON' => 'Ontario', 'PE' => 'Prince Edward Island', 'QC' => 'Quebec', 'SK' => 'Saskatchewan', 'YT' => 'Yukon Territory'
-		);
-		if ($useAbbrev) {
+		$provinces = [
+			'AB' => 'Alberta',
+			'BC' => 'British Columbia',
+			'MB' => 'Manitoba',
+			'NB' => 'New Brunswick',
+			'NL' => 'Newfoundland',
+			'NT' => 'Northwest Territories',
+			'NS' => 'Nova Scotia',
+			'NU' => 'Nunavut',
+			'ON' => 'Ontario',
+			'PE' => 'Prince Edward Island',
+			'QC' => 'Quebec',
+			'SK' => 'Saskatchewan',
+			'YT' => 'Yukon Territory',
+		];
+
+		if ($useAbbrev)
 			return $provinces;
-		} else {
+		else
 			return $this->simpleOptions(array_values($provinces)); //remove abbreviation keys
-		}
 	}
 
 	/**
@@ -2121,19 +2164,66 @@ class Formation extends FormBuilder {
 	 */
 	public function stateOptions($useAbbrev = true)
 	{
-		$states = array(
-			'AL' => 'Alabama', 'AK' => 'Alaska', 'AZ' => 'Arizona', 'AR' => 'Arkansas', 'CA' => 'California', 'CO' => 'Colorado', 'CT' => 'Connecticut', 'DE' => 'Delaware', 'DC' => 'District of Columbia',
-			'FL' => 'Florida', 'GA' => 'Georgia', 'HI' => 'Hawaii', 'ID' => 'Idaho', 'IL' => 'Illinois', 'IN' => 'Indiana', 'IA' => 'Iowa', 'KS' => 'Kansas', 'KY' => 'Kentucky', 'LA' => 'Louisiana', 'ME' => 'Maine',
-			'MD' => 'Maryland', 'MA' => 'Massachusetts', 'MI' => 'Michigan', 'MN' => 'Minnesota', 'MS' => 'Mississippi', 'MO' => 'Missouri', 'MT' => 'Montana', 'NE' => 'Nebraska', 'NV' => 'Nevada',
-			'NH' => 'New Hampshire', 'NJ' => 'New Jersey', 'NM' => 'New Mexico', 'NY' => 'New York', 'NC' => 'North Carolina', 'ND' => 'North Dakota', 'OH' => 'Ohio', 'OK' => 'Oklahoma', 'OR' => 'Oregon',
-			'PA' => 'Pennsylvania', 'PR' => 'Puerto Rico', 'RI' => 'Rhode Island', 'SC' => 'South Carolina', 'SD' => 'South Dakota', 'TN' => 'Tennessee', 'TX' => 'Texas', 'UT' => 'Utah', 'VT' => 'Vermont',
-			'VA' => 'Virginia', 'VI' => 'Virgin Islands', 'WA' => 'Washington', 'WV' => 'West Virginia', 'WI' => 'Wisconsin', 'WY' => 'Wyoming'
-		);
-		if ($useAbbrev) {
+		$states = [
+			'AL' => 'Alabama',
+			'AK' => 'Alaska',
+			'AZ' => 'Arizona',
+			'AR' => 'Arkansas',
+			'CA' => 'California',
+			'CO' => 'Colorado',
+			'CT' => 'Connecticut',
+			'DE' => 'Delaware',
+			'DC' => 'District of Columbia',
+			'FL' => 'Florida',
+			'GA' => 'Georgia',
+			'HI' => 'Hawaii',
+			'ID' => 'Idaho',
+			'IL' => 'Illinois',
+			'IN' => 'Indiana',
+			'IA' => 'Iowa',
+			'KS' => 'Kansas',
+			'KY' => 'Kentucky',
+			'LA' => 'Louisiana',
+			'ME' => 'Maine',
+			'MD' => 'Maryland',
+			'MA' => 'Massachusetts',
+			'MI' => 'Michigan',
+			'MN' => 'Minnesota',
+			'MS' => 'Mississippi',
+			'MO' => 'Missouri',
+			'MT' => 'Montana',
+			'NE' => 'Nebraska',
+			'NV' => 'Nevada',
+			'NH' => 'New Hampshire',
+			'NJ' => 'New Jersey',
+			'NM' => 'New Mexico',
+			'NY' => 'New York',
+			'NC' => 'North Carolina',
+			'ND' => 'North Dakota',
+			'OH' => 'Ohio',
+			'OK' => 'Oklahoma',
+			'OR' => 'Oregon',
+			'PA' => 'Pennsylvania',
+			'PR' => 'Puerto Rico',
+			'RI' => 'Rhode Island',
+			'SC' => 'South Carolina',
+			'SD' => 'South Dakota',
+			'TN' => 'Tennessee',
+			'TX' => 'Texas',
+			'UT' => 'Utah',
+			'VT' => 'Vermont',
+			'VA' => 'Virginia',
+			'VI' => 'Virgin Islands',
+			'WA' => 'Washington',
+			'WV' => 'West Virginia',
+			'WI' => 'Wisconsin',
+			'WY' => 'Wyoming',
+		];
+
+		if ($useAbbrev)
 			return $states;
-		} else {
+		else
 			return $this->simpleOptions(array_values($states)); //remove abbreviation keys
-		}
 	}
 
 	/**
@@ -2145,17 +2235,17 @@ class Formation extends FormBuilder {
 	 */
 	public function timeOptions($minutes = 'half')
 	{
-		$times = array();
-		$minutesOptions = array('00');
+		$times = [];
+		$minutesOptions = ['00'];
 		switch ($minutes) {
 			case "full":
-				$minutesOptions = array('00'); break;
+				$minutesOptions = ['00']; break;
 			case "half":
-				$minutesOptions = array('00', '30'); break;
+				$minutesOptions = ['00', '30']; break;
 			case "quarter":
-				$minutesOptions = array('00', '15', '30', '45'); break;
+				$minutesOptions = ['00', '15', '30', '45']; break;
 			case "all":
-				$minutesOptions = array();
+				$minutesOptions = [];
 				for ($m=0; $m < 60; $m++) {
 					$minutesOptions[] = sprintf('%02d', $m);
 				}
@@ -2212,7 +2302,7 @@ class Formation extends FormBuilder {
 		}
 
 		//create list of months
-		$options = array();
+		$options = [];
 		$month   = $start;
 		if ($ascending) {
 			while (strtotime($month) <= strtotime($end)) {
@@ -2303,21 +2393,21 @@ class Formation extends FormBuilder {
 	 * @param  boolean $startWithOne
 	 * @return array
 	 */
-	public function booleanOptions($options = array('Yes', 'No'), $startWithOne = true)
+	public function booleanOptions($options = ['Yes', 'No'], $startWithOne = true)
 	{
 		if (is_string($options)) $options = explode('/', $options); //allow options to be set as a string like "Yes/No"
 		if (!isset($options[1])) $options[1] = "";
 
 		if ($startWithOne) {
-			return array(
+			return [
 				1 => $options[0],
 				0 => $options[1],
-			);
+			];
 		} else {
-			return array(
+			return [
 				0 => $options[0],
 				1 => $options[1],
-			);
+			];
 		}
 	}
 
@@ -2363,7 +2453,7 @@ class Formation extends FormBuilder {
 		if ($session)
 			Session::forget($session);
 
-		$this->errors = array();
+		$this->errors = [];
 	}
 
 	/**
@@ -2373,7 +2463,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return array
 	 */
-	public function addErrorClass($name, $attributes = array())
+	public function addErrorClass($name, $attributes = [])
 	{
 		if ($this->errorMessage($name)) { //an error exists; add the error class
 			if (!isset($attributes['class']))
@@ -2445,7 +2535,7 @@ class Formation extends FormBuilder {
 		$name = str_replace('(', '', str_replace(')', '', $name));
 		$nameFormatted = $name;
 
-		$specialReplacementNames = array('LOWERCASE', 'UPPERCASE', 'UPPERCASE-WORDS');
+		$specialReplacementNames = ['LOWERCASE', 'UPPERCASE', 'UPPERCASE-WORDS'];
 
 		if ($replacementFieldName && is_string($replacementFieldName) && $replacementFieldName != ""
 		&& !in_array($replacementFieldName, $specialReplacementNames)) {
@@ -2638,7 +2728,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function submit($value = 'Submit', $attributes = array())
+	public function submit($value = 'Submit', $attributes = [])
 	{
 		return $this->input('submit', null, $value, $attributes);
 	}
@@ -2650,7 +2740,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function reset($value = null, $attributes = array())
+	public function reset($value = null, $attributes = [])
 	{
 		return $this->input('reset', null, $value, $attributes);
 	}
@@ -2668,7 +2758,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function image($url, $name = null, $attributes = array())
+	public function image($url, $name = null, $attributes = [])
 	{
 		$attributes['src'] = URL::toAsset($url);
 
@@ -2682,7 +2772,7 @@ class Formation extends FormBuilder {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function button($value = null, $attributes = array())
+	public function button($value = null, $attributes = [])
 	{
 		if (!isset($attributes['class']))
 			$attributes['class'] = 'btn btn-default';

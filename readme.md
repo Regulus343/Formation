@@ -17,9 +17,9 @@ All of this can be achieved with a minimal amount of code:
 	<?php
 	echo Form::field('first_name');
 	echo Form::field('password');
-	echo Form::field('user.item', 'select', array(
-		'options' => Form::prepOptions(Item::all(), array('id', 'name'))
-	));
+	echo Form::field('user.item', 'select', [
+		'options' => Form::prepOptions(Item::all(), ['id', 'name'])
+	]);
 	?>
 
 	<?php //simply typing Form::field('first_name') is the same as the following code: ?>
@@ -95,11 +95,11 @@ You may use 'Formation', or another alias, but 'Form' is recommended for the sak
 
 **Opening a form using a given URI and request method:**
 
-	echo Form::open(array('url' => user/profile'));
+	echo Form::open(['url' => user/profile']);
 
 **Opening a form that accepts file uploads:**
 
-	echo Form::openForFiles(array('url' => 'user/profile', 'files' => true));
+	echo Form::openForFiles(['url' => 'user/profile', 'files' => true]);
 
 **Opening a form for a resource controller:**
 
@@ -122,10 +122,10 @@ Laravel provides an easy method of protecting your application from cross-site r
 
 **Attaching the CSRF filter to a route:**
 
-	Route::post('profile', array('before' => 'csrf', function()
+	Route::post('profile', ['before' => 'csrf', function()
 	{
 		//
-	}));
+	}]);
 
 **Retrieving the CSRF token string:**
 
@@ -138,10 +138,10 @@ Laravel provides an easy method of protecting your application from cross-site r
 
 One of the most useful features of Formation is its ability to take an array, object, or Eloquent model and use it to populate form fields automatically. When the form is posted, it will automatically make use of the values in the POSt array instead.
 
-	$defaults = array(
+	$defaults = [
 		'name'  => 'Cody Jassman',
 		'email' => 'me@codyjassman.com',
-	);
+	];
 	Form::setDefaults($defaults);
 
 > **Note:** If you want to use array fields names instead, use, for example, `user.name` and `user.email` instead of `name` and `email`.
@@ -155,10 +155,10 @@ One of the most useful features of Formation is its ability to take an array, ob
 
 Formation makes use Laravel 4's Validator class. Using `Form::setValidation()` will create an instance of the Validator class (or many instances if array field names are used in the form setup). The reason the form's validation rules are passed through Formation to Validator is because Formation automatically adds an "error" class to the label and form field if an error is triggered. To do this, Formation needs a copy of the validation rules that have been set.
 
-	$rules = array(
-		'user.name' => array('required'), //'user.name' can be used for an array field like "user[name]"
-		'email'     => array('required', 'email')
-	);
+	$rules = [
+		'user.name' => ['required'], //'user.name' can be used for an array field like "user[name]"
+		'email'     => ['required', 'email']
+	];
 	Form::setValidationRules($rules);
 
 **Validating all fields:**
@@ -184,8 +184,10 @@ The last example can be used when you have many instances of an array field like
 
 **Setting up labels with an array:**
 
-	$labels = array('name' =>  'Name',
-					'email' => 'Email Address');
+	$labels = [
+		'name'  =>  'Name',
+		'email' => 'Email Address',
+	];
 	Form::setLabels($labels);
 
 By setting up your labels with an array, you will be able to leave the second argument `null` in `Form::label()`.
@@ -198,7 +200,7 @@ If you do not pass a label for the second argument, it will be checked for in Fo
 
 **Specifying extra HTML attributes for a label:**
 
-	echo Form::label('email', 'E-Mail Address', array('class' => 'awesome'));
+	echo Form::label('email', 'E-Mail Address', ['class' => 'awesome']);
 
 > **Note:** After creating a label, any form element you create with a name matching the label name will automatically receive an ID matching the label name as well.
 
@@ -207,12 +209,12 @@ If you do not pass a label for the second argument, it will be checked for in Fo
 
 Setting up labels, validation rules, and default values all at once:
 
-	$form = array(
-		'user.name'=>    array('Name', 'required', 'Cody Jassman'),
-		'user.website'=> array('Website', '', 'http://'),
-		'user.about'=>   array('About You'),
-		'user.number'=>  array('Some Sort of Number'),
-	);
+	$form = [
+		'user.name'    => ['Name', 'required', 'Cody Jassman'],
+		'user.website' => ['Website', '', 'http://'],
+		'user.about'   => ['About You'],
+		'user.number'  => ['Some Sort of Number'],
+	];
 	Form::setup($form);
 
 <a name="basic-fields"></a>
@@ -228,7 +230,7 @@ Setting up labels, validation rules, and default values all at once:
 
 **Setting attributes for a text field:**
 
-	echo Form::text('user.first_name', null, array('class' => 'short'));
+	echo Form::text('user.first_name', null, ['class' => 'short']);
 
 By using `Form::setDefaults()`, you will not need to pass a default value and can instead pass a `null` value or none at all as the second argument to let the field take advantage of the preset default value. When a form is posted, the values in the POST array will be used instead unless `Form::resetDefaults()` is used.
 
@@ -266,7 +268,7 @@ Please keep in mind that once again you will not need the third argument if you 
 
 **Creating a set of checkboxes:**
 
-	$checkboxes = Form::simpleOptions(array('Rain', 'Thunder', 'Lightning'));
+	$checkboxes = Form::simpleOptions(['Rain', 'Thunder', 'Lightning']);
 	echo Form::checkboxSet($checkboxes);
 
 **Adding a prefix to the name of each checkbox:**
@@ -275,13 +277,13 @@ Please keep in mind that once again you will not need the third argument if you 
 
 **Adding attributes to checkboxes and/or unordered list container for checkboxes:
 
-	echo Form::checkboxSet($checkboxes, null, array('class' => 'awesome', 'id-container' => 'checkbox-set-weather'));
+	echo Form::checkboxSet($checkboxes, null, ['class' => 'awesome', 'id-container' => 'checkbox-set-weather']);
 
 > **Note:** Attributes ending with "-container" will be added to the container itself rather than to each of the checkboxes.
 
 **Creating a set of radio buttons:**
 
-	echo Form::radioSet('weather', Form::simpleOptions(array('Rain', 'Thunder', 'Lightning')));
+	echo Form::radioSet('weather', Form::simpleOptions(['Rain', 'Thunder', 'Lightning']));
 
 > **Note:** The `simpleOptions()` method is just used in the above example to have the radio buttons' labels used also as the actual form field values instead of using the numerical indexes of the array items. `simpleOptions()` and some other methods for building options are further described in the upcoming **Drop-Down Lists** section of the documentation.
 
@@ -292,30 +294,30 @@ You may append "-container" to attribute names to assign them to the container e
 
 **Generating a drop-down list from an array of items:**
 
-	echo Form::select('size', array('L' => 'Large', 'S' => 'Small'));
+	echo Form::select('size', ['L' => 'Large', 'S' => 'Small']);
 
 **Using a label with a null value as the first option in the list:**
 
-	echo Form::select('size', array('L' => 'Large', 'S' => 'Small'), 'Select a size');
+	echo Form::select('size', ['L' => 'Large', 'S' => 'Small'], 'Select a size');
 
 **Generating a drop-down list with an item selected by default:**
 
-	echo Form::select('size', array('L' => 'Large', 'S' => 'Small'), 'Select a size', 'S');
+	echo Form::select('size', ['L' => 'Large', 'S' => 'Small'], 'Select a size', 'S');
 
 Of course, you may use `Form::setDefaults()` to populate select boxes without the need for the third argument.
 
 **Turn an array, object, or Eloquent model into a set of options:**
 
 	$users = DB::table('users')->orderBy('username')->get();
-	echo Form::select('user', Form::prepOptions($users, array('id', 'username')), 'Select a user');
+	echo Form::select('user', Form::prepOptions($users, ['id', 'username']), 'Select a user');
 
 **Turn a simple array into an options array with values the same as its labels:**
 
-	echo Form::select('animal', Form::simpleOptions(array('Tiger', 'Zebra', 'Elephant')), 'Select an animal');
+	echo Form::select('animal', Form::simpleOptions(['Tiger', 'Zebra', 'Elephant']), 'Select an animal');
 
 **Turn a simple array into a simple options array with numeric values that do start at one instead of zero:**
 
-	echo Form::select('animal', Form::offsetOptions(array('Tiger', 'Zebra', 'Elephant')), 'Select an animal');
+	echo Form::select('animal', Form::offsetOptions(['Tiger', 'Zebra', 'Elephant']), 'Select an animal');
 
 **Turn a simple array into a simple options array with numeric values that start at one instead of zero:**
 
@@ -347,7 +349,7 @@ The first argument is your start month. You can use `true`, `false`, `null`, or 
 
 **Using field macro for a set of radio buttons:**
 
-	$options = Form::simpleOptions(array('T-Rex', 'Parasaurolophus', 'Triceratops'));
+	$options = Form::simpleOptions(['T-Rex', 'Parasaurolophus', 'Triceratops']);
 	echo Form::field('dinosaur', 'Favorite Dinosaur', 'radio-set', $options);
 
 <a name="file-input"></a>
@@ -429,25 +431,29 @@ The field container element can be changed from a div to another HTML element an
 
 **Using field macro for a drop-down select box:**
 
-	echo Form::field('animal', 'select', array('options' => Form::simpleOptions(array('Tiger', 'Zebra', 'Elephant'))));
+	echo Form::field('animal', 'select', [
+		'options' => Form::simpleOptions(['Tiger', 'Zebra', 'Elephant'])
+	]);
 
 **Using field macro for a set of radio buttons:**
 
-	$options = Form::simpleOptions(array('T-Rex', 'Parasaurolophus', 'Triceratops'));
-	echo Form::field('dinosaur', 'radio-set', array('label' => 'Favorite Dinosaur', 'options' => $options));
+	$options = Form::simpleOptions(['T-Rex', 'Parasaurolophus', 'Triceratops']);
+	echo Form::field('dinosaur', 'radio-set', ['label' => 'Favorite Dinosaur', 'options' => $options]);
 
 **Using field macro for a set of checkboxes:**
 
-	echo Form::field('number.', 'checkbox-set', array('options' => Form::offsetOptions(array('One', 'II', '3.0'))));
+	echo Form::field('number.', 'checkbox-set', [
+		'options' => Form::offsetOptions(['One', 'II', '3.0'])
+	]);
 
 You will notice that the third parameter, `attributes`, has some options for special attributes such as `label` and `options` that don't work like any other attribute declaration. The combination of these into the attributes array makes sense because of the generic, many-use nature of the field macro. This prevents simple fields from requiring a bunch of `null` parameters. In addition to `label` and `options`, you can use `nullOption` for a prepended null option for a select box. Lastly, `value` can be used to manually set the value of the field. This is unnecessary if you are using the `setDefaults()` or `setup` methods to pre-populate your form with data.
 
-	$attributes = array(
+	$attributes = [
 		'class'      => 'select-number',
 		'options'    => Form::numberOptions(1, 10),
 		'nullOption' => 'Select a number',
 		'value'      => 3,
-	);
+	];
 	echo Form::field('number', 'select', $attributes);
 
 <a name="custom-macros"></a>

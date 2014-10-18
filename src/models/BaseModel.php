@@ -17,21 +17,21 @@ class BaseModel extends Eloquent {
 	 *
 	 * @var    array
 	 */
-	protected $types = array();
+	protected $types = [];
 
 	/**
 	 * The special formatted fields for the model.
 	 *
 	 * @var    array
 	 */
-	protected $formats = array();
+	protected $formats = [];
 
 	/**
 	 * The special formatted fields for the model for saving to the database.
 	 *
 	 * @var    array
 	 */
-	protected $formatsForDb = array();
+	protected $formatsForDb = [];
 
 	/**
 	 * The foreign key for the model.
@@ -90,7 +90,7 @@ class BaseModel extends Eloquent {
 	 */
 	public static function defaults()
 	{
-		return array();
+		return [];
 	}
 
 	/**
@@ -101,7 +101,7 @@ class BaseModel extends Eloquent {
 	 */
 	public static function validationRules($id = null)
 	{
-		return array();
+		return [];
 	}
 
 	/**
@@ -120,7 +120,7 @@ class BaseModel extends Eloquent {
 	 * @param  array    $relations
 	 * @return string
 	 */
-	public function getFormattedValues($relations = array())
+	public function getFormattedValues($relations = [])
 	{
 		//format fields based on field types
 		foreach ($this->getFieldTypes() as $field => $type) {
@@ -184,7 +184,7 @@ class BaseModel extends Eloquent {
 	 */
 	public static function setDefaultsForNew($prefix = null)
 	{
-		return Form::setDefaults(static::defaults(), array(), $prefix);
+		return Form::setDefaults(static::defaults(), [], $prefix);
 	}
 
 	/**
@@ -194,12 +194,12 @@ class BaseModel extends Eloquent {
 	 * @param  mixed    $prefix
 	 * @return array
 	 */
-	public static function addPrefixToDefaults($defaults = array(), $prefix = null)
+	public static function addPrefixToDefaults($defaults = [], $prefix = null)
 	{
 		if (is_string($prefix) && $prefix != "")
 			$prefix .= ".";
 
-		$defaultsFormatted = array();
+		$defaultsFormatted = [];
 		foreach ($defaults as $field => $value) {
 			$defaultsFormatted[$prefix.$field] = $value;
 		}
@@ -214,7 +214,7 @@ class BaseModel extends Eloquent {
 	 * @param  mixed    $prefix
 	 * @return array
 	 */
-	public function setDefaults($relations = array(), $prefix = null)
+	public function setDefaults($relations = [], $prefix = null)
 	{
 		return Form::setDefaults($this->getFormattedValues($relations), $relations, $prefix);
 	}
@@ -256,7 +256,7 @@ class BaseModel extends Eloquent {
 	 */
 	public function saveRelationalData($input, $modelMethod)
 	{
-		$idsSaved        = array();
+		$idsSaved        = [];
 		$items           = $this->{$modelMethod};
 		$model           = get_class($this->{$modelMethod}()->getModel());
 		$formattedSuffix = Form::getFormattedFieldSuffix();
@@ -335,10 +335,10 @@ class BaseModel extends Eloquent {
 			//save pivot data
 			if (isset($itemData['pivot'])) {
 				$pivotTable = $this->{$modelMethod}()->getTable();
-				$pivotKeys  = array(
+				$pivotKeys  = [
 					$this->getForeignKey() => $this->id,
 					$item->getForeignKey() => $currentItem->id,
-				);
+				];
 
 				$pivotData = array_merge($itemData['pivot'], $pivotKeys);
 
@@ -531,7 +531,7 @@ class BaseModel extends Eloquent {
 	 * @param  array    $relations
 	 * @return object
 	 */
-	public static function findBy($field = 'slug', $value, $relations = array())
+	public static function findBy($field = 'slug', $value, $relations = [])
 	{
 		$item = new static;
 
@@ -549,7 +549,7 @@ class BaseModel extends Eloquent {
 	 * @param  array    $relations
 	 * @return object
 	 */
-	public static function findBySlug($slug, $relations = array())
+	public static function findBySlug($slug, $relations = [])
 	{
 		return static::findBy('slug', $slug, $relations);
 	}
