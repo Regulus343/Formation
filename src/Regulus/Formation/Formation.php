@@ -6,7 +6,7 @@
 
 		created by Cody Jassman
 		version 0.6.4
-		last updated on October 18, 2014
+		last updated on October 20, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\FormBuilder;
@@ -622,7 +622,6 @@ class Formation extends FormBuilder {
 	 */
 	public function openResource(array $attributes = [])
 	{
-		var_dump('x'); exit;
 		$route = $this->route();
 
 		//set method based on action
