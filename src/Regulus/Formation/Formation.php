@@ -5,8 +5,8 @@
 		A powerful form creation composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.6.4
-		last updated on October 20, 2014
+		version 0.6.5
+		last updated on October 26, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\FormBuilder;
@@ -832,9 +832,33 @@ class Formation extends FormBuilder {
 	{
 		$attributes = $this->addErrorClass($name, $attributes);
 
+		if (!is_null($name) && $name != "") {
+			if (is_null($label)) $label = $this->nameToLabel($name);
+		} else {
+			if (is_null($label)) $label = "";
+		}
+
+		//save label in labels array if a label string contains any characters and $save is true
+		if ($label != "" && $save)
+			$this->labels[$name] = $label;
+
+		//get ID of field for label's "for" attribute
+		if (!isset($attributes['for'])) {
+			$id = $this->id($name);
+			$attributes['for'] = $id;
+		}
+
+		//add label suffix
+		$suffix = Config::get('formation::label.suffix');
+		if ($suffix != "" && (!isset($attributes['suffix']) || $attributes['suffix']))
+			$label .= $suffix;
+
+		if (isset($attributes['suffix']))
+			unset($attributes['suffix']);
+
 		//add tooltip and tooltip attributes if necessary
 		if (Config::get('formation::error.typeLabelTooltip')) {
-			$errorMessage = $this->errorMessage($name, false);
+			$errorMessage = $this->errorMessage($name);
 
 			if ($errorMessage) {
 				$addAttributes = Config::get('formation::error.typeLabelAttributes');
@@ -850,31 +874,8 @@ class Formation extends FormBuilder {
 			}
 		}
 
-		if (!is_null($name) && $name != "") {
-			if (is_null($label)) $label = $this->nameToLabel($name);
-		} else {
-			if (is_null($label)) $label = "";
-		}
-
-		//save label in labels array if a label string contains any characters and $save is true
-		if ($label != "" && $save) $this->labels[$name] = $label;
-
-		//get ID of field for label's "for" attribute
-		if (!isset($attributes['for'])) {
-			$id = $this->id($name);
-			$attributes['for'] = $id;
-		}
-
 		//if any "{" characters are used, do not add "access" class for accesskey; Handlebars.js may be being used in field name or label
 		if (preg_match('/\{/', $name)) $attributes['accesskey'] = false;
-
-		//add label suffix
-		$suffix = Config::get('formation::label.suffix');
-		if ($suffix != "" && (!isset($attributes['suffix']) || $attributes['suffix']))
-			$label .= $suffix;
-
-		if (isset($attributes['suffix']))
-			unset($attributes['suffix']);
 
 		//also do not add accesskey depiction if label already contains HTML tags or HTML special characters
 		if ($label != strip_tags($label) || $label != $this->entities($label)) {
@@ -1159,7 +1160,7 @@ class Formation extends FormBuilder {
 	 * Create a field along with a label and error message (if one is set).
 	 *
 	 * @param  string  $name
-	 * @param  string  $type
+	 * @param  mixed   $type
 	 * @param  array   $attributes
 	 * @return string
 	 */
@@ -1263,32 +1264,8 @@ class Formation extends FormBuilder {
 			}
 		}
 
-		$attributesFieldContainer = [];
-		foreach ($attributes as $key => $attribute) {
-			if (substr($key, -16) == "-field-container") {
-				$key = str_replace('-field-container', '', $key);
-				$attributesFieldContainer[$key] = $attribute;
-			}
-		}
-		if (!isset($attributesFieldContainer['class']) || $attributesFieldContainer['class'] == "") {
-			$attributesFieldContainer['class'] = Config::get('formation::fieldContainer.class');
-		} else {
-			$attributesFieldContainer['class'] .= ' '.Config::get('formation::fieldContainer.class');
-		}
-		if (!isset($attributesFieldContainer['id'])) {
-			$attributesFieldContainer['id'] = $this->id($name, $attributesFieldContainer).'-area';
-		} else {
-			if (is_null($attributesFieldContainer['id']) || !$attributesFieldContainer['id'])
-				unset($attributesFieldContainer['id']);
-		}
+		$html = $this->openFieldContainer($name, $type, $attributes);
 
-		if ($type == "checkbox") $attributesFieldContainer['class'] .= ' checkbox';
-		if ($type == "radio")    $attributesFieldContainer['class'] .= ' radio';
-		if ($type == "hidden")   $attributesFieldContainer['class'] .= ' hidden';
-
-		$attributesFieldContainer = $this->addErrorClass($name, $attributesFieldContainer);
-
-		$html = '<'.Config::get('formation::fieldContainer.element').$this->attributes($attributesFieldContainer).'>' . "\n";
 		switch ($type) {
 			case "text":
 				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
@@ -1367,10 +1344,63 @@ class Formation extends FormBuilder {
 		if (Config::get('formation::fieldContainer.error') && !Config::get('formation::error.typeLabelTooltip'))
 			$html .= $this->error($name) . "\n";
 
+		$html .= $this->closeFieldContainer();
+
+		return $html;
+	}
+
+	/**
+	 * Open a field container.
+	 *
+	 * @param  string  $name
+	 * @param  mixed   $type
+	 * @param  array   $attributes
+	 * @return string
+	 */
+	public function openFieldContainer($name, $type = null, $attributes = [])
+	{
+		$attributesFieldContainer = [];
+		foreach ($attributes as $key => $attribute) {
+			if (substr($key, -16) == "-field-container") {
+				$key = str_replace('-field-container', '', $key);
+				$attributesFieldContainer[$key] = $attribute;
+			}
+		}
+		if (!isset($attributesFieldContainer['class']) || $attributesFieldContainer['class'] == "") {
+			$attributesFieldContainer['class'] = Config::get('formation::fieldContainer.class');
+		} else {
+			$attributesFieldContainer['class'] .= ' '.Config::get('formation::fieldContainer.class');
+		}
+		if (!isset($attributesFieldContainer['id'])) {
+			$attributesFieldContainer['id'] = $this->id($name, $attributesFieldContainer).'-area';
+		} else {
+			if (is_null($attributesFieldContainer['id']) || !$attributesFieldContainer['id'])
+				unset($attributesFieldContainer['id']);
+		}
+
+		if ($type == "checkbox") $attributesFieldContainer['class'] .= ' checkbox';
+		if ($type == "radio")    $attributesFieldContainer['class'] .= ' radio';
+		if ($type == "hidden")   $attributesFieldContainer['class'] .= ' hidden';
+
+		$attributesFieldContainer = $this->addErrorClass($name, $attributesFieldContainer);
+
+		return '<'.Config::get('formation::fieldContainer.element').$this->attributes($attributesFieldContainer).'>' . "\n";
+	}
+
+	/**
+	 * Close a field container.
+	 *
+	 * @return string
+	 */
+	public function closeFieldContainer()
+	{
+		$html = "";
+
 		if (Config::get('formation::fieldContainer.clear'))
 			$html .= '<div class="clear"></div>' . "\n";
 
 		$html .= '</'.Config::get('formation::fieldContainer.element').'>' . "\n";
+
 		return $html;
 	}
 
@@ -2556,7 +2586,7 @@ class Formation extends FormBuilder {
 
 		//return error message if it already exists
 		if (isset($this->errors[$name]))
-			$errorMessage = str_replace($name, $nameFormatted, $this->errors[$name]);
+			$errorMessage = str_replace($this->nameToLabel($name), $nameFormatted, $this->errors[$name]);
 
 		//cycle through all validation instances to allow the ability to get error messages in root fields
 		//as well as field arrays like "field[array]" (passed to errorMessage in the form of "field.array")
