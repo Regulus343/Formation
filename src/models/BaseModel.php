@@ -239,8 +239,10 @@ class BaseModel extends Eloquent {
 		$this->save();
 
 		foreach ($input as $field => $value) {
-			if (is_array($value)) {
+			if (is_array($value))
+			{
 				$fieldCamelCase = Form::underscoredToCamelCase($field);
+
 				if (isset($this->{$fieldCamelCase}) || $this->{$fieldCamelCase})
 					$this->saveRelationalData($value, $fieldCamelCase);
 			}
@@ -263,27 +265,51 @@ class BaseModel extends Eloquent {
 		$pivotTimestamps = Config::get('formation::pivotTimestamps');
 
 		//create or update related items
-		foreach ($input as $index => $itemData) {
-			if (isset($itemData['id']) && $itemData['id'] > 0 && $itemData['id'] != "")
-				$new = false;
-			else
-				$new = true;
+		foreach ($input as $index => $itemData)
+		{
+			if ($index != "pivot")
+			{
+				if (isset($itemData['id']) && $itemData['id'] > 0 && $itemData['id'] != "")
+					$new = false;
+				else
+					$new = true;
 
-			$found = false;
-			if (!$new) {
-				foreach ($items as $item) {
-					if ((int) $itemData['id'] == (int) $item->id) {
-						$found = true;
+				$found = false;
+				if (!$new)
+				{
+					foreach ($items as $item) {
+						if ((int) $itemData['id'] == (int) $item->id) {
+							$found = true;
 
-						//remove formatted fields from item to prevent errors in saving data
-						foreach ($item->toArray() as $field => $value) {
-							if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
-								unset($item->{$field});
+							//remove formatted fields from item to prevent errors in saving data
+							foreach ($item->toArray() as $field => $value) {
+								if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
+									unset($item->{$field});
+							}
+
+							//format data for special types and special formats
+							$itemData = $item->formatValuesForTypes($itemData);
+							$itemData = $item->formatValuesForSpecialFormats($itemData);
+
+							//save data
+							$item->fill($itemData)->save();
+
+							$currentItem = $item;
+
+							if (!in_array((int) $item->id, $idsSaved))
+								$idsSaved[] = (int) $item->id;
 						}
+					}
+				}
 
-						//format data for special types and special formats
+				//if model was not found, it may still exist in the database but not have a current relationship with item
+				if (!$found && !$new)
+				{
+					$item = $model::find($itemData['id']);
+
+					if ($item) {
+						//format data for special types
 						$itemData = $item->formatValuesForTypes($itemData);
-						$itemData = $item->formatValuesForSpecialFormats($itemData);
 
 						//save data
 						$item->fill($itemData)->save();
@@ -292,96 +318,140 @@ class BaseModel extends Eloquent {
 
 						if (!in_array((int) $item->id, $idsSaved))
 							$idsSaved[] = (int) $item->id;
+					} else {
+						$new = true;
 					}
 				}
-			}
 
-			//if model was not found, it may still exist in the database but not have a current relationship with item
-			if (!$found && !$new) {
-				$item = $model::find($itemData['id']);
-				if ($item) {
+				if ($new)
+				{
+					$item = new $model;
+
+					//attempt to add foreign key ID in case relationship doesn't require a pivot table
+					$itemData[$this->getForeignKey()] = $this->id;
+
 					//format data for special types
 					$itemData = $item->formatValuesForTypes($itemData);
 
-					//save data
 					$item->fill($itemData)->save();
 
 					$currentItem = $item;
 
 					if (!in_array((int) $item->id, $idsSaved))
 						$idsSaved[] = (int) $item->id;
-				} else {
-					$new = true;
-				}
-			}
-
-			if ($new) {
-				$item = new $model;
-
-				//attempt to add foreign key ID in case relationship doesn't require a pivot table
-				$itemData[$this->getForeignKey()] = $this->id;
-
-				//format data for special types
-				$itemData = $item->formatValuesForTypes($itemData);
-
-				$item->fill($itemData)->save();
-
-				$currentItem = $item;
-
-				if (!in_array((int) $item->id, $idsSaved))
-					$idsSaved[] = (int) $item->id;
-			}
-
-			//save pivot data
-			if (isset($itemData['pivot'])) {
-				$pivotTable = $this->{$modelMethod}()->getTable();
-				$pivotKeys  = [
-					$this->getForeignKey() => $this->id,
-					$item->getForeignKey() => $currentItem->id,
-				];
-
-				$pivotData = array_merge($itemData['pivot'], $pivotKeys);
-
-				//set updated timestamp
-				if ($pivotTimestamps) {
-					$timestamp = date('Y-m-d H:i:s');
-					$pivotData['updated_at'] = $timestamp;
 				}
 
-				//attempt to select pivot record by both keys
-				$pivotItem = DB::table($pivotTable);
-				foreach ($pivotKeys as $key => $id) {
-					$pivotItem->where($key, $id);
+				//save pivot data
+				if (isset($itemData['pivot']))
+				{
+					$pivotTable = $this->{$modelMethod}()->getTable();
+					$pivotKeys  = [
+						$this->getForeignKey() => $this->id,
+						$item->getForeignKey() => $currentItem->id,
+					];
+
+					$pivotData = array_merge($itemData['pivot'], $pivotKeys);
+
+					//set updated timestamp
+					if ($pivotTimestamps) {
+						$timestamp = date('Y-m-d H:i:s');
+						$pivotData['updated_at'] = $timestamp;
+					}
+
+					//attempt to select pivot record by both keys
+					$pivotItem = DB::table($pivotTable);
+					foreach ($pivotKeys as $key => $id) {
+						$pivotItem->where($key, $id);
+					}
+
+					//if id exists, add it to where clause and unset it
+					if (isset($pivotData['id']) && (int) $pivotData['id']) {
+						$pivotItem->where('id', $pivotData['id']);
+						unset($pivotData['id']);
+					}
+
+					//attempt to update and if it doesn't work, insert a new record
+					if (!$pivotItem->update($pivotData)) {
+						if ($pivotTimestamps)
+							$pivotData['created_at'] = $timestamp;
+
+						DB::table($pivotTable)->insert($pivotData);
+					}
+				}
+			} else {
+				//data is entirely pivot data; save pivot data
+
+				$item = new $model; //create dummy item to get foreign key
+
+				$pivotTable    = $this->{$modelMethod}()->getTable();
+				$pivotIdsSaved = [];
+
+				foreach ($itemData as $pivotId)
+				{
+					$pivotKeys  = [
+						$this->getForeignKey() => $this->id,
+						$item->getForeignKey() => $pivotId,
+					];
+
+					$pivotData = $pivotKeys;
+
+					//set updated timestamp
+					if ($pivotTimestamps) {
+						$timestamp = date('Y-m-d H:i:s');
+						$pivotData['updated_at'] = $timestamp;
+					}
+
+					//attempt to select pivot record by both keys
+					$pivotItem = DB::table($pivotTable);
+					foreach ($pivotKeys as $key => $id) {
+						$pivotItem->where($key, $id);
+					}
+
+					//if id exists, add it to where clause and unset it
+					if (isset($pivotData['id']) && (int) $pivotData['id']) {
+						$pivotItem->where('id', $pivotData['id']);
+						unset($pivotData['id']);
+					}
+
+					//attempt to update and if it doesn't work, insert a new record
+					if (!$pivotItem->update($pivotData)) {
+						if ($pivotTimestamps)
+							$pivotData['created_at'] = $timestamp;
+
+						DB::table($pivotTable)->insert($pivotData);
+					}
+
+					if (!in_array((int) $pivotId, $pivotIdsSaved))
+						$pivotIdsSaved[] = (int) $pivotId;
 				}
 
-				//if id exists, add it to where clause and unset it
-				if (isset($pivotData['id']) && (int) $pivotData['id']) {
-					$pivotItem->where('id', $pivotData['id']);
-					unset($pivotData['id']);
-				}
-
-				//attempt to update and if it doesn't work, insert a new record
-				if (!$pivotItem->update($pivotData)) {
-					if ($pivotTimestamps)
-						$pivotData['created_at'] = $timestamp;
-
-					DB::table($pivotTable)->insert($pivotData);
-				}
+				if (empty($pivotIdsSaved))
+					DB::table($pivotTable)
+						->where($this->getForeignKey(), $this->id)
+						->delete();
+				else
+					DB::table($pivotTable)
+						->where($this->getForeignKey(), $this->id)
+						->whereNotIn($item->getForeignKey(), $pivotIdsSaved)
+						->delete();
 			}
 		}
 
 		//remove any items no longer present in input data
-		foreach ($items as $item) {
-			if (!in_array((int) $item->id, $idsSaved))
-			{
-				//check for pivot data and delete pivot item instead of item if it exists
-				if (isset($itemData['pivot'])) {
-					DB::table($pivotTable)
-						->where('page_id', $this->id)
-						->where('area_id', $item->id)
-						->delete();
-				} else {
-					$item->delete();
+		if ($index != "pivot") {
+			foreach ($items as $item) {
+				if (!in_array((int) $item->id, $idsSaved))
+				{
+					//check for pivot data and delete pivot item instead of item if it exists
+					if (isset($itemData['pivot']))
+					{
+						DB::table($pivotTable)
+							->where($this->getForeignKey(), $this->id)
+							->where($item->getForeignKey(), $item->id)
+							->delete();
+					} else {
+						$item->delete();
+					}
 				}
 			}
 		}
@@ -421,8 +491,17 @@ class BaseModel extends Eloquent {
 	public function formatValuesForSpecialFormats($values)
 	{
 		foreach ($this->getFieldFormatsForDb() as $field => $formats) {
-			if (isset($values[$field]))
+			if (isset($values[$field])) {
 				$values[$field] = $this->formatValueFromSpecialFormats($field, $values, $formats);
+			} else {
+				if (is_string($formats))
+					$formats = [$formats];
+
+				foreach ($formats as $format) {
+					if ($format == "pivotArray")
+						$values[$field] = ['pivot' => []];
+				}
+			}
 		}
 
 		return $values;

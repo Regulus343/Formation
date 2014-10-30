@@ -2,11 +2,11 @@
 
 /*----------------------------------------------------------------------------------------------------------
 	Formation
-		A powerful form creation composer package for Laravel 4.
+		A powerful form creation and form data saving composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.6.5
-		last updated on October 26, 2014
+		version 0.6.6
+		last updated on October 29, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\FormBuilder;
@@ -170,20 +170,24 @@ class Formation extends FormBuilder {
 
 						$itemPrefix = $prefix.($this->camelCaseToUnderscore($relation));
 
-						foreach ($item as $field => $value) {
-							if (!$relationField || $field == $relationField)
+						foreach ($item as $field => $value)
+						{
+							if (!$relationField || $relationField == $field || ($relationField && $field == "pivot"))
 							{
 								if ($field == "pivot") {
-									foreach ($value as $pivotField => $pivotValue) {
-										if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
-											$fieldName = str_replace($formattedSuffix, '', $pivotField);
-										else
-											$fieldName = $pivotField;
+									foreach ($value as $pivotField => $pivotValue)
+									{
+										if ($relationField) {
+											if ($relationField == $pivotField)
+												$defaultsArray[$itemPrefix.'.pivot.'][] = $pivotValue;
+										} else {
+											if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
+												$fieldName = str_replace($formattedSuffix, '', $pivotField);
+											else
+												$fieldName = $pivotField;
 
-										if ($relationField)
-											$defaultsArray[$itemPrefix.'.'.$i][] = $pivotValue;
-										else
 											$defaultsArray[$itemPrefix.'.'.$i.'.pivot.'.$fieldName] = $pivotValue;
+										}
 									}
 								} else {
 									if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
