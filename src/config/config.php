@@ -21,6 +21,7 @@ return array(
 
 	'field' => array(
 		'class'           => 'form-control',
+		'idPrefix'        => 'field-',
 		'autoLabel'       => true,
 		'autoPlaceholder' => true,
 	),

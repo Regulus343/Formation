@@ -1026,6 +1026,11 @@ class Formation extends FormBuilder {
 		} else {
 			//replace array denoting periods and underscores with dashes
 			$id = strtolower(str_replace('.', '-', str_replace('_', '-', str_replace(' ', '-', $name))));
+
+			//add ID prefix
+			$idPrefix = Config::get('formation::field.idPrefix');
+			if (!is_null($idPrefix) && $idPrefix !== false && $idPrefix != "")
+				$id = $idPrefix.$id;
 		}
 
 		//remove icon code
@@ -1043,6 +1048,7 @@ class Formation extends FormBuilder {
 		if (substr($id, -1) == "-")
 			$id = substr($id, 0, (strlen($id) - 1));
 
+		//unset ID attribute if ID is empty
 		if (!$id || $id == "")
 			unset($attributes['id']);
 
