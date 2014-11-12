@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.6.6
-		last updated on October 29, 2014
+		version 0.6.7
+		last updated on November 11, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\FormBuilder;
@@ -395,7 +395,7 @@ class Formation extends FormBuilder {
 	}
 
 	/**
-	 * Resets form field values back to defaults and ignores POSTed values.
+	 * Reset form field values back to defaults and ignores POSTed values.
 	 *
 	 * @param  array    $defaults
 	 * @return void
@@ -407,7 +407,7 @@ class Formation extends FormBuilder {
 	}
 
 	/**
-	 * Assigns labels to form fields.
+	 * Assign labels to form fields.
 	 *
 	 * @param  array    $labels
 	 * @return void
@@ -417,7 +417,17 @@ class Formation extends FormBuilder {
 		if (is_object($labels))
 			$labels = (array) $labels;
 
-		$this->labels = $labels;
+		$this->labels = array_merge($this->labels, $labels);
+	}
+
+	/**
+	 * Get the labels for form fields.
+	 *
+	 * @return array
+	 */
+	public function getLabels()
+	{
+		return $this->labels;
 	}
 
 	/**
@@ -1928,8 +1938,11 @@ class Formation extends FormBuilder {
 			$label = $this->label($name); //set dummy label so ID can be created in line below
 			$idPrefix = $this->id($name, $attributes);
 
-			if (is_null($selected)) $selected = $this->value($name);
-			foreach ($options as $value => $display) {
+			if (is_null($selected))
+				$selected = $this->value($name);
+
+			foreach ($options as $value => $display)
+			{
 				if ($selected === (string) $value) {
 					$checked = true;
 				} else {
@@ -1976,11 +1989,14 @@ class Formation extends FormBuilder {
 	 */
 	public function radio($name, $value = null, $checked = false, $attributes = [])
 	{
-		if (is_null($value)) $value = $name;
-		if ((string) $value === $this->value($name)) $checked = true;
+		if (is_null($value))
+			$value = $name;
 
-		if (!isset($attributes['id'])) $attributes['id'] = $this->id($name.'-'.strtolower($value), $attributes);
-		$name = $this->name($name);
+		if ((string) $value === $this->value($name))
+			$checked = true;
+
+		if (!isset($attributes['id']))
+			$attributes['id'] = $this->id($name.'-'.strtolower($value), $attributes);
 
 		return $this->checkable('radio', $name, $value, $checked, $attributes);
 	}
@@ -1997,7 +2013,8 @@ class Formation extends FormBuilder {
 	 */
 	protected function checkable($type, $name, $value, $checked, $attributes)
 	{
-		if ($checked) $attributes['checked'] = 'checked';
+		if ($checked)
+			$attributes['checked'] = 'checked';
 
 		return $this->input($type, $name, $value, $attributes);
 	}

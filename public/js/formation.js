@@ -3,7 +3,7 @@
 | Formation.js
 |------------------------------------------------------------------------------
 |
-| Last Updated: September 9, 2014
+| Last Updated: November 11, 2014
 |
 */
 
@@ -150,12 +150,12 @@ var Formation = {
 		this.itemNumber  = i;
 
 		//create item template
-		var source     = $('#'+templateId).html();
-		var template   = Handlebars.compile(source);
-		var context    = {};
+		var source   = $('#'+templateId).html();
+		var template = Handlebars.compile(source);
+		var context  = {};
 
 		if (item !== undefined && item !== null)
-			context    = item;
+			context = item;
 
 		context.number = i;
 		var html       = template(context);
@@ -178,10 +178,45 @@ var Formation = {
 		//trigger callback function if one is set
 		if (callbackFunction !== undefined)
 			callbackFunction(this.itemContainer, item);
+
+		return i;
 	},
 
 	loadNewTemplate: function(container, callbackFunction) {
-		this.loadTemplate(container, null, callbackFunction);
+		return this.loadTemplate(container, null, callbackFunction);
+	},
+
+	getTemplateHtml: function(container, item) {
+		//require "data-template-id" attribute for container
+		var templateId = $(container).attr('data-template-id');
+		if (templateId == null) {
+			console.log('Container requires "data-template-id" attribute.');
+			return;
+		}
+
+		//set i to an unused number
+		var i = 0;
+		$(container).find('[data-item-number]').each(function(){
+			if ($(this).attr('data-item-number') > i)
+				i = $(this).attr('data-item-number');
+		});
+
+		i ++;
+
+		this.itemNumber  = i;
+
+		//create item template
+		var source   = $('#'+templateId).html();
+		var template = Handlebars.compile(source);
+		var context  = {};
+
+		if (item !== undefined && item !== null)
+			context = item;
+
+		context.number = i;
+		var html       = template(context);
+
+		return html;
 	},
 
 	setUpRemoveButtonsForTemplate: function() {
