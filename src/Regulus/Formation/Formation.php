@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.6.7
-		last updated on November 11, 2014
+		version 0.6.7.2
+		last updated on November 12, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\FormBuilder;
@@ -1800,44 +1800,52 @@ class Formation extends FormBuilder {
 	 */
 	public function checkboxSet($names = [], $namePrefix = null, $attributes = [])
 	{
-		if (!empty($names) && is_array($names)) {
-			$containerAttributes = ['class' => 'checkbox-set'];
-			foreach ($attributes as $attribute => $value) {
+		if (!empty($names) && (is_object($names) || is_array($names)))
+		{
+			if (is_object($names))
+				$names = (array) $names;
 
+			$containerAttributes = ['class' => 'checkbox-set'];
+
+			foreach ($attributes as $attribute => $value)
+			{
 				//appending "-container" to attributes means they apply to the
 				//"checkbox-set" container rather than to the checkboxes themselves
-				if (substr($attribute, -10) == "-container") {
-					if (str_replace('-container', '', $attribute) == "class") {
+				if (substr($attribute, -10) == "-container")
+				{
+					if (str_replace('-container', '', $attribute) == "class")
 						$containerAttributes['class'] .= ' '.$value;
-					} else {
+					else
 						$containerAttributes[str_replace('-container', '', $attribute)] = $value;
-					}
+
 					unset($attributes[$attribute]);
 				}
 			}
+
 			$containerAttributes = $this->addErrorClass('roles', $containerAttributes);
 			$html = '<div'.$this->attributes($containerAttributes).'>';
 
 			foreach ($names as $name => $display) {
 				//if a simple array is used, automatically create the label from the name
 				$associativeArray = true;
-				if (isset($attributes['associative'])) {
+				if (isset($attributes['associative']))
+				{
 					if (!$attributes['associative'])
 						$associativeArray = false;
 				} else {
 					if (is_numeric($name))
 						$associativeArray = false;
 				}
+
 				if (!$associativeArray) {
-					$name = $display;
+					$name    = $display;
 					$display = $this->nameToLabel($name);
 				}
 
-				if (isset($attributes['name-values']) && $attributes['name-values']) {
+				if (isset($attributes['name-values']) && $attributes['name-values'])
 					$value = $name;
-				} else {
+				else
 					$value = 1;
-				}
 
 				$nameToCheck = $name;
 				if (!is_null($namePrefix)) {
@@ -1851,6 +1859,7 @@ class Formation extends FormBuilder {
 
 				$valueToCheck = $this->value($nameToCheck);
 				$checked      = false;
+
 				if (is_array($valueToCheck) && in_array($value, $valueToCheck)) {
 					$checked = true;
 				} else if (is_bool($value) && $value == $this->value($nameToCheck, 'checkbox')) {
@@ -1866,7 +1875,7 @@ class Formation extends FormBuilder {
 
 				$checkbox = '<div'.$this->attributes($subContainerAttributes).'>' . "\n";
 
-				$checkboxAttributes = $attributes;
+				$checkboxAttributes       = $attributes;
 				$checkboxAttributes['id'] = $this->id($name);
 
 				if (isset($checkboxAttributes['associative'])) unset($checkboxAttributes['associative']);
@@ -1874,9 +1883,8 @@ class Formation extends FormBuilder {
 
 				$checkbox .= $this->checkbox($name, $value, $checked, $checkboxAttributes);
 				$checkbox .= $this->label($name, $display, ['accesskey' => false]);
-
 				$checkbox .= '</div>' . "\n";
-				$html .= $checkbox;
+				$html     .= $checkbox;
 			}
 
 			$html .= '</div>' . "\n";
@@ -1923,25 +1931,32 @@ class Formation extends FormBuilder {
 	 */
 	public function radioSet($name, $options = [], $selected = null, $attributes = [])
 	{
-		if (!empty($options) && is_array($options)) {
-			$containerAttributes = ['class' => 'radio-set'];
-			foreach ($attributes as $attribute => $value) {
+		if (!empty($options) && (is_object($options) || is_array($options)))
+		{
+			if (is_object($options))
+				$options = (array) $options;
 
+			$containerAttributes = ['class' => 'radio-set'];
+
+			foreach ($attributes as $attribute => $value)
+			{
 				//appending "-container" to attributes means they apply to the
 				//"radio-set" container rather than to the checkboxes themselves
-				if (substr($attribute, -10) == "-container") {
-					if (str_replace('-container', '', $attribute) == "class") {
+				if (substr($attribute, -10) == "-container")
+				{
+					if (str_replace('-container', '', $attribute) == "class")
 						$containerAttributes['class'] .= ' '.$value;
-					} else {
+					else
 						$containerAttributes[str_replace('-container', '', $attribute)] = $value;
-					}
+
 					unset($attributes[$attribute]);
 				}
 			}
-			$containerAttributes = $this->addErrorClass($name, $containerAttributes);
-			$html = '<div'.$this->attributes($containerAttributes).'>';
 
-			$label = $this->label($name); //set dummy label so ID can be created in line below
+			$containerAttributes = $this->addErrorClass($name, $containerAttributes);
+			$html                = '<div'.$this->attributes($containerAttributes).'>';
+
+			$label    = $this->label($name); //set dummy label so ID can be created in line below
 			$idPrefix = $this->id($name, $attributes);
 
 			if (is_null($selected))
@@ -1949,11 +1964,10 @@ class Formation extends FormBuilder {
 
 			foreach ($options as $value => $display)
 			{
-				if ($selected === (string) $value) {
+				if ($selected === (string) $value)
 					$checked = true;
-				} else {
+				else
 					$checked = false;
-				}
 
 				//add selected class to list item if radio button is set to allow styling for selected radio buttons in set
 				$subContainerAttributes = ['class' => 'radio'];
@@ -1964,11 +1978,13 @@ class Formation extends FormBuilder {
 
 				//append radio button value to the end of ID to prevent all radio buttons from having the same ID
 				$idSuffix = str_replace('.', '-', str_replace(' ', '-', str_replace('_', '-', strtolower($value))));
-				if ($idSuffix == "") $idSuffix = "blank";
+				if ($idSuffix == "")
+					$idSuffix = "blank";
+
 				$attributes['id'] = $idPrefix.'-'.$idSuffix;
 
 				$radioButton .= '<label>'.$this->radio($name, $value, $checked, $attributes).' '.$display.'</label></div>' . "\n";
-				$html .= $radioButton;
+				$html        .= $radioButton;
 			}
 
 			$html .= '</div>' . "\n";
