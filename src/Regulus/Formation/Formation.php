@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.6.7.2
-		last updated on November 12, 2014
+		version 0.7.0
+		last updated on November 18, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\FormBuilder;
@@ -227,13 +227,18 @@ class Formation extends FormBuilder {
 			$fieldArray = explode('.', $field);
 
 			//divide any field that starts with "time" into "hour", "minutes", and "meridiem" fields
-			if (substr(end($fieldArray), 0, 4) == "time") {
+			if (substr(end($fieldArray), 0, 4) == "time")
+			{
 				$valueArray = explode(':', $value);
-				if (count($valueArray) >= 2) {
+
+				if (count($valueArray) >= 2)
+				{
 					$defaults[$field.'_hour']     = $valueArray[0];
 					$defaults[$field.'_minutes']  = $valueArray[1];
 					$defaults[$field.'_meridiem'] = "am";
-					if ($valueArray[0] >= 12) {
+
+					if ($valueArray[0] >= 12)
+					{
 						$defaults[$field.'_hour']     -= 12;
 						$defaults[$field.'_meridiem']  = "pm";
 					}
@@ -272,10 +277,12 @@ class Formation extends FormBuilder {
 
 			$result = $values;
 		} else {
-			foreach ($this->defaults as $field => $value) {
+			foreach ($this->defaults as $field => $value)
+			{
 				$s = explode('.', $field);
 
-				if (!is_null($value)) {
+				if (!is_null($value))
+				{
 					switch (count($s)) {
 						case 1:	$result[$s[0]] = $value; break;
 						case 2:	$result[$s[0]][$s[1]] = $value; break;
@@ -816,15 +823,19 @@ class Formation extends FormBuilder {
 	protected function name($name)
 	{
 		//remove index number from between round brackets
-		if (preg_match("/\((.*)\)/i", $name, $match)) $name = str_replace($match[0], '', $name);
+		if (preg_match("/\((.*)\)/i", $name, $match))
+			$name = str_replace($match[0], '', $name);
 
 		$nameArray = explode('.', $name);
-		if (count($nameArray) < 2) return $name;
+
+		if (count($nameArray) < 2)
+			return $name;
 
 		$nameFormatted = $nameArray[0];
-		for ($n=1; $n < count($nameArray); $n++) {
+		for ($n = 1; $n < count($nameArray); $n++) {
 			$nameFormatted .= '['.$nameArray[$n].']';
 		}
+
 		return $nameFormatted;
 	}
 
@@ -847,9 +858,11 @@ class Formation extends FormBuilder {
 		$attributes = $this->addErrorClass($name, $attributes);
 
 		if (!is_null($name) && $name != "") {
-			if (is_null($label)) $label = $this->nameToLabel($name);
+			if (is_null($label))
+				$label = $this->nameToLabel($name);
 		} else {
-			if (is_null($label)) $label = "";
+			if (is_null($label))
+				$label = "";
 		}
 
 		//save label in labels array if a label string contains any characters and $save is true
@@ -874,9 +887,12 @@ class Formation extends FormBuilder {
 		if (Config::get('formation::error.typeLabelTooltip')) {
 			$errorMessage = $this->errorMessage($name);
 
-			if ($errorMessage) {
+			if ($errorMessage)
+			{
 				$addAttributes = Config::get('formation::error.typeLabelAttributes');
-				foreach ($addAttributes as $attribute => $attributeValue) {
+
+				foreach ($addAttributes as $attribute => $attributeValue)
+				{
 					if (isset($attributes[$attribute]))
 						$attributes[$attribute] .= ' '.$attributeValue;
 					else
@@ -889,39 +905,46 @@ class Formation extends FormBuilder {
 		}
 
 		//if any "{" characters are used, do not add "access" class for accesskey; Handlebars.js may be being used in field name or label
-		if (preg_match('/\{/', $name)) $attributes['accesskey'] = false;
+		if (preg_match('/\{/', $name))
+			$attributes['accesskey'] = false;
 
 		//also do not add accesskey depiction if label already contains HTML tags or HTML special characters
-		if ($label != strip_tags($label) || $label != $this->entities($label)) {
+		if ($label != strip_tags($label) || $label != $this->entities($label))
 			$attributes['accesskey'] = false;
-		} else {
+		else
 			$label = $this->entities($label); //since there is no HTML present in label, convert entities to HTML special characters
-		}
 
 		//add accesskey
 		$attributes = $this->addAccessKey($name, $label, $attributes, false);
 
 		//add "control-label" class
-		if (!isset($attributes['control-label-class']) || $attributes['control-label-class']) {
-			if (isset($attributes['class']) && $attributes['class'] != "") {
+		if (!isset($attributes['control-label-class']) || $attributes['control-label-class'])
+		{
+			if (isset($attributes['class']) && $attributes['class'] != "")
 				$attributes['class'] .= ' '.Config::get('formation::label.class');
-			} else {
+			else
 				$attributes['class'] = Config::get('formation::label.class');
-			}
 		}
-		if (isset($attributes['control-label-class'])) unset($attributes['control-label-class']);
+
+		if (isset($attributes['control-label-class']))
+			unset($attributes['control-label-class']);
 
 		//add non-breakable space if label is empty
-		if ($label == "") $label = "&nbsp;";
+		if ($label == "")
+			$label = "&nbsp;";
 
-		if (is_array($attributes) && isset($attributes['accesskey'])) {
-			if (is_string($attributes['accesskey'])) {
+		if (is_array($attributes) && isset($attributes['accesskey']))
+		{
+			if (is_string($attributes['accesskey']))
+			{
 				$newLabel = preg_replace('/'.strtoupper($attributes['accesskey']).'/', '<span class="access">'.strtoupper($attributes['accesskey']).'</span>', $label, 1);
-				if ($newLabel == $label) { //if nothing changed with replace, try lowercase
+
+				if ($newLabel == $label) //if nothing changed with replace, try lowercase
 					$newLabel = preg_replace('/'.$attributes['accesskey'].'/', '<span class="access">'.$attributes['accesskey'].'</span>', $label, 1);
-				}
+
 				$label = $newLabel;
 			}
+
 			unset($attributes['accesskey']);
 		}
 
@@ -944,18 +967,19 @@ class Formation extends FormBuilder {
 	protected function nameToLabel($name)
 	{
 		$nameArray = explode('.', $name);
-		if (count($nameArray) < 2) {
+
+		if (count($nameArray) < 2)
 			$nameFormatted = str_replace('_', ' ', $name);
-		} else { //if field is an array, create label from last array index
+		else //if field is an array, create label from last array index
 			$nameFormatted = str_replace('_', ' ', $nameArray[(count($nameArray) - 1)]);
-		}
 
 		//convert icon code to markup
-		if (preg_match('/\[ICON:(.*)\]/', $nameFormatted, $match)) {
+		if (preg_match('/\[ICON:(.*)\]/', $nameFormatted, $match))
 			$nameFormatted = str_replace($match[0], '<span class="glyphicon glyphicon-'.str_replace(' ', '', $match[1]).'"></span>&nbsp; ', $nameFormatted);
-		}
 
-		if ($nameFormatted == strip_tags($nameFormatted)) $nameFormatted = ucwords($nameFormatted);
+		if ($nameFormatted == strip_tags($nameFormatted))
+			$nameFormatted = ucwords($nameFormatted);
+
 		return $nameFormatted;
 	}
 
@@ -970,14 +994,16 @@ class Formation extends FormBuilder {
 	 */
 	public function addAccessKey($name, $label = null, $attributes = [], $returnLowercase = true)
 	{
-		if (!isset($attributes['accesskey']) || (!is_string($attributes['accesskey']) && $attributes['accesskey'] === true)) {
+		if (!isset($attributes['accesskey']) || (!is_string($attributes['accesskey']) && $attributes['accesskey'] === true))
+		{
 			$accessKey = false;
-			if (is_null($label)) {
-				if (isset($this->labels[$name])) {
+
+			if (is_null($label))
+			{
+				if (isset($this->labels[$name]))
 					$label = $this->labels[$name];
-				} else {
+				else
 					$label = $this->nameToLabel($name);
-				}
 			}
 
 			$label = strtr($label, 'Ã Ã¡Ã¢Ã£Ã¤Ã§Ã¨Ã©ÃªÃ«Ã¬Ã­Ã®Ã¯Ã±Ã²Ã³Ã´ÃµÃ¶Ã¹ÃºÃ»Ã¼Ã½Ã¿Ã€ÃÃ‚ÃƒÃ„Ã‡ÃˆÃ‰ÃŠÃ‹ÃŒÃÃŽÃÃ‘Ã’Ã“Ã”Ã•Ã–Ã™ÃšÃ›ÃœÃ', 'aaaaaceeeeiiiinooooouuuuyyAAAAACEEEEIIIINOOOOOUUUUY');
@@ -989,10 +1015,13 @@ class Formation extends FormBuilder {
 			}
 
 			//if no accesskey is set, loop through the field name's characters and set one
-			for ($l=0; $l < strlen($label); $l++) {
-				if (!$accessKey) {
+			for ($l = 0; $l < strlen($label); $l++) {
+				if (!$accessKey)
+				{
 					$character = strtolower($label[$l]);
-					if (!isset($this->accessKeys[$character]) && !in_array($character, $ignoreCharacters)) {
+
+					if (!isset($this->accessKeys[$character]) && !in_array($character, $ignoreCharacters))
+					{
 						$this->accessKeys[$character] = $name;
 						$accessKey = $character;
 					}
@@ -1001,10 +1030,13 @@ class Formation extends FormBuilder {
 
 			if ($accessKey) {
 				$attributes['accesskey'] = $accessKey;
-				if ($returnLowercase) $attributes['accesskey'] = strtolower($attributes['accesskey']);
+
+				if ($returnLowercase)
+					$attributes['accesskey'] = strtolower($attributes['accesskey']);
 			}
 		} else {
-			if ($attributes['accesskey'] === false) unset($attributes['accesskey']); //allow ability to prevent accesskey by setting it to false
+			if ($attributes['accesskey'] === false) //allow ability to prevent accesskey by setting it to false
+				unset($attributes['accesskey']);
 		}
 		return $attributes;
 	}
@@ -1034,9 +1066,8 @@ class Formation extends FormBuilder {
 		}
 
 		//remove icon code
-		if (preg_match('/\[ICON:(.*)\]/i', $id, $match)) {
+		if (preg_match('/\[ICON:(.*)\]/i', $id, $match))
 			$id = str_replace($match[0], '', $id);
-		}
 
 		//remove round brackets that are used to prevent index number from appearing in field name
 		$id = str_replace('(', '', str_replace(')', '', $id));
@@ -1065,14 +1096,15 @@ class Formation extends FormBuilder {
 	 */
 	protected function setFieldClass($name, $attributes = [], $type = 'text')
 	{
-		if (!in_array($type, ['hidden', 'checkbox', 'radio'])) {
+		if (!in_array($type, ['hidden', 'checkbox', 'radio']))
+		{
 			$defaultClass = Config::get('formation::field.class');
-			if ($defaultClass != "") {
-				if (isset($attributes['class']) && $attributes['class'] != "") {
+			if ($defaultClass != "")
+			{
+				if (isset($attributes['class']) && $attributes['class'] != "")
 					$attributes['class'] .= ' '.$defaultClass;
-				} else {
+				else
 					$attributes['class'] = $defaultClass;
-				}
 			}
 		}
 
@@ -1095,17 +1127,17 @@ class Formation extends FormBuilder {
 		if (substr($fieldClass, -1) == "-")
 			$fieldClass = substr($fieldClass, 0, (strlen($fieldClass) - 1));
 
-		if ($fieldClass != "") {
+		if ($fieldClass != "")
+		{
 			$fieldClass = "field-".$fieldClass;
 
 			//replace double dashes with single dash
 			$fieldClass = str_replace('--', '-', $fieldClass);
 
-			if (isset($attributes['class']) && $attributes['class'] != "") {
+			if (isset($attributes['class']) && $attributes['class'] != "")
 				$attributes['class'] .= ' '.$fieldClass;
-			} else {
+			else
 				$attributes['class'] = $fieldClass;
-			}
 		}
 
 		return $attributes;
@@ -1154,7 +1186,7 @@ class Formation extends FormBuilder {
 			// may be specified as required="required", etc.
 			if (is_numeric($key)) $key = $value;
 
-			if ( ! is_null($value))
+			if (!is_null($value))
 			{
 				$html[] = $key.'="'.$this->entities($value).'"';
 			}
@@ -1189,10 +1221,11 @@ class Formation extends FormBuilder {
 		//set any field named "submit" to a "submit" field automatically and set it's type to attributes to
 		//to simplify creation of "submit" fields with field() macro
 		if ($name == "submit") {
-			if (is_array($type)) {
-				$name = null;
+			if (is_array($type))
+			{
+				$name       = null;
 				$attributes = $type;
-				$type = "submit";
+				$type       = "submit";
 			}
 
 			$types = [
@@ -1214,7 +1247,8 @@ class Formation extends FormBuilder {
 				'submit',
 			];
 
-			if (!is_array($type) && !in_array($type, $types)) {
+			if (!is_array($type) && !in_array($type, $types))
+			{
 				$name = $type;
 				$type = "submit";
 				$attributes = [];
@@ -1223,61 +1257,73 @@ class Formation extends FormBuilder {
 
 		//allow label to be set via attributes array (defaults to labels array and then to a label derived from the field's name)
 		$fieldLabel = Config::get('formation::field.autoLabel');
-		if (!is_null($name)) {
+		if (!is_null($name))
 			$label = $this->nameToLabel($name);
-		} else {
+		else
 			$label = $name;
-		}
-		if (is_array($attributes) && isset($attributes['label'])) {
+
+		if (is_array($attributes) && isset($attributes['label']))
+		{
 			$label = $attributes['label'];
 			unset($attributes['label']);
 			$fieldLabel = true;
 		}
-		if (is_null($label)) $fieldLabel = false;
 
-		if (!is_array($attributes)) $attributes = [];
+		if (is_null($label))
+			$fieldLabel = false;
+
+		if (!is_array($attributes))
+			$attributes = [];
 
 		//allow options for select, radio-set, and checkbox-set to be set via attributes array
 		$options = [];
-		if (isset($attributes['options'])) {
+		if (isset($attributes['options']))
+		{
 			$options = $attributes['options'];
 			unset($attributes['options']);
 		}
 
 		///allow the null option ("Select a ...") for a select field to be set via attributes array
 		$nullOption = null;
-		if (isset($attributes['null-option'])) {
+		if (isset($attributes['null-option']))
+		{
 			$nullOption = $attributes['null-option'];
 			unset($attributes['null-option']);
 		}
 
 		///allow the field's value to be set via attributes array
 		$value = null;
-		if (isset($attributes['value'])) {
+		if (isset($attributes['value']))
+		{
 			$value = $attributes['value'];
 			unset($attributes['value']);
 		}
 
 		//set any field named "password" to a "password" field automatically; no type declaration required
-		if (substr($name, 0, 8) == "password" && is_null($type)) $type = "password";
+		if (substr($name, 0, 8) == "password" && is_null($type))
+			$type = "password";
 
 		//if type is still null, assume it to be a regular "text" field
-		if (is_null($type)) $type = "text";
+		if (is_null($type))
+			$type = "text";
 
 		//set attributes up for label and field (remove element-specific attributes from label and vice versa)
 		$attributesLabel = [];
-		foreach ($attributes as $key => $attribute) {
+		foreach ($attributes as $key => $attribute)
+		{
 			if (substr($key, -6) != "-field" && substr($key, -10) != "-container" && $key != "id") {
 				$key = str_replace('-label', '', $key);
 				$attributesLabel[$key] = $attribute;
 			}
+
 			if (($key == "id" || $key == "id-field") && !isset($attributes['for'])) {
 				$attributesLabel['for'] = $attribute;
 			}
 		}
 
 		$attributesField = [];
-		foreach ($attributes as $key => $attribute) {
+		foreach ($attributes as $key => $attribute)
+		{
 			if (substr($key, -6) != "-label" && substr($key, -16) != "-field-container") {
 				$key = str_replace('-field', '', $key);
 				$attributesField[$key] = $attribute;
@@ -1288,74 +1334,110 @@ class Formation extends FormBuilder {
 
 		switch ($type) {
 			case "text":
-				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				if ($fieldLabel)
+					$html .= $this->label($name, $label, $attributesLabel);
+
 				$html .= $this->text($name, $value, $attributesField) . "\n";
 				break;
+
 			case "search":
-				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				if ($fieldLabel)
+					$html .= $this->label($name, $label, $attributesLabel);
+
 				$html .= $this->search($name, $value, $attributesField) . "\n";
 				break;
+
 			case "password":
-				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				if ($fieldLabel)
+					$html .= $this->label($name, $label, $attributesLabel);
+
 				$html .= $this->password($name, $attributesField) . "\n";
 				break;
 			case "url":
-				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				if ($fieldLabel)
+					$html .= $this->label($name, $label, $attributesLabel);
+
 				$html .= $this->url($name, $value, $attributesField) . "\n";
 				break;
+
 			case "number":
-				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				if ($fieldLabel)
+					$html .= $this->label($name, $label, $attributesLabel);
+
 				$html .= $this->number($name, $value, $attributesField) . "\n";
 				break;
+
 			case "date":
-				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				if ($fieldLabel)
+					$html .= $this->label($name, $label, $attributesLabel);
+
 				$html .= $this->date($name, $value, $attributesField) . "\n";
 				break;
+
 			case "textarea":
-				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				if ($fieldLabel)
+					$html .= $this->label($name, $label, $attributesLabel);
+
 				$html .= $this->textarea($name, $value, $attributesField);
 				break;
+
 			case "hidden":
 				$html .= $this->hidden($name, $value, $attributesField);
 				break;
+
 			case "select":
-				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				if ($fieldLabel)
+					$html .= $this->label($name, $label, $attributesLabel);
+
 				$html .= $this->select($name, $options, $nullOption, $value, $attributesField);
 				break;
+
 			case "checkbox":
-				if (is_null($value)) $value = 1;
-				if (isset($attributesLabel['class'])) {
+				if (is_null($value))
+					$value = 1;
+
+				if (isset($attributesLabel['class']))
 					$attributesLabel['class'] .= " checkbox";
-				} else {
+				else
 					$attributesLabel['class']  = "checkbox";
-				}
+
 				$html .= '<label>'.$this->checkbox($name, $value, false, $attributesField).' '.$label.'</label>';
 				break;
+
 			case "radio":
-				if (isset($attributesLabel['class'])) {
+				if (isset($attributesLabel['class']))
 					$attributesLabel['class'] .= " radio";
-				} else {
+				else
 					$attributesLabel['class']  = "radio";
-				}
+
 				$html .= '<label>'.$this->radio($name, $value, false, $attributesField).' '.$label.'</label>';
 				break;
 			case "checkbox-set":
 				//for checkbox set, use options as array of checkbox names
-				if ($fieldLabel) $html .= $this->label(null, $label, $attributesLabel);
+				if ($fieldLabel)
+					$html .= $this->label(null, $label, $attributesLabel);
 
 				$html .= $this->checkboxSet($options, $name, $attributesField);
 				break;
+
 			case "radio-set":
-				if ($fieldLabel) $html .= $this->label(null, $label, $attributesLabel);
+				if ($fieldLabel)
+					$html .= $this->label(null, $label, $attributesLabel);
+
 				$html .= $this->radioSet($name, $options, null, $attributesField);
 				break;
+
 			case "file":
-				if ($fieldLabel) $html .= $this->label($name, $label, $attributesLabel);
+				if ($fieldLabel)
+					$html .= $this->label($name, $label, $attributesLabel);
+
 				$html .= $this->file($name, $attributesField) . "\n";
 				break;
+
 			case "button":
 				$html .= $this->button($label, $attributesField);
 				break;
+
 			case "submit":
 				$html .= $this->submit($label, $attributesField);
 				break;
@@ -1381,16 +1463,18 @@ class Formation extends FormBuilder {
 	{
 		$attributesFieldContainer = [];
 		foreach ($attributes as $key => $attribute) {
-			if (substr($key, -16) == "-field-container") {
+			if (substr($key, -16) == "-field-container")
+			{
 				$key = str_replace('-field-container', '', $key);
 				$attributesFieldContainer[$key] = $attribute;
 			}
 		}
-		if (!isset($attributesFieldContainer['class']) || $attributesFieldContainer['class'] == "") {
+
+		if (!isset($attributesFieldContainer['class']) || $attributesFieldContainer['class'] == "")
 			$attributesFieldContainer['class'] = Config::get('formation::fieldContainer.class');
-		} else {
+		else
 			$attributesFieldContainer['class'] .= ' '.Config::get('formation::fieldContainer.class');
-		}
+
 		if (!isset($attributesFieldContainer['id'])) {
 			$attributesFieldContainer['id'] = $this->id($name, $attributesFieldContainer).'-area';
 		} else {
@@ -1398,9 +1482,8 @@ class Formation extends FormBuilder {
 				unset($attributesFieldContainer['id']);
 		}
 
-		if ($type == "checkbox") $attributesFieldContainer['class'] .= ' checkbox';
-		if ($type == "radio")    $attributesFieldContainer['class'] .= ' radio';
-		if ($type == "hidden")   $attributesFieldContainer['class'] .= ' hidden';
+		if (in_array($type, ['checkbox', 'radio', 'hidden']))
+			$attributesFieldContainer['class'] .= ' '.$type;
 
 		$attributesFieldContainer = $this->addErrorClass($name, $attributesFieldContainer);
 
@@ -1454,7 +1537,7 @@ class Formation extends FormBuilder {
 		if (isset($attributes['placeholder']) && !$attributes['placeholder'])
 			unset($attributes['placeholder']);
 
-		$name = (isset($attributes['name'])) ? $attributes['name'] : $name;
+		$name       = (isset($attributes['name'])) ? $attributes['name'] : $name;
 		$attributes = $this->addErrorClass($name, $attributes);
 
 		$attributes['id'] = $this->id($name, $attributes);
@@ -1466,7 +1549,8 @@ class Formation extends FormBuilder {
 
 		$name = $this->name($name);
 
-		if ($type != "hidden") $attributes = $this->addAccessKey($name, null, $attributes);
+		if ($type != "hidden")
+			$attributes = $this->addAccessKey($name, null, $attributes);
 
 		$attributes = array_merge($attributes, compact('type', 'name', 'value'));
 
@@ -1612,7 +1696,7 @@ class Formation extends FormBuilder {
 	public function textarea($name, $value = null, $attributes = [])
 	{
 		$attributes['name'] = $name;
-		$attributes['id'] = $this->id($name, $attributes);
+		$attributes['id']   = $this->id($name, $attributes);
 
 		//add the field class if config option is set
 		$attributes = $this->setFieldClass($name, $attributes);
@@ -1668,14 +1752,14 @@ class Formation extends FormBuilder {
 			$attributes['data-null-option'] = $nullOption;
 		}
 
-		foreach ($options as $value => $display) {
+		foreach ($options as $value => $display)
+		{
 			$value = str_replace('[DUPLICATE]', '', $value); //allow the possibility of the same value appearing in the options array twice by appending "[DUPLICATE]" to its key
 
-			if (is_array($display)) {
+			if (is_array($display))
 				$html[] = $this->optgroup($display, $value, $selected);
-			} else {
+			else
 				$html[] = $this->option($value, $display, $selected);
-			}
 		}
 
 		$attributes['name'] = $this->name($attributes['name']);
@@ -1740,11 +1824,13 @@ class Formation extends FormBuilder {
 	public function selectTime($namePrefix = 'time', $selected = null, $attributes = [])
 	{
 		$html = "";
-		if ($namePrefix != "" && substr($namePrefix, -1) != "_") $namePrefix .= "_";
+		if ($namePrefix != "" && substr($namePrefix, -1) != "_")
+			$namePrefix .= "_";
 
 		//create hour field
 		$hoursOptions = [];
-		for ($h=0; $h <= 12; $h++) {
+		for ($h=0; $h <= 12; $h++)
+		{
 			$hour = sprintf('%02d', $h);
 			if ($hour == 12) {
 				$hoursOptions[$hour.'[DUPLICATE]'] = $hour;
@@ -1753,38 +1839,44 @@ class Formation extends FormBuilder {
 				$hoursOptions[$hour] = $hour;
 			}
 		}
+
 		$attributesHour = $attributes;
-		if (isset($attributesHour['class'])) {
+
+		if (isset($attributesHour['class']))
 			$attributesHour['class'] .= " time time-hour";
-		} else {
+		else
 			$attributesHour['class'] = "time time-hour";
-		}
+
 		$html .= $this->select($namePrefix.'hour', $hoursOptions, null, null, $attributesHour);
 
 		$html .= '<span class="time-hour-minutes-separator">:</span>' . "\n";
 
 		//create minutes field
 		$minutesOptions = [];
-		for ($m=0; $m < 60; $m++) {
+		for ($m=0; $m < 60; $m++)
+		{
 			$minute = sprintf('%02d', $m);
 			$minutesOptions[$minute] = $minute;
 		}
+
 		$attributesMinutes = $attributes;
-		if (isset($attributesMinutes['class'])) {
+
+		if (isset($attributesMinutes['class']))
 			$attributesMinutes['class'] .= " time time-minutes";
-		} else {
+		else
 			$attributesMinutes['class'] = "time time-minutes";
-		}
+
 		$html .= $this->select($namePrefix.'minutes', $minutesOptions, null, null, $attributesMinutes);
 
 		//create meridiem field
-		$meridiemOptions = $this->simpleOptions(['am', 'pm']);
+		$meridiemOptions    = $this->simpleOptions(['am', 'pm']);
 		$attributesMeridiem = $attributes;
-		if (isset($attributesMeridiem['class'])) {
+
+		if (isset($attributesMeridiem['class']))
 			$attributesMeridiem['class'] .= " time time-meridiem";
-		} else {
+		else
 			$attributesMeridiem['class'] = "time time-meridiem";
-		}
+
 		$html .= $this->select($namePrefix.'meridiem', $meridiemOptions, null, null, $attributesMeridiem);
 
 		return $html;
@@ -2058,9 +2150,10 @@ class Formation extends FormBuilder {
 		if (isset($optionsArray[0]) && isset($optionsArray[0]->incrementing) && isset($optionsArray[0]->timestamps))
 			$optionsArray = $options->toArray();
 
-		if (is_string($vars) || (is_array($vars) && count($vars) > 0)) {
-			foreach ($optionsArray as $key => $option) {
-
+		if (is_string($vars) || (is_array($vars) && count($vars) > 0))
+		{
+			foreach ($optionsArray as $key => $option)
+			{
 				//turn object into array
 				$optionArray = $option;
 				if (is_object($option))
@@ -2080,7 +2173,10 @@ class Formation extends FormBuilder {
 
 				//check whether the value is a method
 				preg_match('/\(\)/', $value, $functionMatch);
-				if (isset($optionValue)) unset($optionValue);
+
+				if (isset($optionValue))
+					unset($optionValue);
+
 				if (!empty($functionMatch)) { //value is a method of object; call it
 					$function = str_replace('()', '', $value);
 					$optionValue = $options[$key]->function();
@@ -2089,11 +2185,11 @@ class Formation extends FormBuilder {
 				}
 
 				//if a label and a value are set, add it to options array
-				if (isset($optionArray[$label]) && isset($optionValue)) {
+				if (isset($optionArray[$label]) && isset($optionValue))
 					$optionsFormatted[$optionArray[$label]] = $optionValue;
-				}
 			}
 		}
+
 		return $optionsFormatted;
 	}
 
@@ -2106,6 +2202,7 @@ class Formation extends FormBuilder {
 	public function simpleOptions($options = [])
 	{
 		$optionsFormatted = [];
+
 		foreach ($options as $option) {
 			$optionsFormatted[$option] = $option;
 		}
@@ -2123,6 +2220,7 @@ class Formation extends FormBuilder {
 	public function offsetOptions($options = [])
 	{
 		$optionsFormatted = [];
+
 		for ($o=0; $o < count($options); $o++) {
 			$optionsFormatted[($o + 1)] = $options[$o];
 		}
@@ -2143,27 +2241,32 @@ class Formation extends FormBuilder {
 	public function numberOptions($start = 1, $end = 10, $increment = 1, $decimals = 0)
 	{
 		$options = [];
-		if (is_numeric($start) && is_numeric($end)) {
-			if ($start <= $end) {
-				for ($o = $start; $o <= $end; $o += $increment) {
-					if ($decimals) {
+		if (is_numeric($start) && is_numeric($end))
+		{
+			if ($start <= $end)
+			{
+				for ($o = $start; $o <= $end; $o += $increment)
+				{
+					if ($decimals)
 						$value = number_format($o, $decimals, '.', '');
-					} else {
+					else
 						$value = $o;
-					}
+
 					$options[$value] = $value;
 				}
 			} else {
-				for ($o = $start; $o >= $end; $o -= $increment) {
-					if ($decimals) {
+				for ($o = $start; $o >= $end; $o -= $increment)
+				{
+					if ($decimals)
 						$value = number_format($o, $decimals, '.', '');
-					} else {
+					else
 						$value = $o;
-					}
+
 					$options[$value] = $value;
 				}
 			}
 		}
+
 		return $options;
 	}
 
@@ -2307,9 +2410,11 @@ class Formation extends FormBuilder {
 	 */
 	public function timeOptions($minutes = 'half')
 	{
-		$times = [];
+		$times          = [];
 		$minutesOptions = ['00'];
-		switch ($minutes) {
+
+		switch ($minutes)
+		{
 			case "full":
 				$minutesOptions = ['00']; break;
 			case "half":
@@ -2324,17 +2429,25 @@ class Formation extends FormBuilder {
 				break;
 		}
 
-		for ($h=0; $h < 24; $h++) {
+		for ($h=0; $h < 24; $h++)
+		{
 			$hour = sprintf('%02d', $h);
-			if ($h < 12) { $meridiem = "am"; } else { $meridiem = "pm"; }
-			if ($h == 0) $hour = 12;
-			if ($h > 12) {
+			if ($h < 12)
+				$meridiem = "am";
+			else
+				$meridiem = "pm";
+
+			if ($h == 0)
+				$hour = 12;
+
+			if ($h > 12)
 				$hour = sprintf('%02d', ($hour - 12));
-			}
+
 			foreach ($minutesOptions as $minutes) {
 				$times[sprintf('%02d', $h).':'.$minutes.':00'] = $hour.':'.$minutes.$meridiem;
 			}
 		}
+
 		return $times;
 	}
 
@@ -2354,29 +2467,31 @@ class Formation extends FormBuilder {
 	public function monthOptions($start = 'current', $end = -12, $endDate = false, $format = 'F Y')
 	{
 		//prepare start & end months
-		if ($start == "current" || is_null($start) || !is_string($start)) $start = date('Y-m-01');
-		if (is_int($end)) {
-			$startMid = date('Y-m-15', strtotime($start)); //get mid-day of month to prevent long months or short months from producing incorrect month values
-			if ($end > 0) {
-				$ascending = true;
-				$end       = date('Y-m-01', strtotime($startMid.' +'.$end.' months'));
-			} else {
-				$ascending = false;
-				$end       = date('Y-m-01', strtotime($startMid.' -'.abs($end).' months'));
-			}
+		if ($start == "current" || is_null($start) || !is_string($start))
+			$start = date('Y-m-01');
+
+		if (is_int($end))
+		{
+			$startMid  = date('Y-m-15', strtotime($start)); //get mid-day of month to prevent long months or short months from producing incorrect month values
+			$ascending = $end > 0;
+
+			if ($ascending)
+				$end = date('Y-m-01', strtotime($startMid.' +'.$end.' months'));
+			else
+				$end = date('Y-m-01', strtotime($startMid.' -'.abs($end).' months'));
 		} else {
-			if ($end == "current") $end = date('Y-m-01');
-			if (strtotime($end) > strtotime($start)) {
-				$ascending = true;
-			} else {
-				$ascending = false;
-			}
+			if ($end == "current")
+				$end = date('Y-m-01');
+
+			$ascending = strtotime($end) > strtotime($start);
 		}
 
 		//create list of months
 		$options = [];
 		$month   = $start;
-		if ($ascending) {
+
+		if ($ascending)
+		{
 			while (strtotime($month) <= strtotime($end)) {
 				$monthMid = date('Y-m-15', strtotime($month));
 				if ($endDate) {
