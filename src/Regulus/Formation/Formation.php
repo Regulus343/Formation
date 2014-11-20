@@ -1925,13 +1925,12 @@ class Formation {
 			if ($defaultNullOption !== false)
 			{
 				if (!is_string($defaultNullOption))
-					$defaultNullOption = Lang::get('fractal::labels.nullOption');
+					$defaultNullOption = Lang::get('formation::labels.defaultNullOption');
 
 				$html[] = $this->option('', $defaultNullOption, $value);
 
 				$attributes['data-null-option'] = $defaultNullOption;
 			}
-
 		}
 
 		foreach ($options as $optionValue => $optionLabel)
