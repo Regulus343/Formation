@@ -63,7 +63,6 @@ With this form, we can validate just the fields in the user array with `Form::va
 - [Buttons](#buttons)
 - [Integrating Handlebars JS Templates](#js-templates)
 - [Field Macro](#field-macro)
-- [Custom Macros](#custom-macros)
 
 > **Note:** All input data displayed in form elements is filtered through the entities method.
 
@@ -73,7 +72,7 @@ With this form, we can validate just the fields in the user array with `Form::va
 To install Formation, make sure `regulus/formation` has been added to Laravel 4's `composer.json` file.
 
 	"require": {
-		"regulus/formation": "0.7.0"
+		"regulus/formation": "dev-master"
 	},
 
 Then run `php composer.phar update` from the command line. Composer will install the Formation package. Now, all you have to do is register the service provider and set up Formation's alias in `app/config/app.php`. Add this to the `providers` array:
@@ -224,13 +223,13 @@ Setting up labels, validation rules, and default values all at once:
 
 	echo Form::text('username');
 
-**Explicitly specifying a default value for a text input element:**
+**Specifying a default value for a text input element:**
 
-	echo Form::text('email', 'example@gmail.com');
+	echo Form::text('email', ['value' => 'example@gmail.com']);
 
 **Setting attributes for a text field:**
 
-	echo Form::text('user.first_name', null, ['class' => 'short']);
+	echo Form::text('user.first_name', ['class' => 'short']);
 
 By using `Form::setDefaults()`, you will not need to pass a default value and can instead pass a `null` value or none at all as the second argument to let the field take advantage of the preset default value. When a form is posted, the values in the POST array will be used instead unless `Form::resetDefaults()` is used.
 
@@ -253,11 +252,11 @@ The above example will create a text field with a name of `user[][username]` and
 
 **Generating a checkbox input element:**
 
-	echo Form::checkbox('name', 'value');
+	echo Form::checkbox('name', ['value' => 'X']);
 
 **Generating a checkbox that is checked by default:**
 
-	echo Form::checkbox('name', 'value', true);
+	echo Form::checkbox('name', ['checked' => true]);
 
 Please keep in mind that once again you will not need the third argument if you set up your default values with `Form::setDefaults()`.
 
@@ -298,13 +297,16 @@ You may append "-container" to attribute names to assign them to the container e
 
 **Using a label with a null value as the first option in the list:**
 
-	echo Form::select('size', ['L' => 'Large', 'S' => 'Small'], 'Select a size');
+	echo Form::select('size', ['L' => 'Large', 'S' => 'Small'], ['null-option' => Select a size']);
 
-**Generating a drop-down list with an item selected by default:**
+**Generating a drop-down list with an option selected by default:**
 
-	echo Form::select('size', ['L' => 'Large', 'S' => 'Small'], 'Select a size', 'S');
+	//you may pass either a "selected" or "value" attribute to select an option
+	echo Form::select('size', ['L' => 'Large', 'S' => 'Small'], ['null-option' => 'Select a size', 'value' => 'S');
 
-Of course, you may use `Form::setDefaults()` to populate select boxes without the need for the third argument.
+	echo Form::select('size', ['L' => 'Large', 'S' => 'Small'], ['null-option' => 'Select a size', 'selected' => 'S');
+
+Of course, you may use `Form::setDefaults()` to populate select boxes without the need for the third `selected` or `value` attribute.
 
 **Turn an array, object, or Eloquent model into a set of options:**
 
@@ -313,14 +315,15 @@ Of course, you may use `Form::setDefaults()` to populate select boxes without th
 
 **Turn a simple array into an options array with values the same as its labels:**
 
-	echo Form::select('animal', Form::simpleOptions(['Tiger', 'Zebra', 'Elephant']), 'Select an animal');
+	echo Form::select('animal', Form::simpleOptions(['Tiger', 'Zebra', 'Elephant']), ['null-option' => Select an animal']);
 
 **Turn a simple array into a simple options array with numeric values that do start at one instead of zero:**
 
-	echo Form::select('animal', Form::offsetOptions(['Tiger', 'Zebra', 'Elephant']), 'Select an animal');
+	echo Form::select('animal', Form::offsetOptions(['Tiger', 'Zebra', 'Elephant']), ['null-option' => Select an animal']);
 
 **Turn a simple array into a simple options array with numeric values that start at one instead of zero:**
 
+	//display options from 0 to 180 incrementing by 10 each time
 	echo Form::select('number', Form::numberOptions(0, 180, 10));
 
 The first argument is the starting number, the second is the ending number, and the third is the number to iterate by. If it is negative, you may count down instead of up. Finally, the fourth argument is used to denote the number of decimal places the numbers should have.
@@ -350,7 +353,7 @@ The first argument is your start month. You can use `true`, `false`, `null`, or 
 **Using field macro for a set of radio buttons:**
 
 	$options = Form::simpleOptions(['T-Rex', 'Parasaurolophus', 'Triceratops']);
-	echo Form::field('dinosaur', 'Favorite Dinosaur', 'radio-set', $options);
+	echo Form::field('dinosaur', 'radio-set', ['label' => 'Favorite Dinosaur', 'options' => $options]);
 
 <a name="file-input"></a>
 ## File Input
@@ -455,21 +458,3 @@ You will notice that the third parameter, `attributes`, has some options for spe
 		'value'      => 3,
 	];
 	echo Form::field('number', 'select', $attributes);
-
-<a name="custom-macros"></a>
-## Custom Macros
-
-It's easy to define your own custom Form class helpers called "macros". Here's how it works. First, simply register the macro with a given name and a Closure:
-
-**Registering a Form macro:**
-
-	Form::macro('myField', function()
-	{
-		return '<input type="awesome" />';
-	});
-
-Now you can call your macro using its name:
-
-**Calling a custom Form macro:**
-
-	echo Form::myField();

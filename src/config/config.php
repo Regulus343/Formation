@@ -1,6 +1,6 @@
 <?php
 
-return array(
+return [
 
 	/*
 	|--------------------------------------------------------------------------
@@ -12,24 +12,26 @@ return array(
 	| within the container.
 	|
 	*/
-	'fieldContainer' => array(
+	'fieldContainer' => [
 		'element' => 'div',
 		'class'   => 'form-group',
 		'error'   => true,
 		'clear'   => false,
-	),
+	],
 
-	'field' => array(
-		'class'           => 'form-control',
-		'idPrefix'        => 'field-',
-		'autoLabel'       => true,
-		'autoPlaceholder' => true,
-	),
+	'field' => [
+		'class'                 => 'form-control',
+		'idPrefix'              => 'field-',
+		'autoLabel'             => true,
+		'autoPlaceholder'       => true,
+		'defaultNullOption'     => true,
+		'nullOptionAddEllipsis' => false,
+	],
 
-	'label' => array(
+	'label' => [
 		'class'  => 'control-label',
 		'suffix' => false,
-	),
+	],
 
 	/*
 	|--------------------------------------------------------------------------
@@ -44,19 +46,19 @@ return array(
 	| existing values.
 	|
 	*/
-	'error' => array(
+	'error' => [
 		'element'             => 'div',
 		'elementClass'        => 'error',
 		'class'               => 'has-error',
 		'icon'                => 'remove-circle',
 		'typeLabelTooltip'    => true,
 
-		'typeLabelAttributes' => array(
+		'typeLabelAttributes' => [
 			'data-toggle'    => 'tooltip',
 			'data-placement' => 'top',
 			'class'          => 'error-tooltip',
-		),
-	),
+		],
+	],
 
 	/*
 	|--------------------------------------------------------------------------
@@ -113,4 +115,4 @@ return array(
 	*/
 	'encoding' => 'UTF-8',
 
-);
+];
