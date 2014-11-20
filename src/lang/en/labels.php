@@ -4,6 +4,6 @@ return [
 
 	'create'            => 'Create',
 	'update'            => 'Update',
-	'defaultNullOption' => 'Select an Option',
+	'defaultNullOption' => 'Select an option',
 
 ];
