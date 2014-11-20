@@ -1912,11 +1912,14 @@ class Formation {
 
 		$html = [];
 
-		if (isset($attributes['null-option']) && !is_null($attributes['null-option']))
+		if (isset($attributes['null-option']))
 		{
-			$html[] = $this->option('', $attributes['null-option'], $value);
+			if (!is_null($attributes['null-option']) && $attributes['null-option'] !== false)
+			{
+				$html[] = $this->option('', $attributes['null-option'], $value);
 
-			$attributes['data-null-option'] = $attributes['null-option'];
+				$attributes['data-null-option'] = $attributes['null-option'];
+			}
 
 			unset($attributes['null-option']);
 		} else {
