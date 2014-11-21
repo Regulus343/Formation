@@ -1912,6 +1912,14 @@ class Formation {
 
 		$html = [];
 
+		if (isset($attributes['multiple']))
+		{
+			if ($attributes['multiple'] !== false)
+				$attributes['multiple'] = "multiple";
+			else
+				unset($attributes['multiple']);
+		}
+
 		if (isset($attributes['null-option']))
 		{
 			if (!is_null($attributes['null-option']) && $attributes['null-option'] !== false)
@@ -1923,16 +1931,19 @@ class Formation {
 
 			unset($attributes['null-option']);
 		} else {
-			$defaultNullOption = Config::get('formation::field.defaultNullOption');
-
-			if ($defaultNullOption !== false)
+			if (!isset($attributes['multiple']))
 			{
-				if (!is_string($defaultNullOption))
-					$defaultNullOption = Lang::get('formation::labels.defaultNullOption');
+				$defaultNullOption = Config::get('formation::field.defaultNullOption');
 
-				$html[] = $this->option('', $defaultNullOption, $value);
+				if ($defaultNullOption !== false)
+				{
+					if (!is_string($defaultNullOption))
+						$defaultNullOption = Lang::get('formation::labels.defaultNullOption');
 
-				$attributes['data-null-option'] = $defaultNullOption;
+					$html[] = $this->option('', $defaultNullOption, $value);
+
+					$attributes['data-null-option'] = $defaultNullOption;
+				}
 			}
 		}
 
