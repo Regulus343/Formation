@@ -97,9 +97,10 @@ class BaseModel extends Eloquent {
 	 * Get the validation rules used by the model.
 	 *
 	 * @param  mixed    $id
-	 * @return string
+	 * @param  string   $type
+	 * @return array
 	 */
-	public static function validationRules($id = null)
+	public static function validationRules($id = null, $type = 'default')
 	{
 		return [];
 	}
@@ -107,11 +108,12 @@ class BaseModel extends Eloquent {
 	/**
 	 * Set the validation rules for the model.
 	 *
-	 * @return string
+	 * @param  string   $type
+	 * @return void
 	 */
-	public function setValidationRules()
+	public function setValidationRules($type = 'default')
 	{
-		Form::setValidationRules(static::validationRules((int) $this->id));
+		Form::setValidationRules(static::validationRules((int) $this->id, $type));
 	}
 
 	/**

@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.8.0
-		last updated on November 19, 2014
+		version 0.8.1
+		last updated on November 20, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\HtmlBuilder;
@@ -1504,15 +1504,12 @@ class Formation {
 				break;
 
 			case "checkbox":
-				if (is_null($value))
-					$value = 1;
-
 				if (isset($attributesLabel['class']))
 					$attributesLabel['class'] .= " checkbox";
 				else
 					$attributesLabel['class']  = "checkbox";
 
-				$html .= '<label>'.$this->checkbox($name, $value, $attributesField).' '.$label.'</label>';
+				$html .= '<label>'.$this->checkbox($name, $attributesField).' '.$label.'</label>';
 				break;
 
 			case "radio":
@@ -1528,7 +1525,10 @@ class Formation {
 				if ($fieldLabel)
 					$html .= $this->label(null, $label, $attributesLabel);
 
-				$html .= $this->checkboxSet($options, $name, $attributesField);
+				if (!is_null($name))
+					$attributesField['name-prefix'] = $name;
+
+				$html .= $this->checkboxSet($options, $attributesField);
 				break;
 
 			case "radio-set":
@@ -1811,10 +1811,7 @@ class Formation {
 
 		$attributes = $this->addErrorClass($name, $attributes);
 
-		$value = isset($attributes['value']) ? $attributes['value'] : null;
-
-		if (is_null($value))
-			$value = ""; //if value is still null, set it to an empty string
+		$value = isset($attributes['value']) ? $attributes['value'] : $value = $this->value($name);
 
 		if (isset($attributes['value']))
 			unset($attributes['value']);
@@ -1906,6 +1903,9 @@ class Formation {
 
 		if (is_null($value))
 			$value = $this->value($name);
+
+		if ((is_null($value) || $value == "") && substr($name, -1) == ".")
+			$value = $this->value(substr($name, 0, (strlen($name) - 1)));
 
 		//add the field class if config option is set
 		$attributes = $this->setFieldClass($name, $attributes);
@@ -2199,9 +2199,12 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function checkbox($name, $value = 1, $attributes = [])
+	public function checkbox($name, $attributes = [])
 	{
-		if ($value == $this->value($name) && !isset($attributes['checked']))
+		if (!isset($attributes['value']))
+			$attributes['value'] = 1;
+
+		if ($attributes['value'] == $this->value($name) && !isset($attributes['checked']))
 			$attributes['checked'] = true;
 
 		return $this->checkable('checkbox', $name, $attributes);
@@ -3528,7 +3531,7 @@ class Formation {
 	 * @param  \Illuminate\Session\Store  $session
 	 * @return $this
 	 */
-	public function setSessionStore(Session $session)
+	public function setSessionStore(\Illuminate\Session\Store $session)
 	{
 		$this->session = $session;
 
