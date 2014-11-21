@@ -2265,13 +2265,18 @@ class Formation {
 			foreach ($options as $optionValue => $optionLabel)
 			{
 				$radioButtonAttributes = $attributes;
-				$radioButtonAttributes['checked'] = $attributes['value'] === (string) $optionValue;
 
 				//add selected class to list item if radio button is set to allow styling for selected radio buttons in set
 				$subContainerAttributes = ['class' => 'radio'];
 
-				if ($radioButtonAttributes['checked'])
+				if ($attributes['value'] == (string) $optionValue)
+					$radioButtonAttributes['checked'] = "checked";
+
+				if (isset($radioButtonAttributes['checked']))
+				{
+					$radioButtonAttributes['checked'] = "checked";
 					$subContainerAttributes['class'] .= ' selected';
+				}
 
 				$radioButton = '<div'.$this->attributes($subContainerAttributes).'>' . "\n";
 
@@ -2300,13 +2305,16 @@ class Formation {
 	 * </code>
 	 *
 	 * @param  string  $name
+	 * @param  mixed   $value
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function radio($name, $attributes = [])
+	public function radio($name, $value = null, $attributes = [])
 	{
 		if (is_null($value))
 			$value = $name;
+
+		$attributes['value'] = $value;
 
 		if ((string) $value === $this->value($name) && !isset($attributes['checked']))
 			$attributes['checked'] = true;
@@ -2314,7 +2322,7 @@ class Formation {
 		if (!isset($attributes['id']))
 			$attributes['id'] = $this->id($name.'-'.strtolower($value), $attributes);
 
-		return $this->checkable('radio', $name, $value, $checked, $attributes);
+		return $this->checkable('radio', $name, $attributes);
 	}
 
 	/**
