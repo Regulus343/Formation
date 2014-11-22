@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.8.1
-		last updated on November 20, 2014
+		version 0.8.2
+		last updated on November 21, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\HtmlBuilder;
@@ -2096,15 +2096,18 @@ class Formation {
 			if (is_object($names))
 				$names = (array) $names;
 
+			$containerAttributes = ['class' => 'checkbox-set'];
+
 			if (isset($attributes['name-prefix']))
 			{
 				$namePrefix = $attributes['name-prefix'];
+
+				$containerAttributes['id'] = $this->id($namePrefix, $attributes);
+
 				unset($attributes['name-prefix']);
 			} else {
 				$namePrefix = null;
 			}
-
-			$containerAttributes = ['class' => 'checkbox-set'];
 
 			foreach ($attributes as $attribute => $value)
 			{
@@ -2236,7 +2239,7 @@ class Formation {
 			if (is_object($options))
 				$options = (array) $options;
 
-			$containerAttributes = ['class' => 'radio-set'];
+			$containerAttributes = ['class' => 'radio-set', 'id' => $this->id($name, $attributes)];
 
 			foreach ($attributes as $attribute => $value)
 			{
