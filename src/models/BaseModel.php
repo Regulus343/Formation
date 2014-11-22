@@ -97,10 +97,9 @@ class BaseModel extends Eloquent {
 	 * Get the validation rules used by the model.
 	 *
 	 * @param  mixed    $id
-	 * @param  string   $type
-	 * @return array
+	 * @return string
 	 */
-	public static function validationRules($id = null, $type = 'default')
+	public static function validationRules($id = null)
 	{
 		return [];
 	}
@@ -108,12 +107,11 @@ class BaseModel extends Eloquent {
 	/**
 	 * Set the validation rules for the model.
 	 *
-	 * @param  string   $type
-	 * @return void
+	 * @return string
 	 */
-	public function setValidationRules($type = 'default')
+	public function setValidationRules()
 	{
-		Form::setValidationRules(static::validationRules((int) $this->id, $type));
+		Form::setValidationRules(static::validationRules((int) $this->id));
 	}
 
 	/**
@@ -234,8 +232,7 @@ class BaseModel extends Eloquent {
 			$input = Input::all();
 
 		//format data for special types and special formats
-		$input = $this->formatValuesForTypes($input);
-		$input = $this->formatValuesForSpecialFormats($input);
+		$input = $this->formatValuesForDb($input);
 
 		$this->fill($input);
 		$this->save();
@@ -460,6 +457,32 @@ class BaseModel extends Eloquent {
 	}
 
 	/**
+	 * Format values for insertion into database.
+	 *
+	 * @param  array    $values
+	 * @return array
+	 */
+	public function formatValuesForDb($values)
+	{
+		$values = $this->formatValuesForTypes($values);
+		$values = $this->formatValuesForSpecialFormats($values);
+
+		return $values;
+	}
+
+	/**
+	 * Fill model with formatted values.
+	 *
+	 * @param  array    $values
+	 * @return void
+	 */
+	public function fillFormattedValues($values)
+	{
+		$values = $this->formatValuesForDb($values);
+		$this->fill($values);
+	}
+
+	/**
 	 * Format values based on the model's special field types for data insertion into database.
 	 *
 	 * @param  array    $values
@@ -471,11 +494,11 @@ class BaseModel extends Eloquent {
 			$value = isset($values[$field]) ? $values[$field] : null;
 
 			switch ($type) {
-				case "date":        $value = ($value != "" ? date('Y-m-d', strtotime($value)) : "0000-00-00"); break;
-				case "date-time":   $value = ($value != "" ? date('Y-m-d H:i:s', strtotime($value)) : "0000-00-00 00:00:00"); break;
+				case "date":        $value = (!is_null($value) && $value != "" ? date('Y-m-d', strtotime($value)) : "0000-00-00"); break;
+				case "date-time":   $value = (!is_null($value) && $value != "" ? date('Y-m-d H:i:s', strtotime($value)) : "0000-00-00 00:00:00"); break;
 				case "slug":        $value = Format::slug($value); break;
 				case "unique-slug": $value = Format::uniqueSlug($value, $this->table, $field, $this->id); break;
-				case "checkbox":    $value = ($value != null && $value != false); break;
+				case "checkbox":    $value = (!is_null($value) && $value != false); break;
 			}
 
 			$values[$field] = $value;
