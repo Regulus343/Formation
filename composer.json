@@ -11,7 +11,7 @@
 	"require": {
 		"php": ">=5.3.0",
 		"illuminate/support": "4.x",
-		"regulus/tetra-text": "dev-master"
+		"regulus/tetra-text": "0.4.*"
 	},
 	"autoload": {
 		"classmap": [
@@ -22,5 +22,5 @@
 			"Regulus\\Formation": "src/"
 		}
 	},
-	"minimum-stability": "dev"
+	"minimum-stability": "stable"
 }
