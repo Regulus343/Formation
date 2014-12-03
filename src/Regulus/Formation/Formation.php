@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.8.4
-		last updated on November 26, 2014
+		version 0.8.5
+		last updated on December 1, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\HtmlBuilder;
@@ -2154,10 +2154,11 @@ class Formation {
 				if (!is_null($namePrefix))
 				{
 					if (substr($namePrefix, -1) == ".") {
-						$name = $namePrefix . $name;
+						$nameToCheck = $namePrefix . $name;
+						$name        = $nameToCheck;
 					} else {
 						$nameToCheck = $namePrefix;
-						$name = $namePrefix . '.('.$name.')';
+						$name        = $namePrefix . '.('.$name.')';
 					}
 				}
 
@@ -2168,7 +2169,9 @@ class Formation {
 					$checked = true;
 				} else if (is_bool($value) && $value == $this->value($nameToCheck, 'checkbox')) {
 					$checked = true;
-				} else if (is_string($value) && $value == $valueToCheck) {
+				} else if ($value && $value == $valueToCheck) {
+					$checked = true;
+				} else if (!$value && $value === $valueToCheck) {
 					$checked = true;
 				}
 
@@ -2220,6 +2223,9 @@ class Formation {
 
 		if ($attributes['value'] == $this->value($name) && !isset($attributes['checked']))
 			$attributes['checked'] = true;
+
+		if (isset($attributes['checked']) && $attributes['checked'] == false)
+			unset($attributes['checked']);
 
 		return $this->checkable('checkbox', $name, $attributes);
 	}
