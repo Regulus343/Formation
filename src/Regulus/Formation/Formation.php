@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.8.5
-		last updated on December 1, 2014
+		version 0.8.6
+		last updated on December 3, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\HtmlBuilder;
@@ -204,10 +204,16 @@ class Formation {
 		else
 			$defaultsFormatted = $defaults;
 
-		foreach ($defaultsFormatted as $field => $value) {
+		foreach ($defaultsFormatted as $field => $value)
+		{
 			$addValue = true;
+
 			if ((is_array($value) || is_object($value)) && ! (int) $field)
 				$addValue = false;
+
+			//decode JSON as array
+			if (is_string($value) && substr($value, 0, 2) == "[\"" && substr($value, -2) == "\"]")
+				$value = json_decode($value);
 
 			if ($addValue)
 				$defaultsArray[$prefix.$field] = $value;
@@ -1957,6 +1963,10 @@ class Formation {
 			else
 				$html[] = $this->option($optionValue, $optionLabel, $value);
 		}
+
+		//make multiple select name into array if it is not already
+		if (isset($attributes['multiple']) && substr($attributes['name'], -1) != ".")
+			$attributes['name'] .= ".";
 
 		$attributes['name'] = $this->name($attributes['name']);
 
