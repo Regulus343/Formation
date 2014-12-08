@@ -632,30 +632,59 @@ class BaseModel extends Eloquent {
 	 *
 	 * @param  string   $field
 	 * @param  string   $value
-	 * @param  array    $relations
+	 * @param  mixed    $relations
+	 * @param  boolean  $returnQuery
 	 * @return object
 	 */
-	public static function findBy($field = 'slug', $value, $relations = [])
+	public static function findBy($field = 'slug', $value, $relations = [], $returnQuery = false)
 	{
 		$item = new static;
+
+		if (is_null($relations) || is_bool($relations))
+		{
+			//if relations is boolean, assume it to be returnQuery instead
+			if (is_bool($relations))
+				$returnQuery = $relations;
+
+			$relations = [];
+		}
+
+		$item = $item->where($field, $value);
 
 		foreach ($relations as $relation) {
 			$item = $item->with($relation);
 		}
 
-		return $item->where($field, $value)->first();
+		if (!$returnQuery)
+			$item = $item->first();
+
+		return $item;
 	}
 
 	/**
 	 * Gets the model by its slug.
 	 *
 	 * @param  string   $slug
-	 * @param  array    $relations
+	 * @param  mixed    $relations
+	 * @param  boolean  $returnQuery
 	 * @return object
 	 */
-	public static function findBySlug($slug, $relations = [])
+	public static function findBySlug($slug, $relations = [], $returnQuery = false)
 	{
-		return static::findBy('slug', $slug, $relations);
+		return static::findBy('slug', $slug, $relations, $returnQuery);
+	}
+
+	/**
+	 * Gets the model by its slug, stripped of dashes.
+	 *
+	 * @param  string   $slug
+	 * @param  mixed    $relations
+	 * @param  boolean  $returnQuery
+	 * @return object
+	 */
+	public static function findByDashlessSlug($slug, $relations = [], $returnQuery = false)
+	{
+		return static::findBy(DB::raw('replace(slug, \'-\', \'\')'), str_replace('-', '', $slug), $relations, $returnQuery);
 	}
 
 }

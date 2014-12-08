@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.8.6
-		last updated on December 3, 2014
+		version 0.8.7
+		last updated on December 7, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\HtmlBuilder;
