@@ -4,7 +4,7 @@
         "Read more about it at http://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "4f421107f0ef02cb5ba2d13780de7b36",
+    "hash": "3eb5d718b05a205591f8341b38164b94",
     "packages": [
         {
             "name": "ezyang/htmlpurifier",
@@ -101,16 +101,16 @@
         },
         {
             "name": "regulus/tetra-text",
-            "version": "v0.4.2",
+            "version": "v0.4.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Regulus343/TetraText.git",
-                "reference": "a518dba10a08b3007d1aa5c820cb71ad9a2ed665"
+                "reference": "1df6af78ab2daeb300298fc82be681907f1dbf05"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Regulus343/TetraText/zipball/a518dba10a08b3007d1aa5c820cb71ad9a2ed665",
-                "reference": "a518dba10a08b3007d1aa5c820cb71ad9a2ed665",
+                "url": "https://api.github.com/repos/Regulus343/TetraText/zipball/1df6af78ab2daeb300298fc82be681907f1dbf05",
+                "reference": "1df6af78ab2daeb300298fc82be681907f1dbf05",
                 "shasum": ""
             },
             "require": {
@@ -138,7 +138,7 @@
                 }
             ],
             "description": "A small text/string formatting composer package that formats phone numbers, numeric values, money values and more.",
-            "time": "2014-11-27 06:02:50"
+            "time": "2014-12-09 04:27:28"
         }
     ],
     "packages-dev": [],

@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.8.7
-		last updated on December 7, 2014
+		version 0.8.8
+		last updated on December 8, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\HtmlBuilder;
@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Traits\MacroableTrait;
+
+use Regulus\TetraText\Facade as Format;
 
 class Formation {
 
@@ -2466,15 +2468,14 @@ class Formation {
 					$value = $vars[1];
 				}
 
-				//check whether the value is a method
-				preg_match('/\(\)/', $value, $functionMatch);
-
 				if (isset($optionValue))
 					unset($optionValue);
 
-				if (!empty($functionMatch)) { //value is a method of object; call it
-					$function = str_replace('()', '', $value);
-					$optionValue = $options[$key]->function();
+				$method = Format::getMethodFromString($value);
+
+				if (!is_null($method)) //value is a method of object; call it
+				{
+					$optionValue = call_user_func_array([$options[$key], $method['name']], $method['parameters']);
 				} else if (isset($optionArray[$value])) {
 					$optionValue = $optionArray[$value];
 				}
