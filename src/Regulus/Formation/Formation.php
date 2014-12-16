@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 4.
 
 		created by Cody Jassman
-		version 0.8.8
-		last updated on December 8, 2014
+		version 0.9.0
+		last updated on December 15, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\HtmlBuilder;
@@ -3124,7 +3124,12 @@ class Formation {
 	 */
 	public function getJsonErrors($session = 'errors')
 	{
-		return str_replace('\\"', '\\\"', json_encode($this->setErrors($session)));
+		$errors = $this->setErrors($session);
+
+		if (empty($errors))
+			$errors = [];
+
+		return str_replace('\\"', '\\\"', json_encode($errors));
 	}
 
 	/**

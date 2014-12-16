@@ -3,7 +3,7 @@
 | Formation.js
 |------------------------------------------------------------------------------
 |
-| Last Updated: November 11, 2014
+| Last Updated: December 15, 2014
 |
 */
 
@@ -50,7 +50,7 @@ var Formation = {
 		this.errorsById = [];
 
 		for (e in errors) {
-			this.errorsById[e.replace(/\_/g, '-').replace(/\./g, '-')] = errors[e];
+			this.errorsById['field-' + e.replace(/\_/g, '-').replace(/\./g, '-')] = errors[e];
 		}
 	},
 
