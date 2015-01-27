@@ -2,11 +2,11 @@
 
 /*----------------------------------------------------------------------------------------------------------
 	Formation
-		A powerful form creation and form data saving composer package for Laravel 4.
+		A powerful form creation and form data saving composer package for Laravel.
 
 		created by Cody Jassman
-		version 0.9.0
-		last updated on December 15, 2014
+		version 0.9.1
+		last updated on January 9, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\HtmlBuilder;
@@ -213,9 +213,23 @@ class Formation {
 			if ((is_array($value) || is_object($value)) && ! (int) $field)
 				$addValue = false;
 
-			//decode JSON as array
+			//decode JSON array
 			if (is_string($value) && substr($value, 0, 2) == "[\"" && substr($value, -2) == "\"]")
 				$value = json_decode($value);
+
+			//decode JSON object
+			if (is_string($value) && substr($value, 0, 1) == "{" && substr($value, -1) == "}")
+			{
+				$value    = json_decode($value, true);
+				$addValue = false;
+
+				if ($prefix != "")
+					$prefixForArray = $prefix.'.'.$field;
+				else
+					$prefixForArray = $field;
+
+				$defaultsArray = $this->addArrayToDefaults($value, $prefixForArray, $defaultsArray);
+			}
 
 			if ($addValue)
 				$defaultsArray[$prefix.$field] = $value;
@@ -291,10 +305,43 @@ class Formation {
 	}
 
 	/**
+	 * Turn multidimensional array into dot notation for defaults array.
+	 *
+	 * @param  array    $array
+	 * @param  mixed    $prefix
+	 * @param  array    $defaultsArray
+	 * @return array
+	 */
+	private function addArrayToDefaults($array, $prefix = null, $defaultsArray = [])
+	{
+		if (is_null($prefix))
+			$prefix = "";
+
+		$rootPrefix = $prefix;
+
+		foreach ($array as $field => $value)
+		{
+			if ($rootPrefix != "")
+				$prefix = $rootPrefix.'.'.$field;
+			else
+				$prefix = $field;
+
+			if (is_array($value))
+			{
+				$defaultsArray = $this->addArrayToDefaults($value, $prefix, $defaultsArray);
+			} else {
+				$defaultsArray[$prefix] = $value;
+			}
+		}
+
+		return $defaultsArray;
+	}
+
+	/**
 	 * Format default values for times.
 	 *
 	 * @param  array    $defaults
-	 * @return void
+	 * @return array
 	 */
 	private function formatDefaults($defaults = [])
 	{
@@ -320,6 +367,7 @@ class Formation {
 				}
 			}
 		}
+
 		return $defaults;
 	}
 
@@ -334,7 +382,7 @@ class Formation {
 	}
 
 	/**
-	 * Get an array of all values. Turns values with decimal notation names back into proper arrays.
+	 * Get an array of all values. Turns values with dot notation names back into proper arrays.
 	 *
 	 * @param  mixed    $name
 	 * @param  boolean  $object
@@ -409,7 +457,7 @@ class Formation {
 	}
 
 	/**
-	 * Get an array of all default values. Turns values with decimal notation names back into proper arrays.
+	 * Get an array of all default values. Turns values with dot notation names back into proper arrays.
 	 *
 	 * @param  mixed    $name
 	 * @return array
@@ -2788,25 +2836,27 @@ class Formation {
 
 		if ($ascending)
 		{
-			while (strtotime($month) <= strtotime($end)) {
+			while (strtotime($month) <= strtotime($end))
+			{
 				$monthMid = date('Y-m-15', strtotime($month));
-				if ($endDate) {
+
+				if ($endDate)
 					$date = $this->lastDayOfMonth($month);
-				} else {
+				else
 					$date = $month;
-				}
 
 				$options[$date] = date($format, strtotime($date));
 				$month = date('Y-m-01', strtotime($monthMid.' +1 month'));
 			}
 		} else {
-			while (strtotime($month) >= strtotime($end)) {
+			while (strtotime($month) >= strtotime($end))
+			{
 				$monthMid = date('Y-m-15', strtotime($month));
-				if ($endDate) {
+
+				if ($endDate)
 					$date = $this->lastDayOfMonth($month);
-				} else {
+				else
 					$date = $month;
-				}
 
 				$options[$date] = date($format, strtotime($date));
 				$month = date('Y-m-01', strtotime($monthMid.' -1 month'));
