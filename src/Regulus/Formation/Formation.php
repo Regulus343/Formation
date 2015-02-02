@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel.
 
 		created by Cody Jassman
-		version 0.9.1
-		last updated on January 9, 2014
+		version 0.9.2
+		last updated on Jamuary 28, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\HtmlBuilder;
@@ -254,6 +254,7 @@ class Formation {
 
 				if (count($defaults->{$relation}))
 				{
+
 					foreach ($defaults->{$relation} as $item) {
 						$item = $item->toArray();
 
@@ -279,15 +280,35 @@ class Formation {
 										}
 									}
 								} else {
+									$addValue = true;
+
 									if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
 										$fieldName = str_replace($formattedSuffix, '', $field);
 									else
 										$fieldName = $field;
 
-									if ($relationField)
-										$defaultsArray[$itemPrefix][] = $value;
-									else
-										$defaultsArray[$itemPrefix.'.'.$i.'.'.$fieldName] = $value;
+									//decode JSON array
+									if (is_string($value) && substr($value, 0, 2) == "[\"" && substr($value, -2) == "\"]")
+										$value = json_decode($value);
+
+									//decode JSON object
+									if (is_string($value) && substr($value, 0, 1) == "{" && substr($value, -1) == "}")
+									{
+										$value    = json_decode($value, true);
+										$addValue = false;
+
+										$prefixForArray = $itemPrefix.'.'.$i.'.'.$fieldName;
+
+										$defaultsArray = $this->addArrayToDefaults($value, $prefixForArray, $defaultsArray);
+									}
+
+									if ($addValue)
+									{
+										if ($relationField)
+											$defaultsArray[$itemPrefix][] = $value;
+										else
+											$defaultsArray[$itemPrefix.'.'.$i.'.'.$fieldName] = $value;
+									}
 								}
 							}
 						}
@@ -1245,6 +1266,9 @@ class Formation {
 		//remove round brackets that are used to prevent index number from appearing in field name
 		$id = str_replace('(', '', str_replace(')', '', $id));
 
+		//remove quotation marks
+		$id = str_replace('"', '', $id);
+
 		//replace double dashes with single dash
 		$id = str_replace('--', '-', $id);
 
@@ -1717,6 +1741,9 @@ class Formation {
 		if (is_null($attributes['value']) && $type != "password")
 			$attributes['value'] = $this->value($name);
 
+		if (isset($attributes['value']))
+			$attributes['value'] = str_replace('"', '&quot;', $attributes['value']);
+
 		$name = $this->name($name);
 
 		if ($type != "hidden")
@@ -1848,6 +1875,37 @@ class Formation {
 	}
 
 	/**
+	 * Create an HTML range input element.
+	 *
+	 * @param  string  $name
+	 * @param  array   $attributes
+	 * @return string
+	 */
+	public function range($name, $attributes = [])
+	{
+		$output = true;
+		if (isset($attributes['output']))
+		{
+			$output = $attributes['output'];
+			unset($attributes['output']);
+		}
+
+		if (!isset($attributes['value']))
+			$attributes['value'] = $this->value($name);
+
+		//set value to minimum if it is not set
+		if ((is_null($attributes['value']) || $attributes['value'] == "") && isset($attributes['min']))
+			$attributes['value'] = $attributes['min'];
+
+		$html = $this->input('range', $name, $attributes);
+
+		if ($output)
+			$html .= '<output for="'.$this->id($name).'" id="'.$this->id($name).'-output" class="range">'.$attributes['value'].'</output>' . "\n";
+
+		return $html;
+	}
+
+	/**
 	 * Create an HTML textarea element.
 	 *
 	 * @param  string  $name
@@ -1962,6 +2020,8 @@ class Formation {
 
 		if ((is_null($value) || $value == "") && substr($name, -1) == ".")
 			$value = $this->value(substr($name, 0, (strlen($name) - 1)));
+
+		$value = str_replace('"', '&quot;', $value);
 
 		//add the field class if config option is set
 		$attributes = $this->setFieldClass($name, $attributes);
@@ -2281,6 +2341,9 @@ class Formation {
 		if (!isset($attributes['value']))
 			$attributes['value'] = 1;
 
+		if (is_string($attributes['value']))
+			$attributes['value'] = str_replace('"', '&quot;', $attributes['value']);
+
 		if ($attributes['value'] == $this->value($name) && !isset($attributes['checked']))
 			$attributes['checked'] = true;
 
@@ -2350,7 +2413,7 @@ class Formation {
 				$radioButton = '<div'.$this->attributes($subContainerAttributes).'>' . "\n";
 
 				//append radio button value to the end of ID to prevent all radio buttons from having the same ID
-				$idSuffix = str_replace('.', '-', str_replace(' ', '-', str_replace('_', '-', strtolower($optionValue))));
+				$idSuffix = str_replace('"', '', str_replace('.', '-', str_replace(' ', '-', str_replace('_', '-', strtolower($optionValue)))));
 				if ($idSuffix == "")
 					$idSuffix = "blank";
 
@@ -2382,6 +2445,8 @@ class Formation {
 	{
 		if (is_null($value))
 			$value = $name;
+
+		$value = str_replace('"', '&quot;', $value);
 
 		$attributes['value'] = $value;
 
