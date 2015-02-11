@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel.
 
 		created by Cody Jassman
-		version 0.9.2
-		last updated on Jamuary 28, 2014
+		version 0.9.3
+		last updated on February 10, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\HtmlBuilder;
@@ -242,8 +242,8 @@ class Formation {
 		if (!empty($relations)) {
 			$i = 1;
 
-			foreach ($relations as $key => $relation) {
-
+			foreach ($relations as $key => $relation)
+			{
 				$relationField = false;
 				if ($associative) {
 					if (is_string($relation))
@@ -254,7 +254,6 @@ class Formation {
 
 				if (count($defaults->{$relation}))
 				{
-
 					foreach ($defaults->{$relation} as $item) {
 						$item = $item->toArray();
 
@@ -349,7 +348,12 @@ class Formation {
 
 			if (is_array($value))
 			{
-				$defaultsArray = $this->addArrayToDefaults($value, $prefix, $defaultsArray);
+				$associative = array_keys($value) !== range(0, count($value) - 1);
+
+				if ($associative)
+					$defaultsArray = $this->addArrayToDefaults($value, $prefix, $defaultsArray);
+				else
+					$defaultsArray[$prefix] = $value;
 			} else {
 				$defaultsArray[$prefix] = $value;
 			}
@@ -413,7 +417,7 @@ class Formation {
 	public function getValuesArray($name = null, $object = false, $defaults = false) {
 		$result = [];
 
-		if (!$defaults && Input::all() || Input::old()) {
+		if (!$defaults && (Input::all() || Input::old())) {
 			if (Input::all())
 				$values = Input::all();
 			else
@@ -440,11 +444,52 @@ class Formation {
 			}
 		}
 
-		if (!is_null($name)) {
-			if (isset($result[$name]))
-				$result = $result[$name];
-			else
-				$result = [];
+		if (!is_null($name))
+		{
+			$names = explode('.', $name);
+
+			switch (count($names))
+			{
+				case 1:
+					if (isset($result[$names[0]]))
+						$result = $result[$names[0]];
+					else
+						$result = [];
+
+					break;
+
+				case 2:
+					if (isset($result[$names[0]][$names[1]]))
+						$result = $result[$names[0]][$names[1]];
+					else
+						$result = [];
+
+					break;
+
+				case 3:
+					if (isset($result[$names[0]][$names[1]][$names[2]]))
+						$result = $result[$names[0]][$names[1]][$names[2]];
+					else
+						$result = [];
+
+					break;
+
+				case 4:
+					if (isset($result[$names[0]][$names[1]][$names[2]][$names[3]]))
+						$result = $result[$names[0]][$names[1]][$names[2]][$names[3]];
+					else
+						$result = [];
+
+					break;
+
+				case 4:
+					if (isset($result[$names[0]][$names[1]][$names[2]][$names[3]][$names[4]]))
+						$result = $result[$names[0]][$names[1]][$names[2]][$names[3]][$names[4]];
+					else
+						$result = [];
+
+					break;
+			}
 		}
 
 		if ($object)
@@ -2267,6 +2312,8 @@ class Formation {
 
 				if (isset($attributes['name-values']) && $attributes['name-values'])
 					$value = $name;
+				elseif (isset($attributes['label-values']) && $attributes['label-values'])
+					$value = $label;
 				else
 					$value = 1;
 
@@ -2614,6 +2661,25 @@ class Formation {
 
 		foreach ($options as $option) {
 			$optionsFormatted[$option] = $option;
+		}
+
+		return $optionsFormatted;
+	}
+
+	/**
+	 * Create an associative array from a simple array for a checkbox set. The field name will be lowercased and underscored.
+	 *
+	 * @param  array   $options
+	 * @return array
+	 */
+	public function checkboxOptions($options = [])
+	{
+		$optionsFormatted = [];
+
+		foreach ($options as $option) {
+			$fieldName = strtolower(str_replace('.', '', str_replace(' ', '_', trim($option))));
+
+			$optionsFormatted[$fieldName] = $option;
 		}
 
 		return $optionsFormatted;

@@ -3,7 +3,7 @@
 | Formation.js
 |------------------------------------------------------------------------------
 |
-| Last Updated: December 15, 2014
+| Last Updated: February 10, 2015
 |
 */
 
@@ -84,8 +84,11 @@ var Formation = {
 
 	//used with Handlebars.js to load form template items populate fields
 	loadTemplates: function(container, items, callbackFunction) {
+		if (typeof container != "object")
+			container = $(container);
+
 		//require "data-template-id" attribute for container
-		var templateId = $(container).attr('data-template-id');
+		var templateId = container.attr('data-template-id');
 		if (templateId == null) {
 			console.log('Container requires "data-template-id" attribute.');
 			return;
@@ -110,10 +113,10 @@ var Formation = {
 			var html       = template(context);
 
 			//append item to container
-			$(container).append(html);
+			container.append(html);
 
 			//select item
-			this.itemContainer = $(container).find('[data-item-number="'+i+'"]');
+			this.itemContainer = container.find('[data-item-number="'+i+'"]');
 
 			//populate fields and set errors for item based on data
 			this.setFieldsForItem(item);
@@ -131,8 +134,11 @@ var Formation = {
 	},
 
 	loadTemplate: function(container, item, callbackFunction) {
+		if (typeof container != "object")
+			container = $(container);
+
 		//require "data-template-id" attribute for container
-		var templateId = $(container).attr('data-template-id');
+		var templateId = container.attr('data-template-id');
 		if (templateId == null) {
 			console.log('Container requires "data-template-id" attribute.');
 			return;
@@ -140,7 +146,7 @@ var Formation = {
 
 		//set i to an unused number
 		var i = 0;
-		$(container).find('[data-item-number]').each(function(){
+		container.find('[data-item-number]').each(function(){
 			if ($(this).attr('data-item-number') > i)
 				i = $(this).attr('data-item-number');
 		});
@@ -161,10 +167,10 @@ var Formation = {
 		var html       = template(context);
 
 		//append item to container
-		$(container).append(html);
+		container.append(html);
 
 		//select item
-		this.itemContainer = $(container).find('[data-item-number="'+i+'"]');
+		this.itemContainer = container.find('[data-item-number="'+i+'"]');
 
 		//populate fields and set errors for item based on data
 		this.setFieldsForItem(item);
@@ -324,7 +330,7 @@ var Formation = {
 
 		Example:
 
-		populateSelect({
+		Formation.populateSelect({
 			targetSelect:         '#select-option',
 			options:              [{id: 1, name: 'Option 1'}, {id: 2, name: 'Option 2'}],
 			optionValue:          'id',
@@ -389,7 +395,7 @@ var Formation = {
 
 		Example:
 
-		ajaxForSelect({
+		Formation.ajaxForSelect({
 			url:                  baseUrl + 'ajax/select-options',
 			postData:             { category_id: 1 },
 			targetSelect:         '#select-option',
