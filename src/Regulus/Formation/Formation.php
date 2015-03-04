@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel.
 
 		created by Cody Jassman
-		version 0.9.3
-		last updated on February 10, 2014
+		version 0.9.4
+		last updated on March 3, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Html\HtmlBuilder;
@@ -239,22 +239,50 @@ class Formation {
 		$formattedSuffix = $this->getFormattedFieldSuffix();
 
 		//add relations data to defaults array if it is set
-		if (!empty($relations)) {
-			$i = 1;
-
+		if (!empty($relations))
+		{
 			foreach ($relations as $key => $relation)
 			{
-				$relationField = false;
-				if ($associative) {
-					if (is_string($relation))
-						$relationField = $relation;
+				$relationNumberField = null;
+				$relationField       = null;
+
+				if ($associative)
+				{
+					//check to see if a different number is being chosen from a field
+					if (preg_match('/\[number:([A-Za-z\.\_]*)\]/', $relation, $match))
+					{
+						$relationNumberField = explode('.', $match[1]);
+					}
+					else //otherwise, a specific field is being selected
+					{
+						if (is_string($relation))
+							$relationField = $relation;
+					}
 
 					$relation = $key;
 				}
 
 				if (count($defaults->{$relation}))
 				{
-					foreach ($defaults->{$relation} as $item) {
+					$i = 1;
+
+					foreach ($defaults->{$relation} as $item)
+					{
+						$number = $i;
+
+						if (!is_null($relationNumberField))
+						{
+							if (count($relationNumberField) == 1 && isset($item->{$relationNumberField[0]}))
+								$number = $item->{$relationNumberField[0]};
+
+							if (count($relationNumberField) == 2 && isset($item->{$relationNumberField[0]}) && isset($item->{$relationNumberField[0]}->{$relationNumberField[1]}))
+								$number = $item->{$relationNumberField[0]}->{$relationNumberField[1]};
+
+							if (count($relationNumberField) == 3 && isset($item->{$relationNumberField[0]}) && isset($item->{$relationNumberField[0]}->{$relationNumberField[1]})
+							&& isset($item->{$relationNumberField[0]}->{$relationNumberField[1]}->{$relationNumberField[2]}))
+								$number = $item->{$relationNumberField[0]}->{$relationNumberField[1]}->{$relationNumberField[2]};
+						}
+
 						$item = $item->toArray();
 
 						$itemPrefix = $prefix.($this->camelCaseToUnderscore($relation));
@@ -275,7 +303,7 @@ class Formation {
 											else
 												$fieldName = $pivotField;
 
-											$defaultsArray[$itemPrefix.'.'.$i.'.pivot.'.$fieldName] = $pivotValue;
+											$defaultsArray[$itemPrefix.'.'.$number.'.pivot.'.$fieldName] = $pivotValue;
 										}
 									}
 								} else {
@@ -296,7 +324,7 @@ class Formation {
 										$value    = json_decode($value, true);
 										$addValue = false;
 
-										$prefixForArray = $itemPrefix.'.'.$i.'.'.$fieldName;
+										$prefixForArray = $itemPrefix.'.'.$number.'.'.$fieldName;
 
 										$defaultsArray = $this->addArrayToDefaults($value, $prefixForArray, $defaultsArray);
 									}
@@ -306,7 +334,7 @@ class Formation {
 										if ($relationField)
 											$defaultsArray[$itemPrefix][] = $value;
 										else
-											$defaultsArray[$itemPrefix.'.'.$i.'.'.$fieldName] = $value;
+											$defaultsArray[$itemPrefix.'.'.$number.'.'.$fieldName] = $value;
 									}
 								}
 							}
@@ -314,13 +342,12 @@ class Formation {
 
 						$i ++;
 					}
-
-					$i ++;
 				}
 			}
 		}
 
 		$this->defaults = $defaultsArray;
+
 		return $this->defaults;
 	}
 

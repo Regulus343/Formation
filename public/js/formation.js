@@ -3,7 +3,7 @@
 | Formation.js
 |------------------------------------------------------------------------------
 |
-| Last Updated: February 10, 2015
+| Last Updated: March 3, 2015
 |
 */
 
@@ -33,19 +33,23 @@ var Formation = {
 
 	setUpRemoveButtons:  true,
 
-	setErrorSettings: function (errorSettings) {
+	setErrorSettings: function (errorSettings)
+	{
 		this.errorSettings = errorSettings;
 	},
 
-	setErrorCallback: function (errorCallback) {
+	setErrorCallback: function (errorCallback)
+	{
 		this.errorCallback = errorCallback;
 	},
 
-	defaultErrorCallback: function(fieldContainer) {
+	defaultErrorCallback: function(fieldContainer)
+	{
 		fieldContainer.find('[data-toggle="tooltip"]').tooltip({html: true}); //by default, form errors are set up for Bootstrap 3
 	},
 
-	setErrors: function(errors) {
+	setErrors: function(errors)
+	{
 		this.errors     = errors;
 		this.errorsById = [];
 
@@ -54,78 +58,64 @@ var Formation = {
 		}
 	},
 
-	getErrors: function() {
+	getErrors: function()
+	{
 		return this.errors;
 	},
 
-	getError: function(field) {
+	getError: function(field)
+	{
 		if (this.errors === null)
 			return false;
 
 		return this.errors[field] !== undefined ? this.errors[field] : false;
 	},
 
-	getErrorsById: function() {
+	getErrorsById: function()
+	{
 		return this.errorsById;
 	},
 
-	getErrorById: function(field) {
+	getErrorById: function(field)
+	{
 		if (this.errorsById === null)
 			return false;
 
 		return this.errorsById[field] !== undefined ? this.errorsById[field] : false;
 	},
 
-	camelCaseToDashed: function(string) {
+	camelCaseToDashed: function(string)
+	{
 		return string.replace(/([A-Z])/g, function($1) {
-			return '-' + $1.toLowerCase(); 
+			return '-' + $1.toLowerCase();
 		});
 	},
 
 	//used with Handlebars.js to load form template items populate fields
-	loadTemplates: function(container, items, callbackFunction) {
+	loadTemplates: function(container, items, callbackFunction)
+	{
 		if (typeof container != "object")
 			container = $(container);
 
 		//require "data-template-id" attribute for container
 		var templateId = container.attr('data-template-id');
 		if (templateId == null) {
-			console.log('Container requires "data-template-id" attribute.');
+			this.log('Container requires "data-template-id" attribute.');
 			return;
 		}
 
 		this.templateItems = 0;
-		for (i in items) {
+		for (i in items)
+		{
 			if (items.hasOwnProperty(i))
 				this.templateItems ++;
 		}
 
-		for (i in items) {
+		for (i in items)
+		{
 			var item = items[i];
 
-			this.itemNumber = i;
-
-			//create item template
-			var source     = $('#'+templateId).html();
-			var template   = Handlebars.compile(source);
-			var context    = item;
-			context.number = i;
-			var html       = template(context);
-
-			//append item to container
-			container.append(html);
-
-			//select item
-			this.itemContainer = container.find('[data-item-number="'+i+'"]');
-
-			//populate fields and set errors for item based on data
-			this.setFieldsForItem(item);
-
-			//add template item to loaded total
-			this.templateItemsLoaded ++;
-
-			//set up remove buttons
-			this.setUpRemoveButtonsForTemplate();
+			this.loadTemplate(container, item);
 
 			//trigger callback function if one is set
 			if (callbackFunction !== undefined)
@@ -133,14 +123,15 @@ var Formation = {
 		}
 	},
 
-	loadTemplate: function(container, item, callbackFunction) {
+	loadTemplate: function(container, item, callbackFunction)
+	{
 		if (typeof container != "object")
 			container = $(container);
 
 		//require "data-template-id" attribute for container
 		var templateId = container.attr('data-template-id');
 		if (templateId == null) {
-			console.log('Container requires "data-template-id" attribute.');
+			this.log('Container requires "data-template-id" attribute.');
 			return;
 		}
 
@@ -164,7 +155,8 @@ var Formation = {
 			context = item;
 
 		context.number = i;
-		var html       = template(context);
+
+		var html = template(context);
 
 		//append item to container
 		container.append(html);
@@ -181,6 +173,32 @@ var Formation = {
 		//set up remove buttons
 		this.setUpRemoveButtonsForTemplate();
 
+		//load template sub-items
+		this.itemContainer.find('[data-template-id]').each(function()
+		{
+			var subItems = [];
+
+			if (item !== null && $(this).attr('data-template-item-name') !== undefined && item[$(this).attr('data-template-item-name')] !== undefined)
+				subItems = item[$(this).attr('data-template-item-name')];
+
+			if (!subItems.length && !Object.keys(subItems).length && $(this).attr('data-template-default-items') !== undefined)
+			{
+				for (s = 0; s < parseInt($(this).attr('data-template-default-items')); s++) {
+					subItems[s] = {};
+				}
+			}
+
+			//set parent number
+			if (subItems.length || Object.keys(subItems).length)
+			{
+				for (s in subItems) {
+					subItems[s].parentNumber = i;
+				}
+			}
+
+			Formation.loadTemplates($(this), subItems);
+		});
+
 		//trigger callback function if one is set
 		if (callbackFunction !== undefined)
 			callbackFunction(this.itemContainer, item);
@@ -188,15 +206,26 @@ var Formation = {
 		return i;
 	},
 
-	loadNewTemplate: function(container, callbackFunction) {
-		return this.loadTemplate(container, null, callbackFunction);
+	loadNewTemplate: function(container, callbackFunction)
+	{
+		if (typeof container != "object")
+			container = $(container);
+
+		var item = null;
+
+		//set parent number if possible
+		if (container.parents('[data-item-number]').length)
+			item = {parentNumber: container.parents('[data-item-number]').attr('data-item-number')};
+
+		return this.loadTemplate(container, item, callbackFunction);
 	},
 
-	getTemplateHtml: function(container, item) {
+	getTemplateHtml: function(container, item)
+	{
 		//require "data-template-id" attribute for container
 		var templateId = $(container).attr('data-template-id');
 		if (templateId == null) {
-			console.log('Container requires "data-template-id" attribute.');
+			this.log('Container requires "data-template-id" attribute.');
 			return;
 		}
 
@@ -225,30 +254,34 @@ var Formation = {
 		return html;
 	},
 
-	setUpRemoveButtonsForTemplate: function() {
-		if (this.setUpRemoveButtons) {
-			this.itemContainer.find('.remove-template-item').click(function(e){
+	setUpRemoveButtonsForTemplate: function()
+	{
+		if (this.setUpRemoveButtons)
+		{
+			this.itemContainer.find('.remove-template-item').off('click').on('click', function(e){
 				e.preventDefault();
 
-				var itemContainer = $(this).parents('[data-item-number]');
+				var itemContainer = $(this).closest('[data-item-number]');
 
-				itemContainer.slideUp(500, function(){
+				itemContainer.slideUp(250, function(){
 					itemContainer.remove();
 				});
 			});
 		}
 	},
 
-	setFieldsForItem: function(item, parentField) {
+	setFieldsForItem: function(item, parentField)
+	{
 		var errorSettings = this.errorSettings;
 
 		i = this.itemNumber;
 
-		for (field in item) {
+		for (field in item)
+		{
 			var value = item[field];
 
-			if (typeof value == "object") {
-
+			if (typeof value == "object")
+			{
 				this.setFieldsForItem(value, field);
 
 			} else {
@@ -263,10 +296,15 @@ var Formation = {
 				var fieldElement = this.itemContainer.find('.'+fieldClassName);
 
 				//set value for field
-				if (fieldElement.attr('type') == "checkbox") {
+				if (fieldElement.attr('type') == "checkbox")
+				{
 					fieldElement.prop('checked', parseInt(value));
-				} else {
-					fieldElement.val(value);
+				}
+				else
+				{
+					//make sure value is not already set
+					if (fieldElement.val() == "")
+						fieldElement.val(value);
 				}
 
 				//set "data-value" attribute as well in case fields are select boxes that have not yet been populated with options
@@ -274,7 +312,8 @@ var Formation = {
 
 				//add error class for field if an error exists
 				var error = this.getErrorById(fieldElement.attr('id'));
-				if (error !== false) {
+				if (error !== false)
+				{
 					var containerElement = fieldElement.parents('div.form-group');
 					containerElement.addClass(errorSettings.classAttribute);
 
@@ -283,10 +322,13 @@ var Formation = {
 
 					fieldElement.addClass(errorSettings.classAttribute);
 
-					if (this.errorSettings.typeLabelTooltip) {
+					if (this.errorSettings.typeLabelTooltip)
+					{
 						//add attributes to tooltip's label
 						var attributes = errorSettings.typeLabelAttributes;
-						for (a in attributes) {
+
+						for (a in attributes)
+						{
 							var attribute = this.camelCaseToDashed(a);
 							var value     = attributes[a];
 
@@ -306,8 +348,10 @@ var Formation = {
 						fieldElement.after(errorHtml);
 					}
 
-					if (this.errorCallback) {
+					if (this.errorCallback)
+					{
 						var errorCallbackArray = this.errorCallback.split('.');
+
 						if (errorCallbackArray.length == 2)
 							window[errorCallbackArray[0]][errorCallbackArray[1]](containerElement);
 						else
@@ -318,7 +362,8 @@ var Formation = {
 		}
 	},
 
-	allItemsLoaded: function() {
+	allItemsLoaded: function()
+	{
 		return this.templateItemsLoaded == this.templateItems;
 	},
 
@@ -344,8 +389,10 @@ var Formation = {
 		or you can just use a simple array in JSON like ['Option 1', 'Option 2']. If you set settings.optionsToggleElement, the element will be
 		shown if there are select options and hidden if there are none.
 	*/
-	populateSelect: function(settings) {
-		if (settings.nullOption === undefined) {
+	populateSelect: function(settings)
+	{
+		if (settings.nullOption === undefined)
+		{
 			if ($(settings.targetSelect).attr('data-null-option') != "")
 				settings.nullOption = $(settings.targetSelect).attr('data-null-option');
 			else
@@ -356,10 +403,11 @@ var Formation = {
 
 		//build select options markup
 		var options = "";
-		if (settings.nullOption !== false) {
+		if (settings.nullOption !== false)
 			options += '<option value="">'+settings.nullOption+'</option>' + "\n";
-		}
-		for (c=0; c < settings.options.length; c++) {
+
+		for (c=0; c < settings.options.length; c++)
+		{
 			if (settings.optionValue === undefined)
 				options += '<option value="'+settings.options[c]+'">'+settings.options[c]+'</option>' + "\n";
 			else
@@ -374,12 +422,12 @@ var Formation = {
 		});
 
 		//show or hide an element depending on whether options are available in select box
-		if (settings.optionsToggleElement !== undefined) {
-			if (data.length > 0) {
+		if (settings.optionsToggleElement !== undefined)
+		{
+			if (data.length > 0)
 				$(settings.optionsToggleElement).removeClass('hidden');
-			} else {
+			else
 				$(settings.optionsToggleElement).addClass('hidden');
-			}
 		}
 
 		//show or hide an element depending on whether options are available in select box
@@ -407,7 +455,8 @@ var Formation = {
 		or you can just return a simple array in JSON like ['Option 1', 'Option 2']. If you set settings.optionsToggleElement, the element will be shown
 		if there are select options and hidden if there are none.
 	*/
-	ajaxForSelect: function(settings) {
+	ajaxForSelect: function(settings)
+	{
 		if (settings.type === undefined)
 			settings.type = 'post';
 
@@ -424,9 +473,14 @@ var Formation = {
 				Formation.populateSelect(settings);
 			},
 			error: function() {
-				console.log('Ajax For Select Failed');
+				Formation.log('Ajax For Select Failed');
 			}
 		});
+	},
+
+	log: function(string)
+	{
+		console.log('Formation.js: '+string);
 	}
 
 }
