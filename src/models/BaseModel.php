@@ -1,8 +1,7 @@
-<?php namespace Regulus\Formation;
+<?php namespace Regulus\Formation\Models;
 
 use Illuminate\Database\Eloquent\Model as Eloquent;
 
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
 
@@ -261,7 +260,7 @@ class BaseModel extends Eloquent {
 		$items           = $this->{$modelMethod};
 		$model           = get_class($this->{$modelMethod}()->getModel());
 		$formattedSuffix = Form::getFormattedFieldSuffix();
-		$pivotTimestamps = Config::get('formation::pivotTimestamps');
+		$pivotTimestamps = config('form.pivot_timestamps');
 
 		//create or update related items
 		foreach ($input as $index => $itemData)

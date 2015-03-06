@@ -12,7 +12,7 @@ return [
 	| within the container.
 	|
 	*/
-	'fieldContainer' => [
+	'field_container' => [
 		'element' => 'div',
 		'class'   => 'form-group',
 		'error'   => true,
@@ -20,12 +20,12 @@ return [
 	],
 
 	'field' => [
-		'class'                 => 'form-control',
-		'idPrefix'              => 'field-',
-		'autoLabel'             => true,
-		'autoPlaceholder'       => true,
-		'defaultNullOption'     => true,
-		'nullOptionAddEllipsis' => false,
+		'class'                    => 'form-control',
+		'id_prefix'                => 'field-',
+		'auto_label'               => true,
+		'auto_placeholder'         => true,
+		'default_null_option'      => true,
+		'null_option_add_ellipsis' => false,
 	],
 
 	'label' => [
@@ -47,15 +47,15 @@ return [
 	|
 	*/
 	'error' => [
-		'element'             => 'div',
-		'elementClass'        => 'error',
-		'class'               => 'has-error',
-		'icon'                => 'remove-circle',
-		'typeLabelTooltip'    => true,
+		'element'               => 'div',
+		'element_class'         => 'error',
+		'class'                 => 'has-error',
+		'icon'                  => 'remove-circle',
+		'type_label_tooltip'    => true,
 
-		'typeLabelAttributes' => [
-			'data-toggle'    => 'tooltip',
-			'data-placement' => 'top',
+		'type_label_attributes' => [
+			'data_toggle'    => 'tooltip',
+			'data_placement' => 'top',
 			'class'          => 'error-tooltip',
 		],
 	],
@@ -69,7 +69,7 @@ return [
 	| to create their labels.
 	|
 	*/
-	'autoButtonIcon' => true,
+	'auto_button_icon' => true,
 
 	/*
 	|--------------------------------------------------------------------------
@@ -80,19 +80,21 @@ return [
 	| "Auto CSRF Token" will automatically add the CSRF token field to forms.
 	|
 	*/
-	'csrfToken'     => 'csrf_token',
-	'autoCsrfToken' => true,
+	'csrf_token'      => 'csrf_token',
+	'auto_csrf_token' => true,
 
 	/*
 	|--------------------------------------------------------------------------
-	| Date Format
+	| Date & Date/Time Formats
 	|--------------------------------------------------------------------------
 	|
 	| The default date formats for populating fields.
 	|
 	*/
-	'dateFormat'     => 'm/d/Y',
-	'dateTimeFormat' => 'm/d/Y g:i A',
+	'format' => [
+		'date'     => 'm/d/Y',
+		'datetime' => 'm/d/Y g:i A',
+	],
 
 	/*
 	|--------------------------------------------------------------------------
@@ -103,7 +105,7 @@ return [
 	| used if Formation's BaseModel is used to extend Eloquent models.
 	|
 	*/
-	'pivotTimestamps' => true,
+	'pivot_timestamps' => true,
 
 	/*
 	|--------------------------------------------------------------------------

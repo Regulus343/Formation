@@ -2,8 +2,8 @@
 
 return [
 
-	'create'            => 'Create',
-	'update'            => 'Update',
-	'defaultNullOption' => 'Select an option',
+	'create'              => 'Create',
+	'update'              => 'Update',
+	'default_null_option' => 'Select an Option',
 
 ];

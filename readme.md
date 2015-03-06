@@ -1,7 +1,9 @@
 Formation
 =========
 
-**A powerful form creation composer package for Laravel 4.**
+**A powerful form creation and form data saving composer package for Laravel 5.**
+
+> **Note:** For Laravel 4, you may use <a href="https://github.com/Regulus343/Formation/tree/v0.9.4">version 0.9.4</a>.
 
 Formation makes it really easy to build a form with form building methods that automatically:
 
@@ -23,16 +25,24 @@ All of this can be achieved with a minimal amount of code:
 	?>
 
 	<?php //simply typing Form::field('first_name') is the same as the following code: ?>
+
 	<div class="form-group" id="first-name-area">
-		<?php echo Form::label('first_name');
+		<?php
+		echo Form::label('first_name');
+
 		echo Form::text('first_name');
-		echo Form::error('first_name'); ?>
+
+		echo Form::error('first_name');
+		?>
 	</div>
 
 	<?php //which may produce the following markup: ?>
+
 	<div class="form-group hass error" id="first-name-area">
-		<label for="first-name" class="control-label has-error"><span class="access">F</span>irst Name</label>
-		<input type="text" name="first_name" id="first-name" class="form-control has-error" placeholder="First Name" accesskey="f" value="" />
+		<label for="field-first-name" class="control-label has-error"><span class="access">F</span>irst Name</label>
+
+		<input type="text" name="first_name" id="field-first-name" class="form-control has-error" placeholder="First Name" accesskey="f" value="" />
+
 		<div class="error">The First Name field is required.</div>
 	</div>
 
@@ -69,13 +79,13 @@ With this form, we can validate just the fields in the user array with `Form::va
 <a name="installation"></a>
 ## Installation
 
-To install Formation, make sure `regulus/formation` has been added to Laravel 4's `composer.json` file.
+To install Formation, make sure `regulus/formation` has been added to Laravel 5's `composer.json` file.
 
 	"require": {
-		"regulus/formation": "0.9.4"
+		"regulus/formation": "dev-master"
 	},
 
-Then run `php composer.phar update` from the command line. Composer will install the Formation package. Now, all you have to do is register the service provider and set up Formation's alias in `app/config/app.php`. Add this to the `providers` array:
+Then run `php composer.phar update` from the command line. Composer will install the Formation package. Now, all you have to do is register the service provider and set up Formation's alias in `config/app.php`. Add this to the `providers` array:
 
 	'Regulus\Formation\FormationServiceProvider',
 
@@ -152,7 +162,7 @@ One of the most useful features of Formation is its ability to take an array, ob
 <a name="validation-rules"></a>
 ## Validation Rules
 
-Formation makes use Laravel 4's Validator class. Using `Form::setValidation()` will create an instance of the Validator class (or many instances if array field names are used in the form setup). The reason the form's validation rules are passed through Formation to Validator is because Formation automatically adds an "error" class to the label and form field if an error is triggered. To do this, Formation needs a copy of the validation rules that have been set.
+Formation makes use Laravel's Validator class. Using `Form::setValidation()` will create an instance of the Validator class (or many instances if array field names are used in the form setup). The reason the form's validation rules are passed through Formation to Validator is because Formation automatically adds an "error" class to the label and form field if an error is triggered. To do this, Formation needs a copy of the validation rules that have been set.
 
 	$rules = [
 		'user.name' => ['required'], //'user.name' can be used for an array field like "user[name]"
@@ -413,7 +423,7 @@ Here is a simple container element and example template that can be used in conj
 		</fieldset>
 	</script>
 
-> **Note:** The container element should have a `data-template-id` attribute and the item template should have a `data-item-number` attribute. If you are using the Blade templating engine, you should use `@include()` to load the template in another non-Blade file as Handlebars' `{{` and `}}` wrappers can conflict with Blade. To see an example of `loadTemplates()` in action, please refer to the Laravel 4 CMS which uses Formation, [Fractal](https://github.com/Regulus343/Fractal).
+> **Note:** The container element should have a `data-template-id` attribute and the item template should have a `data-item-number` attribute. If you are using the Blade templating engine, you should use `@include()` to load the template in another non-Blade file as Handlebars' `{{` and `}}` wrappers conflict with Blade. To see an example of `loadTemplates()` in action, please refer to the Laravel 5 CMS which uses Formation, [Fractal](https://github.com/Regulus343/Fractal).
 
 <a name="field-macro"></a>
 ## Field Macro

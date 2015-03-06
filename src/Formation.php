@@ -2,30 +2,24 @@
 
 /*----------------------------------------------------------------------------------------------------------
 	Formation
-		A powerful form creation and form data saving composer package for Laravel.
+		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 0.9.4
-		last updated on March 3, 2014
+		version 0.9.9
+		last updated on March 5, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
-use Illuminate\Html\HtmlBuilder;
 use Illuminate\Routing\UrlGenerator;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Input;
-use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Traits\MacroableTrait;
 
 use Regulus\TetraText\Facade as Format;
 
 class Formation {
-
-	use MacroableTrait;
 
 	/**
 	 * The HTML builder instance.
@@ -155,10 +149,9 @@ class Formation {
 	 * @param  string  $csrfToken
 	 * @return void
 	 */
-	public function __construct(HtmlBuilder $html, UrlGenerator $url, $csrfToken)
+	public function __construct(UrlGenerator $url, $csrfToken)
 	{
 		$this->url       = $url;
-		$this->html      = $html;
 		$this->csrfToken = $csrfToken;
 	}
 
@@ -1142,7 +1135,7 @@ class Formation {
 		}
 
 		//add label suffix
-		$suffix = Config::get('formation::label.suffix');
+		$suffix = config('form.label.suffix');
 		if ($suffix != "" && (!isset($attributes['suffix']) || $attributes['suffix']))
 			$label .= $suffix;
 
@@ -1150,15 +1143,17 @@ class Formation {
 			unset($attributes['suffix']);
 
 		//add tooltip and tooltip attributes if necessary
-		if (Config::get('formation::error.typeLabelTooltip')) {
+		if (config('form.error.type_label_tooltip')) {
 			$errorMessage = $this->errorMessage($name);
 
 			if ($errorMessage)
 			{
-				$addAttributes = Config::get('formation::error.typeLabelAttributes');
+				$addAttributes = config('form.error.type_label_attributes');
 
 				foreach ($addAttributes as $attribute => $attributeValue)
 				{
+					$attribute = str_replace('_', '-', $attribute);
+
 					if (isset($attributes[$attribute]))
 						$attributes[$attribute] .= ' '.$attributeValue;
 					else
@@ -1187,9 +1182,9 @@ class Formation {
 		if (!isset($attributes['control-label-class']) || $attributes['control-label-class'])
 		{
 			if (isset($attributes['class']) && $attributes['class'] != "")
-				$attributes['class'] .= ' '.Config::get('formation::label.class');
+				$attributes['class'] .= ' '.config('form.label.class');
 			else
-				$attributes['class'] = Config::get('formation::label.class');
+				$attributes['class'] = config('form.label.class');
 		}
 
 		if (isset($attributes['control-label-class']))
@@ -1326,7 +1321,8 @@ class Formation {
 			$id = strtolower(str_replace('.', '-', str_replace('_', '-', str_replace(' ', '-', $name))));
 
 			//add ID prefix
-			$idPrefix = Config::get('formation::field.idPrefix');
+			$idPrefix = config('form.field.id_prefix');
+
 			if (!is_null($idPrefix) && $idPrefix !== false && $idPrefix != "")
 				$id = $idPrefix.$id;
 		}
@@ -1367,7 +1363,7 @@ class Formation {
 	{
 		if (!in_array($type, ['hidden', 'checkbox', 'radio']))
 		{
-			$defaultClass = Config::get('formation::field.class');
+			$defaultClass = config('form.field.class');
 			if ($defaultClass != "")
 			{
 				if (isset($attributes['class']) && $attributes['class'] != "")
@@ -1421,7 +1417,8 @@ class Formation {
 	 */
 	protected function setFieldPlaceholder($name, $attributes = [])
 	{
-		$placeholder = Config::get('formation::field.autoPlaceholder');
+		$placeholder = config('form.field.auto_placeholder');
+
 		if ($placeholder && !isset($attributes['placeholder'])) {
 			$namePlaceholder = $name;
 			if (isset($this->labels[$name]) && $this->labels[$name] != "") {
@@ -1474,7 +1471,7 @@ class Formation {
 	 */
 	public function entities($value)
 	{
-		return htmlentities($value, ENT_QUOTES, Config::get('formation::encoding'), false);
+		return htmlentities($value, ENT_QUOTES, config('form.encoding'), false);
 	}
 
 	/**
@@ -1525,7 +1522,8 @@ class Formation {
 		}
 
 		//allow label to be set via attributes array (defaults to labels array and then to a label derived from the field's name)
-		$fieldLabel = Config::get('formation::field.autoLabel');
+		$fieldLabel = config('form.field.auto_label');
+
 		if (!is_null($name))
 			$label = $this->nameToLabel($name);
 		else
@@ -1706,7 +1704,7 @@ class Formation {
 				break;
 		}
 
-		if (Config::get('formation::fieldContainer.error') && !Config::get('formation::error.typeLabelTooltip'))
+		if (config('form.field_container.error') && !config('form.error.type_label_tooltip'))
 			$html .= $this->error($name) . "\n";
 
 		$html .= $this->closeFieldContainer();
@@ -1734,9 +1732,9 @@ class Formation {
 		}
 
 		if (!isset($attributesFieldContainer['class']) || $attributesFieldContainer['class'] == "")
-			$attributesFieldContainer['class'] = Config::get('formation::fieldContainer.class');
+			$attributesFieldContainer['class'] = config('form.field_container.class');
 		else
-			$attributesFieldContainer['class'] .= ' '.Config::get('formation::fieldContainer.class');
+			$attributesFieldContainer['class'] .= ' '.config('form.field_container.class');
 
 		if (!isset($attributesFieldContainer['id'])) {
 			$attributesFieldContainer['id'] = $this->id($name, $attributesFieldContainer).'-area';
@@ -1750,7 +1748,7 @@ class Formation {
 
 		$attributesFieldContainer = $this->addErrorClass($name, $attributesFieldContainer);
 
-		return '<'.Config::get('formation::fieldContainer.element').$this->attributes($attributesFieldContainer).'>' . "\n";
+		return '<'.config('form.field_container.element').$this->attributes($attributesFieldContainer).'>' . "\n";
 	}
 
 	/**
@@ -1762,10 +1760,10 @@ class Formation {
 	{
 		$html = "";
 
-		if (Config::get('formation::fieldContainer.clear'))
+		if (config('form.field_container.clear'))
 			$html .= '<div class="clear"></div>' . "\n";
 
-		$html .= '</'.Config::get('formation::fieldContainer.element').'>' . "\n";
+		$html .= '</'.config('form.field_container.element').'>' . "\n";
 
 		return $html;
 	}
@@ -2121,12 +2119,12 @@ class Formation {
 		} else {
 			if (!isset($attributes['multiple']))
 			{
-				$defaultNullOption = Config::get('formation::field.defaultNullOption');
+				$defaultNullOption = config('form.field.default_null_option');
 
 				if ($defaultNullOption !== false)
 				{
 					if (!is_string($defaultNullOption))
-						$defaultNullOption = Lang::get('formation::labels.defaultNullOption');
+						$defaultNullOption = trans('formation::labels.default_null_option');
 
 					$html[] = $this->option('', $defaultNullOption, $value);
 
@@ -3174,7 +3172,7 @@ class Formation {
 	 */
 	public function getErrorClass()
 	{
-		return Config::get('formation::error.class');
+		return config('form.error.class');
 	}
 
 	/**
@@ -3200,7 +3198,7 @@ class Formation {
 		if (!is_null($customMessage))
 			$message = $customMessage;
 
-		$errorElement = Config::get('formation::error.element');
+		$errorElement = config('form.error.element');
 
 		if ($message && $message != "") {
 			return '<'.$errorElement.' class="error"'.$attr.'>'.$message.'</'.$errorElement.'>';
@@ -3292,8 +3290,10 @@ class Formation {
 			}
 		}
 
-		if ($errorMessage && !$ignoreIcon) {
-			$errorIcon = Config::get('formation::error.icon');
+		if ($errorMessage && !$ignoreIcon)
+		{
+			$errorIcon = config('form.error.icon');
+
 			if ($errorIcon) {
 				if (!preg_match("/glyphicon/", $errorMessage))
 					$errorMessage = '<span class="glyphicon glyphicon-'.$errorIcon.'"></span>&nbsp; '.$errorMessage;
@@ -3348,7 +3348,8 @@ class Formation {
 	 */
 	public function getJsonErrorSettings($session = 'errors')
 	{
-		$errorSettings = $this->formatSettingsForJs(Config::get('formation::error'));
+		$errorSettings = $this->formatSettingsForJs(config('form.error'));
+
 		return json_encode($errorSettings);
 	}
 
@@ -3506,17 +3507,17 @@ class Formation {
 	{
 		//if null, check config button icon config setting
 		if (is_null($icon))
-			$icon = Config::get('formation::autoButtonIcon');
+			$icon = config('form.auto_button_icon');
 
 		if (is_null($update))
 			$update = $this->updateResource();
 
 		if ($update) {
-			$label = Lang::get('formation.update');
+			$label = trans('formation::labels.update');
 			if (is_bool($icon) && $icon)
 				$icon = 'ok';
 		} else {
-			$label = Lang::get('formation.create');
+			$label = trans('formation::labels.create');
 			if (is_bool($icon) && $icon)
 				$icon = 'plus';
 		}
@@ -3797,7 +3798,7 @@ class Formation {
 	 */
 	public function getDateFormat()
 	{
-		return Config::get('formation::dateFormat');
+		return config('form.format.date');
 	}
 
 	/**
@@ -3807,17 +3808,17 @@ class Formation {
 	 */
 	public function getDateTimeFormat()
 	{
-		return Config::get('formation::dateTimeFormat');
+		return config('form.format.datetime');
 	}
 
 	/**
-	 * Get the appliction.encoding without needing to request it from Config::get() each time.
+	 * Get the application encoding.
 	 *
 	 * @return string
 	 */
 	protected function encoding()
 	{
-		return $this->encoding ?: $this->encoding = Config::get('site.encoding');
+		return $this->encoding ?: $this->encoding = config('form.encoding');
 	}
 
 }

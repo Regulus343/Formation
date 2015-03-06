@@ -18,7 +18,11 @@ class FormationServiceProvider extends ServiceProvider {
 	 */
 	public function boot()
 	{
-		$this->package('regulus/formation');
+		$this->publishes([
+			__DIR__.'/config/form.php' => config_path('form.php'),
+		]);
+
+		$this->loadTranslationsFrom(__DIR__.'/lang', 'formation');
 	}
 
 	/**
@@ -28,8 +32,9 @@ class FormationServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
-		$this->app['formation'] = $this->app->share(function($app) {
-			return new Formation($app['html'], $app['url'], $app['session.store']->getToken());
+		$this->app->singleton('Regulus\Formation\Formation', function($app)
+		{
+			return new Formation($app['url'], csrf_token());
 		});
 	}
 
@@ -40,7 +45,7 @@ class FormationServiceProvider extends ServiceProvider {
 	 */
 	public function provides()
 	{
-		return array();
+		return [];
 	}
 
 }

@@ -1,6 +1,6 @@
 {
 	"name": "regulus/formation",
-	"description": "A powerful form creation composer package for Laravel 4.",
+	"description": "A powerful form creation and form data saving composer package for Laravel 5.",
 	"license": "MIT",
 	"authors": [
 		{
@@ -9,17 +9,15 @@
 		}
 	],
 	"require": {
-		"php": ">=5.3.0",
-		"illuminate/support": "4.x",
-		"regulus/tetra-text": "0.4.4"
+		"php": ">=5.4.0",
+		"laravel/framework": "5.0.*",
+
+		"regulus/tetra-text": "dev-master"
 	},
 	"autoload": {
-		"classmap": [
-			"src/migrations",
-			"src/models"
-		],
-		"psr-0": {
-			"Regulus\\Formation": "src/"
+		"psr-4": {
+			"Regulus\\Formation\\": "src/",
+			"Regulus\\Formation\\Models\\": "src/models/"
 		}
 	},
 	"minimum-stability": "stable"
