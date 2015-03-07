@@ -1,15 +1,14 @@
 <?php namespace Regulus\Formation\Models;
 
-use Illuminate\Database\Eloquent\Model as Eloquent;
+use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
 
 use Regulus\Formation\Facade as Form;
-
 use Regulus\TetraText\Facade as Format;
 
-class BaseModel extends Eloquent {
+class Base extends Model {
 
 	/**
 	 * The special typed fields for the model.
