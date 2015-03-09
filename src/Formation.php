@@ -6,7 +6,7 @@
 
 		created by Cody Jassman
 		version 0.9.9
-		last updated on March 5, 2014
+		last updated on March 8, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -839,7 +839,7 @@ class Formation {
 		// Finally, we will concatenate all of the attributes into a single string so
 		// we can build out the final form open statement. We'll also append on an
 		// extra value for the hidden _method field if it's needed for the form.
-		$attributes = $this->html->attributes($attributes);
+		$attributes = $this->attributes($attributes);
 
 		return '<form'.$attributes.'>'."\n\n\t".$append;
 	}

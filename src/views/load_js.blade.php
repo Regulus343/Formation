@@ -1,5 +1,5 @@
 {{-- Formation JS: Load --}}
-<script type="text/javascript" src="{{ Config::get('app.url') }}/packages/regulus/formation/js/formation.js"></script>
+<script type="text/javascript" src="{{ Site::js('formation', 'regulus/formation') }}"></script>
 
 {{-- Formation JS: Initialize --}}
 <script type="text/javascript">

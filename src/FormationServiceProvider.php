@@ -9,7 +9,7 @@ class FormationServiceProvider extends ServiceProvider {
 	 *
 	 * @var bool
 	 */
-	protected $defer = false;
+	protected $defer = true;
 
 	/**
 	 * Bootstrap the application events.
@@ -20,9 +20,12 @@ class FormationServiceProvider extends ServiceProvider {
 	{
 		$this->publishes([
 			__DIR__.'/config/form.php' => config_path('form.php'),
+			__DIR__.'/assets'          => assets_path('regulus/formation'),
 		]);
 
 		$this->loadTranslationsFrom(__DIR__.'/lang', 'formation');
+
+		$this->loadViewsFrom(__DIR__.'/views', 'formation');
 	}
 
 	/**
@@ -45,7 +48,7 @@ class FormationServiceProvider extends ServiceProvider {
 	 */
 	public function provides()
 	{
-		return [];
+		return ['Regulus\Formation\Formation'];
 	}
 
 }

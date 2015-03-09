@@ -12,6 +12,7 @@
 		"php": ">=5.4.0",
 		"laravel/framework": "5.0.*",
 
+		"regulus/solid-site": "dev-master",
 		"regulus/tetra-text": "dev-master"
 	},
 	"autoload": {
