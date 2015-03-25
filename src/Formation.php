@@ -6,7 +6,7 @@
 
 		created by Cody Jassman
 		version 0.9.9
-		last updated on March 15, 2014
+		last updated on March 24, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -1268,7 +1268,11 @@ class Formation {
 
 		// convert icon code to markup
 		if (preg_match('/\[ICON:(.*)\]/', $nameFormatted, $match))
-			$nameFormatted = str_replace($match[0], '<span class="glyphicon glyphicon-'.str_replace(' ', '', $match[1]).'"></span>&nbsp; ', $nameFormatted);
+		{
+			$icon = str_replace(' ', '', $match[1]);
+
+			$nameFormatted = str_replace($match[0], $this->icon($icon).' ', $nameFormatted);
+		}
 
 		if ($nameFormatted == strip_tags($nameFormatted))
 			$nameFormatted = ucwords($nameFormatted);
@@ -1414,7 +1418,8 @@ class Formation {
 			$fieldClass = $nameSegments[count($nameSegments) - 2]."-".$fieldClass;
 
 		// remove icon code
-		if (preg_match('/\[ICON:(.*)\]/i', $fieldClass, $match)) {
+		if (preg_match('/\[ICON:(.*)\]/i', $fieldClass, $match))
+		{
 			$fieldClass = str_replace($match[0], '', $fieldClass);
 		}
 
@@ -1559,6 +1564,17 @@ class Formation {
 
 		// allow label to be set via attributes array (defaults to labels array and then to a label derived from the field's name)
 		$fieldLabel = config('form.field.auto_label');
+
+		// add icon class if icon was present in label
+		if (preg_match('/\[ICON:(.*)\]/i', $name))
+		{
+			$iconClass = "icon";
+
+			if (isset($attributes['class']) && $attributes['class'] != "")
+				$attributes['class'] .= ' '.$iconClass;
+			else
+				$attributes['class'] = $iconClass;
+		}
 
 		if (!is_null($name))
 			$label = $this->nameToLabel($name);
@@ -3379,10 +3395,9 @@ class Formation {
 		{
 			$errorIcon = config('form.error.icon');
 
-			if ($errorIcon)
+			if ($errorIcon && !preg_match("/icon/", $errorMessage))
 			{
-				if (!preg_match("/glyphicon/", $errorMessage))
-					$errorMessage = '<span class="glyphicon glyphicon-'.$errorIcon.'"></span>&nbsp; '.$errorMessage;
+				$errorMessage = $this->icon($errorIcon).' '.$errorMessage;
 			}
 		}
 
@@ -3466,6 +3481,29 @@ class Formation {
 		}
 
 		return $settings;
+	}
+
+	/**
+	 * Create icon markup.
+	 *
+	 * @param  mixed   $icon
+	 * @return mixed
+	 */
+	public function icon($icon = null)
+	{
+		if (is_null($icon))
+			return null;
+
+		$iconElement     = config('html.icon.element');
+		$iconClassPrefix = config('html.icon.class_prefix');
+
+		if (is_null($iconElement))
+			$iconElement = "i";
+
+		if (is_null($iconClassPrefix))
+			$iconClassPrefix = "fa fa-";
+
+		return '<'.$iconElement.' class="'.$iconClassPrefix.$icon.'"></'.$iconElement.'>';
 	}
 
 	/**
@@ -3578,6 +3616,17 @@ class Formation {
 		else
 			$attributes['class'] .= ' btn btn-default';
 
+		// add icon class if icon was present in label
+		if (preg_match('/\[ICON:(.*)\]/i', $value))
+		{
+			$iconClass = "icon";
+
+			if (isset($attributes['class']) && $attributes['class'] != "")
+				$attributes['class'] .= ' '.$iconClass;
+			else
+				$attributes['class'] = $iconClass;
+		}
+
 		if ($value == strip_tags($value))
 			$value = $this->entities($value);
 
@@ -3601,14 +3650,19 @@ class Formation {
 		if (is_null($update))
 			$update = $this->updateResource();
 
-		if ($update) {
+		if ($update)
+		{
 			$label = trans('formation::labels.update');
+
 			if (is_bool($icon) && $icon)
-				$icon = 'ok';
-		} else {
+				$icon = config('form.icons.update');
+		}
+		else
+		{
 			$label = trans('formation::labels.create');
+
 			if (is_bool($icon) && $icon)
-				$icon = 'plus';
+				$icon = config('form.icons.create');
 		}
 
 		// add icon code

@@ -62,14 +62,21 @@ return [
 
 	/*
 	|--------------------------------------------------------------------------
-	| Automatic Button Icons
+	| Icons
 	|--------------------------------------------------------------------------
 	|
-	| Automatically add Glyphicon icons to buttons when using submitResource()
-	| to create their labels.
+	| Automatically add icons to buttons when using submitResource()
+	| to create their labels. By default, Font Awesome is used, but if the
+	| Elemental package is installed, you may configure it to use Glyphicons or
+	| another icon set.
 	|
 	*/
 	'auto_button_icon' => true,
+
+	'icons' => [
+		'create' => 'plus-circle',
+		'update' => 'check-circle',
+	],
 
 	/*
 	|--------------------------------------------------------------------------
