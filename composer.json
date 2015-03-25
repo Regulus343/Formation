@@ -15,6 +15,9 @@
 		"regulus/solid-site": "dev-master",
 		"regulus/tetra-text": "dev-master"
 	},
+	"suggest": {
+		"regulus/elemental": "dev-master"
+	},
 	"autoload": {
 		"psr-4": {
 			"Regulus\\Formation\\": "src/",
