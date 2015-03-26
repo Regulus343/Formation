@@ -53,7 +53,7 @@ The above code is an example of how simple and versatile Formation is. The top 3
 
 	<input name="other_field" value="" />
 
-With this form, we can validate just the fields in the user array with `Form::validated('user')`, the final field with `Form::validated('root')`, or all of the fields in the form with `Form::validated()`.
+With this form, we can validate just the fields in the user array with `Form::isValid('user')`, the final field with `Form::isValid('root')`, or all of the fields in the form with `Form::isValid()`.
 
 > You may notice much of this documentation is borrowed from Taylor Otwell's Laravel 3 documentation. This is because Formation was built with Laravel 3's Form class as a starting point. If you are familiar with the Form class for Laravel 3, you will adapt to Formation very easily.
 
@@ -172,17 +172,17 @@ Formation makes use Laravel's Validator class. Using `Form::setValidation()` wil
 
 **Validating all fields:**
 
-	if (Form::validated()) {
+	if (Form::isValid()) {
 		return true;
 	}
 
 **Validating fields in an array:**
 
-	if (Form::validated('user')) { //validates array fields with names like "user[name]" and "user[email]"
+	if (Form::isValid('user')) { //validates array fields with names like "user[name]" and "user[email]"
 		return true;
 	}
 
-	if (Form::validated('user.')) { //ending with a "." allows us to validate fields like "user[0][name]" and "user[1][name]"
+	if (Form::isValid('user.')) { //ending with a "." allows us to validate fields like "user[0][name]" and "user[1][name]"
 		return true;
 	}
 

@@ -703,7 +703,7 @@ class Formation {
 	 * @param  string   $index
 	 * @return bool
 	 */
-	public function validated($index = null)
+	public function isValid($index = null)
 	{
 		// if index is null, cycle through all Validator instances
 		if (is_null($index))
