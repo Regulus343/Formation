@@ -6,7 +6,7 @@
 
 		created by Cody Jassman
 		version 0.9.9
-		last updated on March 24, 2014
+		last updated on April 5, 2014
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -3203,12 +3203,12 @@ class Formation {
 	/**
 	 * Set error messages from session data.
 	 *
-	 * @param  string  $errors
+	 * @param  string  $sessionVar
 	 * @return array
 	 */
-	public function setErrors($session = 'errors')
+	public function setErrors($sessionVar = 'errors')
 	{
-		$this->errors = Session::get($session);
+		$this->errors = Session::get($sessionVar);
 
 		return $this->errors;
 	}
@@ -3216,13 +3216,13 @@ class Formation {
 	/**
 	 * Reset error messages.
 	 *
-	 * @param  string  $errors
+	 * @param  string  $sessionVar
 	 * @return array
 	 */
-	public function resetErrors($session = 'errors')
+	public function resetErrors($sessionVar = 'errors')
 	{
-		if ($session)
-			Session::forget($session);
+		if ($sessionVar)
+			Session::forget($sessionVar);
 
 		$this->errors = [];
 	}

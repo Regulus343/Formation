@@ -3,7 +3,7 @@
 | Formation JS
 |------------------------------------------------------------------------------
 |
-| Last Updated: March 25, 2015
+| Last Updated: April 5, 2015
 |
 */
 
@@ -432,7 +432,7 @@ var Formation = {
 		}
 
 		// show or hide an element depending on whether options are available in select box
-		if (settings.callbackFunction !== undefined)
+		if (settings.callbackFunction !== undefined && window[settings.callbackFunction] !== undefined)
 			window[settings.callbackFunction]();
 	},
 
