@@ -82,7 +82,7 @@ With this form, we can validate just the fields in the user array with `Form::is
 To install Formation, make sure `regulus/formation` has been added to Laravel 5's `composer.json` file.
 
 	"require": {
-		"regulus/formation": "dev-master"
+		"regulus/formation": "1.0.*"
 	},
 
 Then run `php composer.phar update` from the command line. Composer will install the Formation package. Now, all you have to do is register the service provider and set up Formation's alias in `config/app.php`. Add this to the `providers` array:

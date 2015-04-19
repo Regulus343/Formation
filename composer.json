@@ -12,11 +12,11 @@
 		"php": ">=5.4.0",
 		"laravel/framework": "5.0.*",
 
-		"regulus/solid-site": "dev-master",
-		"regulus/tetra-text": "dev-master"
+		"regulus/solid-site": "0.6.*",
+		"regulus/tetra-text": "0.5.*"
 	},
 	"suggest": {
-		"regulus/elemental": "dev-master"
+		"regulus/elemental": "0.5.*"
 	},
 	"autoload": {
 		"psr-4": {
