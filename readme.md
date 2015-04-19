@@ -16,42 +16,46 @@ Formation makes it really easy to build a form with form building methods that a
 
 All of this can be achieved with a minimal amount of code:
 
+```php
+<?php
+echo Form::field('first_name');
+echo Form::field('password');
+echo Form::field('user.item', 'select', [
+	'options' => Form::prepOptions(Item::all(), ['id', 'name'])
+]);
+?>
+
+<?php //simply typing Form::field('first_name') is the same as the following code: ?>
+
+<div class="form-group" id="first-name-area">
 	<?php
-	echo Form::field('first_name');
-	echo Form::field('password');
-	echo Form::field('user.item', 'select', [
-		'options' => Form::prepOptions(Item::all(), ['id', 'name'])
-	]);
+	echo Form::label('first_name');
+
+	echo Form::text('first_name');
+
+	echo Form::error('first_name');
 	?>
+</div>
 
-	<?php //simply typing Form::field('first_name') is the same as the following code: ?>
+<?php //which may produce the following markup: ?>
 
-	<div class="form-group" id="first-name-area">
-		<?php
-		echo Form::label('first_name');
+<div class="form-group hass error" id="first-name-area">
+	<label for="field-first-name" class="control-label has-error"><span class="access">F</span>irst Name</label>
 
-		echo Form::text('first_name');
+	<input type="text" name="first_name" id="field-first-name" class="form-control has-error" placeholder="First Name" accesskey="f" value="" />
 
-		echo Form::error('first_name');
-		?>
-	</div>
-
-	<?php //which may produce the following markup: ?>
-
-	<div class="form-group hass error" id="first-name-area">
-		<label for="field-first-name" class="control-label has-error"><span class="access">F</span>irst Name</label>
-
-		<input type="text" name="first_name" id="field-first-name" class="form-control has-error" placeholder="First Name" accesskey="f" value="" />
-
-		<div class="error">The First Name field is required.</div>
-	</div>
+	<div class="error">The First Name field is required.</div>
+</div>
+```
 
 The above code is an example of how simple and versatile Formation is. The top 3 fields make use of Formation's simplified `field()` macro, the middle section shows the long way to achieve the same markup as the first two text fields, and the final section shows the markup that may be produced from the above two examples (assuming a "required" form validation rule has been set for the "first_name" field and the form has been submitted). You may notice that the markup is quite comprehensive and complete. Accesskeys are automatically employed (unless you specify otherwise) and an "access" class is applied to the accesskey letter in the label. The label, field, and possibly error are all wrapped in a div tag with a Twitter Bootstrap "form-group" class. The IDs are based on the names but use hyphens instead of underscores and the labels are automatically created from the names as well (but can, again, be specified manually). All of the fields will be automatically repopulated when form data is posted to the page.
 
-	<input name="user[name]" value="" />
-	<input name="user[email]" value="" />
+```html
+<input name="user[name]" value="" />
+<input name="user[email]" value="" />
 
-	<input name="other_field" value="" />
+<input name="other_field" value="" />
+```
 
 With this form, we can validate just the fields in the user array with `Form::isValid('user')`, the final field with `Form::isValid('root')`, or all of the fields in the form with `Form::isValid()`.
 
