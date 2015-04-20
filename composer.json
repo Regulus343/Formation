@@ -23,6 +23,5 @@
 			"Regulus\\Formation\\": "src/",
 			"Regulus\\Formation\\Models\\": "src/models/"
 		}
-	},
-	"minimum-stability": "stable"
+	}
 }
