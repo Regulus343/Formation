@@ -10,7 +10,7 @@
 	],
 	"require": {
 		"php": ">=5.4.0",
-		"laravel/framework": "5.0.*",
+		"laravel/framework": "5.*",
 
 		"regulus/solid-site": "0.6.*",
 		"regulus/tetra-text": "0.5.*"
