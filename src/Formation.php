@@ -3210,7 +3210,7 @@ class Formation {
 	{
 		$this->errors = Session::get($sessionVar);
 
-		if (get_class($this->errors) == "Illuminate\Support\ViewErrorBag")
+		if (is_object($this->errors) && get_class($this->errors) == "Illuminate\Support\ViewErrorBag")
 		{
 			$errors = [];
 
