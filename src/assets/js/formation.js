@@ -3,7 +3,7 @@
 | Formation JS
 |------------------------------------------------------------------------------
 |
-| Last Updated: April 5, 2015
+| Last Updated: October 23, 2015
 |
 */
 
@@ -285,7 +285,7 @@ var Formation = {
 				this.setFieldsForItem(value, field);
 
 			} else {
-				var fieldClassName = field.replace('_', '-');
+				var fieldClassName = field.replace(/\_/g, '-');
 
 				// if parent field is "pivot" array, add it to fieldElement
 				if (parentField === "pivot")
@@ -432,8 +432,14 @@ var Formation = {
 		}
 
 		// show or hide an element depending on whether options are available in select box
-		if (settings.callbackFunction !== undefined && window[settings.callbackFunction] !== undefined)
-			window[settings.callbackFunction]();
+		if (settings.callbackFunction !== undefined)
+		{
+			if (window[settings.callbackFunction] !== undefined)
+				window[settings.callbackFunction]();
+
+			if (typeof settings.callbackFunction == "function")
+				settings.callbackFunction();
+		}
 	},
 
 	/*
