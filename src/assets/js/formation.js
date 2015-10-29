@@ -3,7 +3,7 @@
 | Formation JS
 |------------------------------------------------------------------------------
 |
-| Last Updated: October 23, 2015
+| Last Updated: October 28, 2015
 |
 */
 
@@ -117,9 +117,7 @@ var Formation = {
 
 			this.loadTemplate(container, item);
 
-			// trigger callback function if one is set
-			if (callbackFunction !== undefined)
-				callbackFunction(this.itemContainer, item);
+			this.executeFunction(callbackFunction, this.itemContainer, item);
 		}
 	},
 
@@ -137,9 +135,10 @@ var Formation = {
 
 		// set i to an unused number
 		var i = 0;
-		container.find('[data-item-number]').each(function(){
-			if ($(this).attr('data-item-number') > i)
-				i = $(this).attr('data-item-number');
+		container.find('[data-item-number]').each(function()
+		{
+			if (parseInt($(this).attr('data-item-number')) > i)
+				i = parseInt($(this).attr('data-item-number'));
 		});
 
 		i ++;
@@ -201,7 +200,7 @@ var Formation = {
 
 		// trigger callback function if one is set
 		if (callbackFunction !== undefined)
-			callbackFunction(this.itemContainer, item);
+			this.executeFunction(callbackFunction, this.itemContainer, item);
 
 		return i;
 	},
@@ -283,8 +282,9 @@ var Formation = {
 			if (typeof value == "object")
 			{
 				this.setFieldsForItem(value, field);
-
-			} else {
+			}
+			else
+			{
 				var fieldClassName = field.replace(/\_/g, '-');
 
 				// if parent field is "pivot" array, add it to fieldElement
@@ -342,21 +342,15 @@ var Formation = {
 
 						// set tooltip error message
 						labelElement.attr('title', error);
-
-					} else {
+					}
+					else
+					{
 						var errorHtml = '<'+errorSettings.element+' class="'+errorSettings.elementClass+'">' + error + '</'+errorSettings.element+'>';
 						fieldElement.after(errorHtml);
 					}
 
 					if (this.errorCallback)
-					{
-						var errorCallbackArray = this.errorCallback.split('.');
-
-						if (errorCallbackArray.length == 2)
-							window[errorCallbackArray[0]][errorCallbackArray[1]](containerElement);
-						else
-							window[this.errorCallback](containerElement);
-					}
+						this.executeFunction(this.errorCallback);
 				}
 			}
 		}
@@ -431,15 +425,7 @@ var Formation = {
 				$(settings.optionsToggleElement).addClass('hidden');
 		}
 
-		// show or hide an element depending on whether options are available in select box
-		if (settings.callbackFunction !== undefined)
-		{
-			if (window[settings.callbackFunction] !== undefined)
-				window[settings.callbackFunction]();
-
-			if (typeof settings.callbackFunction == "function")
-				settings.callbackFunction();
-		}
+		this.executeFunction(settings.callbackFunction);
 	},
 
 	/*
@@ -488,9 +474,27 @@ var Formation = {
 		});
 	},
 
+	executeFunction: function(functionItem, parameter1, parameter2)
+	{
+		if (functionItem === undefined)
+			return null;
+
+
+
+		if (typeof functionItem == "function")
+			return functionItem(parameter1, parameter2);
+
+		var functionArray = functionItem.split('.');
+
+		if (functionArray.length == 2)
+			return window[functionArray[0]][functionArray[1]](parameter1, parameter2);
+		else
+			return window[functionArray[0]](parameter1, parameter2);
+	},
+
 	log: function(string)
 	{
 		console.log('Formation.js: '+string);
-	}
+	},
 
-}
+};
