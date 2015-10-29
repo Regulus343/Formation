@@ -92,7 +92,7 @@ var Formation = {
 	},
 
 	// used with Handlebars.js to load form template items populate fields
-	loadTemplates: function(container, items, callbackFunction)
+	loadTemplates: function(container, items, callbackFunction, finalCallbackFunction)
 	{
 		if (typeof container != "object")
 			container = $(container);
@@ -119,6 +119,8 @@ var Formation = {
 
 			this.executeFunction(callbackFunction, this.itemContainer, item);
 		}
+
+		this.executeFunction(finalCallbackFunction);
 	},
 
 	loadTemplate: function(container, item, callbackFunction)
