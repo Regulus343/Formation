@@ -3248,7 +3248,7 @@ class Formation {
 	 */
 	public function addErrorClass($name, $attributes = [])
 	{
-		if ($this->errorMessage($name)) // an error exists; add the error class
+		if ($this->hasError($name)) // an error exists; add the error class
 		{
 			if (!isset($attributes['class']))
 				$attributes['class'] = $this->getErrorClass();
@@ -3262,13 +3262,29 @@ class Formation {
 	/**
 	 * Add an error class to an HTML attributes array if a validation error exists for the specified form field.
 	 *
-	 * @param  string  $name
-	 * @param  array   $attributes
-	 * @return array
+	 * @return string
 	 */
 	public function getErrorClass()
 	{
 		return config('form.error.class');
+	}
+
+	/**
+	 * Get an error class for a field if an error is present.
+	 *
+	 * @param  string  $name
+	 * @param  boolean $inClass
+	 * @return array
+	 */
+	public function errorClass($name, $inClass = false)
+	{
+		if (!$this->hasError($name))
+			return "";
+
+		if ($inClass)
+			return ' '.$this->getErrorClass();
+		else
+			return ' class="'.$this->getErrorClass().'"';
 	}
 
 	/**
@@ -3414,6 +3430,17 @@ class Formation {
 		}
 
 		return $errorMessage;
+	}
+
+	/**
+	 * Get an error class for a field if an error is present.
+	 *
+	 * @param  string  $name
+	 * @return boolean
+	 */
+	public function hasError($name)
+	{
+		return $this->errorMessage($name) != false;
 	}
 
 	/**
