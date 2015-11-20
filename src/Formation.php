@@ -3274,7 +3274,7 @@ class Formation {
 	 *
 	 * @param  string  $name
 	 * @param  boolean $inClass
-	 * @return array
+	 * @return string
 	 */
 	public function errorClass($name, $inClass = false)
 	{
