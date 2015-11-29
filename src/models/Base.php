@@ -492,6 +492,7 @@ class Base extends Model {
 	{
 		$values = $this->formatValuesForTypes($values);
 		$values = $this->formatValuesForSpecialFormats($values);
+		$values = $this->formatValuesForModel($values);
 
 		return $values;
 	}
@@ -674,6 +675,18 @@ class Base extends Model {
 		}
 
 		return $value;
+	}
+
+	/**
+	 * Custom formatting method for a specific model. This function exists to be extended by a specific model to allow
+	 * custom formatting before data is inserted into the database.
+	 *
+	 * @param  array    $values
+	 * @return array
+	 */
+	public function formatValuesForModel($values)
+	{
+		return $values;
 	}
 
 	/**
