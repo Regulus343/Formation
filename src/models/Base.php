@@ -95,7 +95,7 @@ class Base extends Model {
 	 * Get the validation rules used by the model.
 	 *
 	 * @param  mixed    $id
-	 * @return string
+	 * @return array
 	 */
 	public static function validationRules($id = null)
 	{
@@ -103,9 +103,19 @@ class Base extends Model {
 	}
 
 	/**
+	 * Set the validation rules for the model for a new record.
+	 *
+	 * @return void
+	 */
+	public static function setValidationRulesForNew()
+	{
+		Form::setValidationRules(static::validationRules());
+	}
+
+	/**
 	 * Set the validation rules for the model.
 	 *
-	 * @return string
+	 * @return void
 	 */
 	public function setValidationRules()
 	{
@@ -116,7 +126,7 @@ class Base extends Model {
 	 * Get the formatted values for populating a form.
 	 *
 	 * @param  array    $relations
-	 * @return string
+	 * @return object
 	 */
 	public function getFormattedValues($relations = [])
 	{
@@ -231,15 +241,16 @@ class Base extends Model {
 	 * Save the input data to the model.
 	 *
 	 * @param  mixed    $input
+	 * @param  mixed    $id
 	 * @return void
 	 */
-	public function saveData($input = null)
+	public function saveData($input = null, $id = null)
 	{
 		if (is_null($input))
 			$input = Input::all();
 
 		// format data for special types and special formats
-		$input = $this->formatValuesForDb($input);
+		$input = $this->formatValuesForDb($input, $id);
 
 		$this->fill($input);
 		$this->save();
@@ -486,13 +497,14 @@ class Base extends Model {
 	 * Format values for insertion into database.
 	 *
 	 * @param  array    $values
+	 * @param  mixed    $id
 	 * @return array
 	 */
-	public function formatValuesForDb($values)
+	public function formatValuesForDb($values, $id = null)
 	{
 		$values = $this->formatValuesForTypes($values);
 		$values = $this->formatValuesForSpecialFormats($values);
-		$values = $this->formatValuesForModel($values);
+		$values = $this->formatValuesForModel($values, $id);
 
 		return $values;
 	}
@@ -549,7 +561,7 @@ class Base extends Model {
 		{
 			foreach ($values as $field => $value)
 			{
-				$values[$field] = trim($value);
+				$values[$field] = $this->trimValue($value);
 			}
 		}
 
@@ -563,6 +575,9 @@ class Base extends Model {
 			{
 				if (is_string($formats))
 					$formats = [$formats];
+
+				if (in_array('null-if-blank', $formats) || in_array('true-if-blank', $formats) || in_array('false-if-blank', $formats) || in_array('json-or-null', $formats))
+					$values[$field] = null;
 
 				foreach ($formats as $format)
 				{
@@ -662,8 +677,21 @@ class Base extends Model {
 
 					break;
 
+				case "json":
+					$value = json_encode($value);
+
+					break;
+
+				case "json-or-null":
+					if (is_null($value) || empty($value))
+						$value = null;
+					else
+						$value = json_encode($value);
+
+					break;
+
 				case "trim":
-					$value = trim($value);
+					$value = $this->trimValue($value);
 
 					break;
 
@@ -678,13 +706,38 @@ class Base extends Model {
 	}
 
 	/**
+	 * Trim a value or array of values.
+	 *
+	 * @param  mixed    $value
+	 * @return array
+	 */
+	private function trimValue($value)
+	{
+		if (is_array($value))
+		{
+			foreach ($value as $v => $subValue)
+			{
+				if (is_string($subValue))
+					$value[$v] = trim($subValue);
+			}
+		}
+		else
+		{
+			$value = trim($value);
+		}
+
+		return $value;
+	}
+
+	/**
 	 * Custom formatting method for a specific model. This function exists to be extended by a specific model to allow
 	 * custom formatting before data is inserted into the database.
 	 *
 	 * @param  array    $values
+	 * @param  mixed    $id
 	 * @return array
 	 */
-	public function formatValuesForModel($values)
+	public function formatValuesForModel($values, $id = null)
 	{
 		return $values;
 	}
@@ -697,8 +750,8 @@ class Base extends Model {
 	 */
 	public static function createNew($input = null)
 	{
-		$item = new static;
-		$item->saveData($input, true);
+		$item = static::create();
+		$item->saveData($input, $item->id);
 
 		return $item;
 	}
