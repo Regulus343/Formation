@@ -105,7 +105,7 @@ return [
 
 	/*
 	|--------------------------------------------------------------------------
-	| Pivot Timestamps
+	| Auto Trim
 	|--------------------------------------------------------------------------
 	|
 	| Whether or not to automatically trim field values before insertion into
