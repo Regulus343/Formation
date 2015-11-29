@@ -120,33 +120,42 @@ class Base extends Model {
 	 */
 	public function getFormattedValues($relations = [])
 	{
-		//format fields based on field types
-		foreach ($this->getFieldTypes() as $field => $type) {
-			if (isset($this->{$field})) {
+		// format fields based on field types
+		foreach ($this->getFieldTypes() as $field => $type)
+		{
+			if (isset($this->{$field}))
+			{
 				$value = $this->{$field};
 				$this->{$field} = static::formatValue($value, $type);
 			}
 		}
 
-		//format fields based on special format rules
-		foreach ($this->getFieldFormats() as $field => $formats) {
+		// format fields based on special format rules
+		foreach ($this->getFieldFormats() as $field => $formats)
+		{
 			$fieldTested = isset($format[1]) ? $format[1] : $field;
 			$valueTested = $this->{$fieldTested} ? isset($this->{$field}) : null;
 
 			$this->{$field} = $this->formatValueFromSpecialFormats($field, $this->toArray(), $formats);
 		}
 
-		foreach ($relations as $relation) {
-			if ($this->{$relation}) {
-				foreach ($this->{$relation} as &$item) {
-					foreach ($item->getFieldTypes() as $field => $type) {
-						if (isset($item->{$field})) {
+		foreach ($relations as $relation)
+		{
+			if ($this->{$relation})
+			{
+				foreach ($this->{$relation} as &$item)
+				{
+					foreach ($item->getFieldTypes() as $field => $type)
+					{
+						if (isset($item->{$field}))
+						{
 							$value = $item->{$field};
 							$item->{$field.'_formatted'} = static::formatValue($value, $type);
 						}
 					}
 
-					foreach ($item->getFieldFormats() as $field => $formats) {
+					foreach ($item->getFieldFormats() as $field => $formats)
+					{
 						if (isset($this->{$field}))
 							$this->{$field} = $this->formatValueFromSpecialFormats($this->{$field}, $formats);
 					}
@@ -166,7 +175,8 @@ class Base extends Model {
 	 */
 	private static function formatValue($value, $type)
 	{
-		switch ($type) {
+		switch ($type)
+		{
 			case "date":      $value = ($value != "0000-00-00" && $value != "" && !is_null($value) ? date(Form::getDateFormat(), strtotime($value)) : ""); break;
 			case "date-time": $value = ($value != "0000-00-00 00:00:00" && $value != "" && !is_null($value) ? date(Form::getDateTimeFormat(), strtotime($value)) : ""); break;
 		}
@@ -221,21 +231,21 @@ class Base extends Model {
 	 * Save the input data to the model.
 	 *
 	 * @param  mixed    $input
-	 * @param  boolean  $new
 	 * @return void
 	 */
-	public function saveData($input = null, $new = false)
+	public function saveData($input = null)
 	{
 		if (is_null($input))
 			$input = Input::all();
 
-		//format data for special types and special formats
+		// format data for special types and special formats
 		$input = $this->formatValuesForDb($input);
 
 		$this->fill($input);
 		$this->save();
 
-		foreach ($input as $field => $value) {
+		foreach ($input as $field => $value)
+		{
 			if (is_array($value))
 			{
 				$fieldCamelCase = Form::underscoredToCamelCase($field);
@@ -261,7 +271,7 @@ class Base extends Model {
 		$formattedSuffix = Form::getFormattedFieldSuffix();
 		$pivotTimestamps = config('form.pivot_timestamps');
 
-		//create or update related items
+		// create or update related items
 		foreach ($input as $index => $itemData)
 		{
 			if ($index != "pivot")
@@ -274,21 +284,24 @@ class Base extends Model {
 				$found = false;
 				if (!$new)
 				{
-					foreach ($items as $item) {
-						if ((int) $itemData['id'] == (int) $item->id) {
+					foreach ($items as $item)
+					{
+						if ((int) $itemData['id'] == (int) $item->id)
+						{
 							$found = true;
 
-							//remove formatted fields from item to prevent errors in saving data
-							foreach ($item->toArray() as $field => $value) {
+							// remove formatted fields from item to prevent errors in saving data
+							foreach ($item->toArray() as $field => $value)
+							{
 								if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
 									unset($item->{$field});
 							}
 
-							//format data for special types and special formats
+							// format data for special types and special formats
 							$itemData = $item->formatValuesForTypes($itemData);
 							$itemData = $item->formatValuesForSpecialFormats($itemData);
 
-							//save data
+							// save data
 							$item->fill($itemData)->save();
 
 							$currentItem = $item;
@@ -299,23 +312,26 @@ class Base extends Model {
 					}
 				}
 
-				//if model was not found, it may still exist in the database but not have a current relationship with item
+				// if model was not found, it may still exist in the database but not have a current relationship with item
 				if (!$found && !$new)
 				{
 					$item = $model::find($itemData['id']);
 
-					if ($item) {
-						//format data for special types
+					if ($item)
+					{
+						// format data for special types
 						$itemData = $item->formatValuesForTypes($itemData);
 
-						//save data
+						// save data
 						$item->fill($itemData)->save();
 
 						$currentItem = $item;
 
 						if (!in_array((int) $item->id, $idsSaved))
 							$idsSaved[] = (int) $item->id;
-					} else {
+					}
+					else
+					{
 						$new = true;
 					}
 				}
@@ -324,10 +340,10 @@ class Base extends Model {
 				{
 					$item = new $model;
 
-					//attempt to add foreign key ID in case relationship doesn't require a pivot table
+					// attempt to add foreign key ID in case relationship doesn't require a pivot table
 					$itemData[$this->getForeignKey()] = $this->id;
 
-					//format data for special types
+					// format data for special types
 					$itemData = $item->formatValuesForTypes($itemData);
 
 					$item->fill($itemData)->save();
@@ -338,7 +354,7 @@ class Base extends Model {
 						$idsSaved[] = (int) $item->id;
 				}
 
-				//save pivot data
+				// save pivot data
 				if (isset($itemData['pivot']))
 				{
 					$pivotTable = $this->{$modelMethod}()->getTable();
@@ -349,26 +365,30 @@ class Base extends Model {
 
 					$pivotData = array_merge($itemData['pivot'], $pivotKeys);
 
-					//set updated timestamp
-					if ($pivotTimestamps) {
+					// set updated timestamp
+					if ($pivotTimestamps)
+					{
 						$timestamp = date('Y-m-d H:i:s');
 						$pivotData['updated_at'] = $timestamp;
 					}
 
-					//attempt to select pivot record by both keys
+					// attempt to select pivot record by both keys
 					$pivotItem = DB::table($pivotTable);
-					foreach ($pivotKeys as $key => $id) {
+					foreach ($pivotKeys as $key => $id)
+					{
 						$pivotItem->where($key, $id);
 					}
 
-					//if id exists, add it to where clause and unset it
-					if (isset($pivotData['id']) && (int) $pivotData['id']) {
+					// if id exists, add it to where clause and unset it
+					if (isset($pivotData['id']) && (int) $pivotData['id'])
+					{
 						$pivotItem->where('id', $pivotData['id']);
 						unset($pivotData['id']);
 					}
 
-					//attempt to update and if it doesn't work, insert a new record
-					if (!$pivotItem->update($pivotData)) {
+					// attempt to update and if it doesn't work, insert a new record
+					if (!$pivotItem->update($pivotData))
+					{
 						if ($pivotTimestamps)
 							$pivotData['created_at'] = $timestamp;
 
@@ -376,7 +396,7 @@ class Base extends Model {
 					}
 				}
 			} else {
-				//data is entirely pivot data; save pivot data
+				// data is entirely pivot data; save pivot data
 
 				$item = new $model; //create dummy item to get foreign key
 
@@ -392,26 +412,30 @@ class Base extends Model {
 
 					$pivotData = $pivotKeys;
 
-					//set updated timestamp
-					if ($pivotTimestamps) {
+					// set updated timestamp
+					if ($pivotTimestamps)
+					{
 						$timestamp = date('Y-m-d H:i:s');
 						$pivotData['updated_at'] = $timestamp;
 					}
 
-					//attempt to select pivot record by both keys
+					// attempt to select pivot record by both keys
 					$pivotItem = DB::table($pivotTable);
-					foreach ($pivotKeys as $key => $id) {
+					foreach ($pivotKeys as $key => $id)
+					{
 						$pivotItem->where($key, $id);
 					}
 
-					//if id exists, add it to where clause and unset it
-					if (isset($pivotData['id']) && (int) $pivotData['id']) {
+					// if id exists, add it to where clause and unset it
+					if (isset($pivotData['id']) && (int) $pivotData['id'])
+					{
 						$pivotItem->where('id', $pivotData['id']);
 						unset($pivotData['id']);
 					}
 
-					//attempt to update and if it doesn't work, insert a new record
-					if (!$pivotItem->update($pivotData)) {
+					// attempt to update and if it doesn't work, insert a new record
+					if (!$pivotItem->update($pivotData))
+					{
 						if ($pivotTimestamps)
 							$pivotData['created_at'] = $timestamp;
 
@@ -434,19 +458,23 @@ class Base extends Model {
 			}
 		}
 
-		//remove any items no longer present in input data
-		if ($index != "pivot") {
-			foreach ($items as $item) {
+		// remove any items no longer present in input data
+		if ($index != "pivot")
+		{
+			foreach ($items as $item)
+			{
 				if (!in_array((int) $item->id, $idsSaved))
 				{
-					//check for pivot data and delete pivot item instead of item if it exists
+					// check for pivot data and delete pivot item instead of item if it exists
 					if (isset($itemData['pivot']))
 					{
 						DB::table($pivotTable)
 							->where($this->getForeignKey(), $this->id)
 							->where($item->getForeignKey(), $item->id)
 							->delete();
-					} else {
+					}
+					else
+					{
 						$item->delete();
 					}
 				}
@@ -488,10 +516,12 @@ class Base extends Model {
 	 */
 	public function formatValuesForTypes($values)
 	{
-		foreach ($this->getFieldTypes() as $field => $type) {
+		foreach ($this->getFieldTypes() as $field => $type)
+		{
 			$value = isset($values[$field]) ? $values[$field] : null;
 
-			switch ($type) {
+			switch ($type)
+			{
 				case "date":        $value = (!is_null($value) && $value != "" ? date('Y-m-d', strtotime($value)) : "0000-00-00"); break;
 				case "date-time":   $value = (!is_null($value) && $value != "" ? date('Y-m-d H:i:s', strtotime($value)) : "0000-00-00 00:00:00"); break;
 				case "slug":        $value = Format::slug($value); break;
@@ -513,15 +543,29 @@ class Base extends Model {
 	 */
 	public function formatValuesForSpecialFormats($values)
 	{
-		foreach ($this->getFieldFormatsForDb() as $field => $formats) {
-			if (isset($values[$field])) {
+		// automatically trim field values if config set
+		if (config('form.auto_trim'))
+		{
+			foreach ($values as $field => $value)
+			{
+				$values[$field] = trim($value);
+			}
+		}
+
+		foreach ($this->getFieldFormatsForDb() as $field => $formats)
+		{
+			if (isset($values[$field]))
+			{
 				$values[$field] = $this->formatValueFromSpecialFormats($field, $values, $formats);
-			} else {
+			}
+			else
+			{
 				if (is_string($formats))
 					$formats = [$formats];
 
-				foreach ($formats as $format) {
-					if ($format == "pivotArray")
+				foreach ($formats as $format)
+				{
+					if ($format == "pivot-array")
 						$values[$field] = ['pivot' => []];
 				}
 			}
@@ -548,61 +592,82 @@ class Base extends Model {
 		if (is_string($formats))
 			$formats = [$formats];
 
-		foreach ($formats as $format) {
+		foreach ($formats as $format)
+		{
 			$format = explode(':', $format);
 
 			$fieldTested = isset($format[1]) && $format[1] != "" ? $format[1] : $field;
 			$valueTested = isset($values[$fieldTested]) ? $values[$fieldTested] : null;
 
-			switch ($format[0]) {
-				case "falseIfNull":
+			switch ($format[0])
+			{
+				case "false-if-null":
 					if (is_null($valueTested))
 						$value = false;
 
 					break;
-				case "trueIfNull":
+
+				case "true-if-null":
 					if (is_null($valueTested))
 						$value = true;
 
 					break;
-				case "falseIfNotNull":
+
+				case "false-if-not-null":
 					if (!is_null($valueTested))
 						$value = false;
 
 					break;
-				case "trueIfNotNull":
+
+				case "true-if-not-null":
 					if (!is_null($valueTested))
 						$value = true;
 
 					break;
-				case "falseIfBlank":
+
+				case "false-if-blank":
 					if ($valueTested == "" || $valueTested == "0000-00-00" || $valueTested == "0000-00-00 00:00:00")
 						$value = false;
 
 					break;
-				case "trueIfBlank":
+
+				case "true-if-blank":
 					if ($valueTested == "" || $valueTested == "0000-00-00" || $valueTested == "0000-00-00 00:00:00")
 						$value = true;
 
 					break;
-				case "nullIfBlank":
+
+				case "null-if-blank":
 					if ($valueTested == "" || $valueTested == "0000-00-00" || $valueTested == "0000-00-00 00:00:00")
 						$value = null;
 
 					break;
-				case "falseIfNotBlank":
+
+				case "false-if-not-blank":
 					if ($valueTested != "")
 						$value = false;
 
 					break;
-				case "trueIfNotBlank":
+
+				case "true-if-not-blank":
 					if ($valueTested != "")
 						$value = true;
 
 					break;
-				case "nullIfNotBlank":
+
+				case "null-if-not-blank":
 					if ($valueTested != "")
 						$value = null;
+
+					break;
+
+				case "trim":
+					$value = trim($value);
+
+					break;
+
+				case "uc-first":
+					$value = ucfirst(trim($value));
 
 					break;
 			}
@@ -649,7 +714,8 @@ class Base extends Model {
 
 		$item = $item->where($field, $value);
 
-		foreach ($relations as $relation) {
+		foreach ($relations as $relation)
+		{
 			$item = $item->with($relation);
 		}
 

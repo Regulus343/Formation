@@ -108,6 +108,17 @@ return [
 	| Pivot Timestamps
 	|--------------------------------------------------------------------------
 	|
+	| Whether or not to automatically trim field values before insertion into
+	| database.
+	|
+	*/
+	'auto_trim' => true,
+
+	/*
+	|--------------------------------------------------------------------------
+	| Pivot Timestamps
+	|--------------------------------------------------------------------------
+	|
 	| Whether or not timestamps are present in the pivot tables. This is only
 	| used if Formation's BaseModel is used to extend Eloquent models.
 	|

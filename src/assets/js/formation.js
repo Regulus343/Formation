@@ -3,7 +3,7 @@
 | Formation JS
 |------------------------------------------------------------------------------
 |
-| Last Updated: October 28, 2015
+| Last Updated: November 29, 2015
 |
 */
 
@@ -392,22 +392,37 @@ var Formation = {
 			if ($(settings.targetSelect).attr('data-null-option') != "")
 				settings.nullOption = $(settings.targetSelect).attr('data-null-option');
 			else
-				settings.nullOption = "Select an option";
+				settings.nullOption = "Select an Option";
 		}
 
 		if (settings.optionLabel === undefined) settings.optionLabel = settings.optionValue;
+
+		// if optionValue, optionLabel, and optionsAssociative are not set, assume array is intended to be associative
+		if (settings.optionValue === undefined && settings.optionLabel === undefined && settings.optionsAssociative === undefined)
+			settings.optionsAssociative = true;
 
 		// build select options markup
 		var options = "";
 		if (settings.nullOption !== false)
 			options += '<option value="">'+settings.nullOption+'</option>' + "\n";
 
-		for (c=0; c < settings.options.length; c++)
+		for (c in settings.options)
 		{
 			if (settings.optionValue === undefined)
-				options += '<option value="'+settings.options[c]+'">'+settings.options[c]+'</option>' + "\n";
+			{
+				if (settings.optionsAssociative === true)
+				{
+					options += '<option value="'+c+'">'+settings.options[c]+'</option>' + "\n";
+				}
+				else
+				{
+					options += '<option value="'+settings.options[c]+'">'+settings.options[c]+'</option>' + "\n";
+				}
+			}
 			else
+			{
 				options += '<option value="'+settings.options[c][settings.optionValue]+'">'+settings.options[c][settings.optionLabel]+'</option>' + "\n";
+			}
 		}
 
 		// set options for each target select field and attempt to set to original value
