@@ -241,16 +241,16 @@ class Base extends Model {
 	 * Save the input data to the model.
 	 *
 	 * @param  mixed    $input
-	 * @param  mixed    $id
+	 * @param  boolean  $new
 	 * @return void
 	 */
-	public function saveData($input = null, $id = null)
+	public function saveData($input = null, $new = false)
 	{
 		if (is_null($input))
 			$input = Input::all();
 
 		// format data for special types and special formats
-		$input = $this->formatValuesForDb($input, $id);
+		$input = $this->formatValuesForDb($input, $new);
 
 		$this->fill($input);
 		$this->save();
@@ -497,14 +497,14 @@ class Base extends Model {
 	 * Format values for insertion into database.
 	 *
 	 * @param  array    $values
-	 * @param  mixed    $id
+	 * @param  boolean  $new
 	 * @return array
 	 */
-	public function formatValuesForDb($values, $id = null)
+	public function formatValuesForDb($values, $new = false)
 	{
 		$values = $this->formatValuesForTypes($values);
 		$values = $this->formatValuesForSpecialFormats($values);
-		$values = $this->formatValuesForModel($values, $id);
+		$values = $this->formatValuesForModel($values, $new);
 
 		return $values;
 	}
@@ -576,14 +576,14 @@ class Base extends Model {
 				if (is_string($formats))
 					$formats = [$formats];
 
-				if (in_array('null-if-blank', $formats) || in_array('true-if-blank', $formats) || in_array('false-if-blank', $formats) || in_array('json-or-null', $formats))
+				if (in_array('blank-if-not-set', $formats))
+					$values[$field] = "";
+
+				if (in_array('null-if-not-set', $formats))
 					$values[$field] = null;
 
-				foreach ($formats as $format)
-				{
-					if ($format == "pivot-array")
-						$values[$field] = ['pivot' => []];
-				}
+				if (in_array('pivot-array', $formats))
+					$values[$field] = ['pivot' => []];
 			}
 		}
 
@@ -695,8 +695,18 @@ class Base extends Model {
 
 					break;
 
-				case "uc-first":
+				case "uppercase-first":
 					$value = ucfirst(trim($value));
+
+					break;
+
+				case "uppercase":
+					$value = strtoupper($value);
+
+					break;
+
+				case "lowercase":
+					$value = strtolower($value);
 
 					break;
 			}
@@ -734,10 +744,10 @@ class Base extends Model {
 	 * custom formatting before data is inserted into the database.
 	 *
 	 * @param  array    $values
-	 * @param  mixed    $id
+	 * @param  boolean  $new
 	 * @return array
 	 */
-	public function formatValuesForModel($values, $id = null)
+	public function formatValuesForModel($values, $new = false)
 	{
 		return $values;
 	}
