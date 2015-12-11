@@ -91,11 +91,11 @@ To install Formation, make sure `regulus/formation` has been added to Laravel 5'
 
 Then run `php composer.phar update` from the command line. Composer will install the Formation package. Now, all you have to do is register the service provider and set up Formation's alias in `config/app.php`. Add this to the `providers` array:
 
-	'Regulus\Formation\FormationServiceProvider',
+	Regulus\Formation\FormationServiceProvider::class,
 
 And add this to the `aliases` array:
 
-	'Form' => 'Regulus\Formation\Facade',
+	'Form' => Regulus\Formation\Facade::class,
 
 You may use 'Formation', or another alias, but 'Form' is recommended for the sake of simplicity. Formation is now ready to go.
 

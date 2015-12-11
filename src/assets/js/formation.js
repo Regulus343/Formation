@@ -3,7 +3,7 @@
 | Formation JS
 |------------------------------------------------------------------------------
 |
-| Last Updated: November 29, 2015
+| Last Updated: December 8, 2015
 |
 */
 
@@ -495,8 +495,6 @@ var Formation = {
 	{
 		if (functionItem === undefined)
 			return null;
-
-
 
 		if (typeof functionItem == "function")
 			return functionItem(parameter1, parameter2);
