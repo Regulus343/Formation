@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.0.3
-		last updated on November 29, 2014
+		version 1.0.4
+		last updated on December 21, 2015
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -3423,7 +3423,7 @@ class Formation {
 		{
 			$errorIcon = config('form.error.icon');
 
-			if ($errorIcon && !preg_match("/icon/", $errorMessage))
+			if ($errorIcon && !preg_match("/icon/", $errorMessage) && !preg_match("/fa\-/", $errorMessage))
 			{
 				$errorMessage = $this->icon($errorIcon).' '.$errorMessage;
 			}
