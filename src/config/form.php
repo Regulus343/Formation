@@ -50,7 +50,7 @@ return [
 		'element'               => 'div',
 		'element_class'         => 'error',
 		'class'                 => 'has-error',
-		'icon'                  => 'remove-circle',
+		'icon'                  => 'exclamation-circle',
 		'type_label_tooltip'    => true,
 
 		'type_label_attributes' => [
