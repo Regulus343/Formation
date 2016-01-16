@@ -700,6 +700,11 @@ class Base extends Model {
 
 					break;
 
+				case "uppercase-words":
+					$value = ucwords(trim($value));
+
+					break;
+
 				case "uppercase":
 					$value = strtoupper($value);
 

@@ -6,7 +6,7 @@
 
 		created by Cody Jassman
 		version 1.0.5
-		last updated on January 8, 2015
+		last updated on January 15, 2015
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -1722,6 +1722,7 @@ class Formation {
 
 				$html .= '<label>'.$this->radio($name, $value, $attributesField).' '.$label.'</label>';
 				break;
+
 			case "checkbox-set":
 				// for checkbox set, use options as array of checkbox names
 				if ($fieldLabel)
