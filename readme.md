@@ -331,7 +331,7 @@ Of course, you may use `Form::setDefaults()` to populate select boxes without th
 
 	echo Form::select('animal', Form::simpleOptions(['Tiger', 'Zebra', 'Elephant']), ['null-option' => Select an animal']);
 
-**Turn a simple array into a simple options array with numeric values that do start at one instead of zero:**
+**Turn a simple array into a simple options array with numeric values that start at one instead of zero:**
 
 	echo Form::select('animal', Form::offsetOptions(['Tiger', 'Zebra', 'Elephant']), ['null-option' => Select an animal']);
 
@@ -444,7 +444,9 @@ Into this:
 
 	echo Form::field('user.email');
 
-The field container element can be changed from a div to another HTML element and the "form-group" class can be changed as well in `config.php`.
+The field container element can be changed from a div to another HTML element and the "form-group" class can be changed as well in `config.php`. If you prefer not to use a field container at all, you may use the following:
+
+	echo Form::field('name', 'text', ['field-container' => false]);
 
 **Using field macro for a drop-down select box:**
 

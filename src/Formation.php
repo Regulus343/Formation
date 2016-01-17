@@ -6,7 +6,7 @@
 
 		created by Cody Jassman
 		version 1.0.5
-		last updated on January 15, 2015
+		last updated on January 17, 2015
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -1622,12 +1622,14 @@ class Formation {
 		$attributesLabel = [];
 		foreach ($attributes as $key => $attribute)
 		{
-			if (substr($key, -6) != "-field" && substr($key, -10) != "-container" && $key != "id") {
+			if (substr($key, -6) != "-field" && substr($key, -10) != "-container" && $key != "id")
+			{
 				$key = str_replace('-label', '', $key);
 				$attributesLabel[$key] = $attribute;
 			}
 
-			if (($key == "id" || $key == "id-field") && !isset($attributes['for'])) {
+			if (($key == "id" || $key == "id-field") && !isset($attributes['for']))
+			{
 				$attributesLabel['for'] = $attribute;
 			}
 		}
@@ -1636,61 +1638,56 @@ class Formation {
 
 		foreach ($attributes as $key => $attribute)
 		{
-			if (substr($key, -6) != "-label" && substr($key, -16) != "-field-container") {
+			if (substr($key, -6) != "-label" && substr($key, -15) != "field-container" && $key != "error-always-exists")
+			{
 				$key = str_replace('-field', '', $key);
 				$attributesField[$key] = $attribute;
 			}
 		}
 
-		$html = $this->openFieldContainer($name, $type, $attributes);
+		$fieldContainer = !isset($attributes['field-container']) || $attributes['field-container'] === true;
+
+		if ($fieldContainer)
+			$html = $this->openFieldContainer($name, $type, $attributes);
+		else
+			$html = "";
+
+		// add label for certain types
+		if ($fieldLabel && in_array($type, ['text', 'search', 'password', 'url', 'number', 'date', 'textarea', 'select', 'file', 'checkbox-set', 'radio-set']))
+		{
+			if (in_array($type, ['checkbox-set', 'radio-set'])) // don't use field name for checkbox and radio sets
+				$html .= $this->label(null, $label, $attributesLabel);
+			else
+				$html .= $this->label($name, $label, $attributesLabel);
+		}
 
 		switch ($type)
 		{
 			case "text":
-				if ($fieldLabel)
-					$html .= $this->label($name, $label, $attributesLabel);
-
-				$html .= $this->text($name, $attributesField) . "\n";
+				$html .= $this->text($name, $attributesField);
 				break;
 
 			case "search":
-				if ($fieldLabel)
-					$html .= $this->label($name, $label, $attributesLabel);
-
-				$html .= $this->search($name, $attributesField) . "\n";
+				$html .= $this->search($name, $attributesField);
 				break;
 
 			case "password":
-				if ($fieldLabel)
-					$html .= $this->label($name, $label, $attributesLabel);
-
-				$html .= $this->password($name, $attributesField) . "\n";
+				$html .= $this->password($name, $attributesField);
 				break;
-			case "url":
-				if ($fieldLabel)
-					$html .= $this->label($name, $label, $attributesLabel);
 
-				$html .= $this->url($name, $attributesField) . "\n";
+			case "url":
+				$html .= $this->url($name, $attributesField);
 				break;
 
 			case "number":
-				if ($fieldLabel)
-					$html .= $this->label($name, $label, $attributesLabel);
-
-				$html .= $this->number($name, $attributesField) . "\n";
+				$html .= $this->number($name, $attributesField);
 				break;
 
 			case "date":
-				if ($fieldLabel)
-					$html .= $this->label($name, $label, $attributesLabel);
-
-				$html .= $this->date($name, $attributesField) . "\n";
+				$html .= $this->date($name, $attributesField);
 				break;
 
 			case "textarea":
-				if ($fieldLabel)
-					$html .= $this->label($name, $label, $attributesLabel);
-
 				$html .= $this->textarea($name, $attributesField);
 				break;
 
@@ -1699,9 +1696,6 @@ class Formation {
 				break;
 
 			case "select":
-				if ($fieldLabel)
-					$html .= $this->label($name, $label, $attributesLabel);
-
 				$html .= $this->select($name, $options, $attributesField);
 				break;
 
@@ -1724,10 +1718,6 @@ class Formation {
 				break;
 
 			case "checkbox-set":
-				// for checkbox set, use options as array of checkbox names
-				if ($fieldLabel)
-					$html .= $this->label(null, $label, $attributesLabel);
-
 				if (!is_null($name))
 					$attributesField['name-prefix'] = $name;
 
@@ -1735,16 +1725,10 @@ class Formation {
 				break;
 
 			case "radio-set":
-				if ($fieldLabel)
-					$html .= $this->label(null, $label, $attributesLabel);
-
 				$html .= $this->radioSet($name, $options, $attributesField);
 				break;
 
 			case "file":
-				if ($fieldLabel)
-					$html .= $this->label($name, $label, $attributesLabel);
-
 				$html .= $this->file($name, $attributesField) . "\n";
 				break;
 
@@ -1757,10 +1741,15 @@ class Formation {
 				break;
 		}
 
-		if (config('form.field_container.error') && !config('form.error.type_label_tooltip'))
-			$html .= $this->error($name) . "\n";
+		$errorAlwaysExists = isset($attributes['error-always-exists']) && $attributes['error-always-exists'] === true;
 
-		$html .= $this->closeFieldContainer();
+		if ((config('form.field_container.error') || $errorAlwaysExists) && !config('form.error.type_label_tooltip'))
+		{
+			$html .= $this->error($name, $errorAlwaysExists) . "\n";
+		}
+
+		if ($fieldContainer)
+			$html .= $this->closeFieldContainer();
 
 		return $html;
 	}
