@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.0.5
-		last updated on January 17, 2015
+		version 1.0.6
+		last updated on January 29, 2015
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -1161,7 +1161,8 @@ class Formation {
 			$this->labels[$name] = $label;
 
 		// get ID of field for label's "for" attribute
-		if (!isset($attributes['for'])) {
+		if (!isset($attributes['for']))
+		{
 			$id = $this->id($name);
 			$attributes['for'] = $id;
 		}
@@ -1622,7 +1623,7 @@ class Formation {
 		$attributesLabel = [];
 		foreach ($attributes as $key => $attribute)
 		{
-			if (substr($key, -6) != "-field" && substr($key, -10) != "-container" && $key != "id")
+			if (substr($key, -6) == "-label")
 			{
 				$key = str_replace('-label', '', $key);
 				$attributesLabel[$key] = $attribute;
@@ -1703,7 +1704,7 @@ class Formation {
 				if (isset($attributesLabel['class']))
 					$attributesLabel['class'] .= " checkbox";
 				else
-					$attributesLabel['class']  = "checkbox";
+					$attributesLabel['class'] = "checkbox";
 
 				$html .= '<label>'.$this->checkbox($name, $attributesField).' '.$label.'</label>';
 				break;
@@ -1712,7 +1713,7 @@ class Formation {
 				if (isset($attributesLabel['class']))
 					$attributesLabel['class'] .= " radio";
 				else
-					$attributesLabel['class']  = "radio";
+					$attributesLabel['class'] = "radio";
 
 				$html .= '<label>'.$this->radio($name, $value, $attributesField).' '.$label.'</label>';
 				break;
@@ -2173,6 +2174,16 @@ class Formation {
 					$attributes['data-null-option'] = $defaultNullOption;
 				}
 			}
+		}
+
+		if (isset($attributes['placeholder']))
+		{
+			$attributes['data-placeholder'] = $attributes['placeholder'];
+
+			if (!isset($data['null-option']))
+				$data['null-option'] = $attributes['placeholder'];
+
+			unset($attributes['placeholder']);
 		}
 
 		foreach ($options as $optionValue => $optionLabel)
