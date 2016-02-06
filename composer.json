@@ -20,8 +20,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"Regulus\\Formation\\": "src/",
-			"Regulus\\Formation\\Models\\": "src/models/"
+			"Regulus\\Formation\\": "src/"
 		}
 	}
 }

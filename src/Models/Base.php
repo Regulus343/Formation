@@ -252,8 +252,7 @@ class Base extends Model {
 		// format data for special types and special formats
 		$input = $this->formatValuesForDb($input, $new);
 
-		$this->fill($input);
-		$this->save();
+		$this->fill($input)->save();
 
 		foreach ($input as $field => $value)
 		{
@@ -531,18 +530,76 @@ class Base extends Model {
 	{
 		foreach ($this->getFieldTypes() as $field => $type)
 		{
-			$value = isset($values[$field]) ? $values[$field] : null;
+			$value      = isset($values[$field]) ? $values[$field] : null;
+			$unsetValue = false;
 
 			switch ($type)
 			{
-				case "date":        $value = (!is_null($value) && $value != "" ? date('Y-m-d', strtotime($value)) : "0000-00-00"); break;
-				case "date-time":   $value = (!is_null($value) && $value != "" ? date('Y-m-d H:i:s', strtotime($value)) : "0000-00-00 00:00:00"); break;
-				case "slug":        $value = Format::slug($value); break;
-				case "unique-slug": $value = Format::uniqueSlug($value, $this->table, $field, $this->id); break;
-				case "checkbox":    $value = (!is_null($value) && $value != false); break;
+				case "checkbox":
+					$value = (!is_null($value) && $value != false); break;
+
+				case "date":
+					$value = (!is_null($value) && $value != "" ? date('Y-m-d', strtotime($value)) : null); break;
+
+				case "date-time":
+				case "datetime":
+				case "timestamp":
+					$value = (!is_null($value) && $value != "" ? date('Y-m-d H:i:s', strtotime($value)) : null); break;
+
+				case "date-not-null":
+					$value = (!is_null($value) && $value != "" ? date('Y-m-d', strtotime($value)) : "0000-00-00"); break;
+
+				case "date-time-not-null":
+				case "datetime-not-null":
+				case "timestamp-not-null":
+					$value = (!is_null($value) && $value != "" ? date('Y-m-d H:i:s', strtotime($value)) : "0000-00-00 00:00:00"); break;
+
+				case "slug":
+					$value = Format::slug($value); break;
+
+				case "unique-slug":
+					$value = Format::uniqueSlug($value, $this->table, $field, $this->id); break;
 			}
 
-			$values[$field] = $value;
+			// set a timestamp based on the checked status of a checkbox
+			if (in_array(substr($type, 0, 18), ['checkbox-timestamp', 'checkbox-date-time', 'checkbox-datetime']))
+			{
+				$value = (!is_null($value) && $value != false);
+
+				$typeArray = explode(':', $type);
+
+				// set checkbox value in case checkbox field actually exists in model
+				$values[$field] = (bool) $value;
+
+				// set field name for timestamp field
+				if (count($typeArray) == 1)
+					$field .= "_at";
+				else
+					$field = $typeArray[1];
+
+				// set timestamp based on checkbox status and previous timestamp value
+				if ($value)
+				{
+					if (is_null($this->{$field}))
+						$value = date('Y-m-d H:i:s');
+					else
+						$unsetValue = true;
+				}
+				else
+				{
+					$value = null;
+				}
+			}
+
+			if (!$unsetValue)
+			{
+				$values[$field] = $value;
+			}
+			else
+			{
+				if (isset($values[$field]))
+					unset($values[$field]);
+			}
 		}
 
 		return $values;
@@ -561,7 +618,8 @@ class Base extends Model {
 		{
 			foreach ($values as $field => $value)
 			{
-				$values[$field] = $this->trimValue($value);
+				if (is_string($value))
+					$values[$field] = $this->trimValue($value);
 			}
 		}
 

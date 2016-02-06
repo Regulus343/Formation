@@ -3,7 +3,7 @@
 | Formation JS
 |------------------------------------------------------------------------------
 |
-| Last Updated: December 8, 2015
+| Last Updated: February 6, 2016
 |
 */
 
@@ -378,7 +378,7 @@ var Formation = {
 			optionLabel:          'name',
 			nullOption:           'Select an option',
 			optionsToggleElement: '#select-option-area',
-			callbackFunction:     'updateSomething'
+			callbackFunction:     'updateSomething',
 		});
 
 		You may use an array like [{id: 1, name: 'Option 1'}, {id: 2, name: 'Option 2'}] and set settings.optionValue and settings.optionValue
@@ -387,14 +387,6 @@ var Formation = {
 	*/
 	populateSelect: function(settings)
 	{
-		if (settings.nullOption === undefined)
-		{
-			if ($(settings.targetSelect).attr('data-null-option') != "")
-				settings.nullOption = $(settings.targetSelect).attr('data-null-option');
-			else
-				settings.nullOption = "Select an Option";
-		}
-
 		if (settings.optionLabel === undefined) settings.optionLabel = settings.optionValue;
 
 		// if optionValue, optionLabel, and optionsAssociative are not set, assume array is intended to be associative
@@ -403,7 +395,7 @@ var Formation = {
 
 		// build select options markup
 		var options = "";
-		if (settings.nullOption !== false)
+		if (settings.nullOption !== false && typeof settings.nullOption != "undefined")
 			options += '<option value="">'+settings.nullOption+'</option>' + "\n";
 
 		for (c in settings.options)
@@ -428,15 +420,36 @@ var Formation = {
 		// set options for each target select field and attempt to set to original value
 		$(settings.targetSelect).each(function()
 		{
-			var currentValue = $(this).val();
-			$(this).html(options);
+			var currentValue  = $(this).val();
+			var customOptions = "";
+
+			if (typeof settings.nullOption == "undefined")
+			{
+				var nullOption = "Select an Option";
+
+				if ($(this).data('null-option') != "")
+					nullOption = $(this).data('null-option');
+
+				customOptions = '<option value="">'+nullOption+'</option>' + "\n";
+			}
+
+			customOptions += options;
+
+			$(this).html(customOptions);
 			$(this).val(currentValue);
 		});
 
 		// show or hide an element depending on whether options are available in select box
-		if (settings.optionsToggleElement !== undefined)
+		if (typeof settings.optionsToggleElement != "undefined")
 		{
-			if (data.length > 0)
+			var optionsExist = false;
+
+			if (typeof settings.options == "object")
+				optionsExist = Object.keys(settings.options).length;
+			else
+				optionsExist = settings.options.length;
+
+			if (optionsExist > 0)
 				$(settings.optionsToggleElement).removeClass('hidden');
 			else
 				$(settings.optionsToggleElement).addClass('hidden');
@@ -458,10 +471,10 @@ var Formation = {
 			postData:             { category_id: 1 },
 			targetSelect:         '#select-option',
 			nullOption:           'Select an option',
-			optionsToggleElement: '#select-option-area'
+			optionsToggleElement: '#select-option-area',
 		});
 
-		You may return return an array like [{id: 1, name: 'Option 1'}, {id: 2, name: 'Option 2'}] and set settings.optionValue and settings.optionValue
+		You may return return an array like [{id: 1, name: 'Option 1'}, {id: 2, name: 'Option 2'}] and set settings.optionValue and settings.optionLabel
 		or you can just return a simple array in JSON like ['Option 1', 'Option 2']. If you set settings.optionsToggleElement, the element will be shown
 		if there are select options and hidden if there are none.
 	*/
@@ -495,6 +508,8 @@ var Formation = {
 	{
 		if (functionItem === undefined)
 			return null;
+
+
 
 		if (typeof functionItem == "function")
 			return functionItem(parameter1, parameter2);
