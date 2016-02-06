@@ -25,7 +25,7 @@ echo Form::field('user.item', 'select', [
 ]);
 ?>
 
-<?php //simply typing Form::field('first_name') is the same as the following code: ?>
+<?php // simply typing Form::field('first_name') is the same as the following code: ?>
 
 <div class="form-group" id="first-name-area">
 	<?php
@@ -37,7 +37,7 @@ echo Form::field('user.item', 'select', [
 	?>
 </div>
 
-<?php //which may produce the following markup: ?>
+<?php // which may produce the following markup: ?>
 
 <div class="form-group hass error" id="first-name-area">
 	<label for="field-first-name" class="control-label has-error"><span class="access">F</span>irst Name</label>
@@ -169,7 +169,7 @@ One of the most useful features of Formation is its ability to take an array, ob
 Formation makes use Laravel's Validator class. Using `Form::setValidation()` will create an instance of the Validator class (or many instances if array field names are used in the form setup). The reason the form's validation rules are passed through Formation to Validator is because Formation automatically adds an "error" class to the label and form field if an error is triggered. To do this, Formation needs a copy of the validation rules that have been set.
 
 	$rules = [
-		'user.name' => ['required'], //'user.name' can be used for an array field like "user[name]"
+		'user.name' => ['required'], // 'user.name' can be used for an array field like "user[name]"
 		'email'     => ['required', 'email']
 	];
 	Form::setValidationRules($rules);
@@ -182,11 +182,11 @@ Formation makes use Laravel's Validator class. Using `Form::setValidation()` wil
 
 **Validating fields in an array:**
 
-	if (Form::isValid('user')) { //validates array fields with names like "user[name]" and "user[email]"
+	if (Form::isValid('user')) { // validates array fields with names like "user[name]" and "user[email]"
 		return true;
 	}
 
-	if (Form::isValid('user.')) { //ending with a "." allows us to validate fields like "user[0][name]" and "user[1][name]"
+	if (Form::isValid('user.')) { // ending with a "." allows us to validate fields like "user[0][name]" and "user[1][name]"
 		return true;
 	}
 
@@ -315,7 +315,7 @@ You may append "-container" to attribute names to assign them to the container e
 
 **Generating a drop-down list with an option selected by default:**
 
-	//you may pass either a "selected" or "value" attribute to select an option
+	// you may pass either a "selected" or "value" attribute to select an option
 	echo Form::select('size', ['L' => 'Large', 'S' => 'Small'], ['null-option' => 'Select a size', 'value' => 'S');
 
 	echo Form::select('size', ['L' => 'Large', 'S' => 'Small'], ['null-option' => 'Select a size', 'selected' => 'S');
@@ -337,26 +337,26 @@ Of course, you may use `Form::setDefaults()` to populate select boxes without th
 
 **Turn a simple array into a simple options array with numeric values that start at one instead of zero:**
 
-	//display options from 0 to 180 incrementing by 10 each time
+	// display options from 0 to 180 incrementing by 10 each time
 	echo Form::select('number', Form::numberOptions(0, 180, 10));
 
 The first argument is the starting number, the second is the ending number, and the third is the number to iterate by. If it is negative, you may count down instead of up. Finally, the fourth argument is used to denote the number of decimal places the numbers should have.
 
 **Create an options array of months:**
 
-	//count up 12 months from current month
+	// count up 12 months from current month
 	echo Form::select('month', Form::monthOptions('current', 12));
 
-	//count down 12 months from current month
+	// count down 12 months from current month
 	echo Form::select('month', Form::monthOptions(true, -12));
 
-	//count up to a specific month from current month
+	// count up to a specific month from current month
 	echo Form::select('month', Form::monthOptions(true, '2013-04-08'));
 
-	//count down to a specific month from another specific month
+	// count down to a specific month from another specific month
 	echo Form::select('month', Form::monthOptions('2013-11-11', '2013-04-08'));
 
-	//count down 12 months from current month and use the last day of the month for "month_end" field
+	// count down 12 months from current month and use the last day of the month for "month_end" field
 	echo Form::select('month_start', Form::monthOptions(true, -12, false, 'M Y'));
 	echo Form::select('month_end', Form::monthOptions(true, -12, true, 'M Y'));
 
@@ -403,7 +403,7 @@ This will automatically pass Formation's error settings and any Formation errors
 
 **Load a Handlebars JS template with automatically populated fields and error displaying:**
 
-	var exampleTemplateCallback = function(item, data) { //example callback function for each template item created
+	var exampleTemplateCallback = function(item, data) { // example callback function for each template item created
 		item.hide().fadeIn();
 	};
 
