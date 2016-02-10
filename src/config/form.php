@@ -21,7 +21,7 @@ return [
 
 	'field' => [
 		'class'                    => 'form-control',
-		'id_prefix'                => 'field-',
+		'prefix'                   => 'field-',
 		'auto_label'               => true,
 		'auto_placeholder'         => true,
 		'default_null_option'      => true,

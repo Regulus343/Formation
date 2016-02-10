@@ -3,7 +3,7 @@
 | Formation JS
 |------------------------------------------------------------------------------
 |
-| Last Updated: February 6, 2016
+| Last Updated: February 9, 2016
 |
 */
 
@@ -21,6 +21,15 @@ var Formation = {
 		},
 	},
 
+	field: {
+		classAttribute:        'form-control',
+		prefix:                'field-',
+		autoLabel:             true,
+		autoPlaceholder:       true,
+		defaultNullOption:     true,
+		nullOptionAddEllipsis: false,
+	},
+
 	errorCallback:       'Formation.defaultErrorCallback',
 
 	errors:              null,
@@ -33,9 +42,47 @@ var Formation = {
 
 	setUpRemoveButtons:  true,
 
-	setErrorSettings: function (errorSettings)
+	setErrorSettings: function(errorSettings)
 	{
-		this.errorSettings = errorSettings;
+		this.errorSettings = {};
+
+		$.extend(String.prototype,
+		{
+			camelize: function()
+			{
+				var string = this.replace (/(?:^|[-_])(\w)/g, function (_, c)
+				{
+					return c ? c.toUpperCase () : '';
+				});
+
+				return string.substr(0, 1).toLowerCase() + string.substr(1);
+			}
+		});
+
+		this.errorSettings = this.setErrorSettingsObject(errorSettings);
+	},
+
+	setErrorSettingsObject: function(errorSettings)
+	{
+		var errorSettingsObject = {};
+
+		for (e in errorSettings)
+		{
+			var errorSetting = errorSettings[e];
+
+			var key = e.camelize(true);
+
+			// correct reserved JS attributes
+			if (key == "class")
+				key += "Attribute";
+
+			if (typeof errorSetting == "object")
+				errorSettingsObject[key] = this.setErrorSettingsObject(errorSetting);
+			else
+				errorSettingsObject[key] = errorSetting;
+		}
+
+		return errorSettingsObject;
 	},
 
 	setErrorCallback: function (errorCallback)
@@ -45,7 +92,8 @@ var Formation = {
 
 	defaultErrorCallback: function(fieldContainer)
 	{
-		fieldContainer.find('[data-toggle="tooltip"]').tooltip({html: true}); //by default, form errors are set up for Bootstrap 3
+		if (typeof fieldContainer != "undefined")
+			fieldContainer.find('[data-toggle="tooltip"]').tooltip({html: true});
 	},
 
 	setErrors: function(errors)
@@ -53,8 +101,9 @@ var Formation = {
 		this.errors     = errors;
 		this.errorsById = [];
 
-		for (e in errors) {
-			this.errorsById['field-' + e.replace(/\_/g, '-').replace(/\./g, '-')] = errors[e];
+		for (e in errors)
+		{
+			this.errorsById[this.field.prefix + e.replace(/\_/g, '-').replace(/\./g, '-')] = errors[e];
 		}
 	},
 
@@ -273,8 +322,6 @@ var Formation = {
 
 	setFieldsForItem: function(item, parentField)
 	{
-		var errorSettings = this.errorSettings;
-
 		i = this.itemNumber;
 
 		for (field in item)
@@ -287,15 +334,8 @@ var Formation = {
 			}
 			else
 			{
-				var fieldClassName = field.replace(/\_/g, '-');
-
-				// if parent field is "pivot" array, add it to fieldElement
-				if (parentField === "pivot")
-					fieldClassName = parentField + "-" + fieldClassName;
-
-				fieldClassName = "field-" + fieldClassName;
-
-				var fieldElement = this.itemContainer.find('.'+fieldClassName);
+				var fieldClass   = this.getFieldClassFromName(field, parentField);
+				var fieldElement = this.itemContainer.find('.'+fieldClass);
 
 				// set value for field
 				if (fieldElement.attr('type') == "checkbox")
@@ -309,53 +349,115 @@ var Formation = {
 						fieldElement.val(value);
 				}
 
-				// set "data-value" attribute as well in case fields are select boxes that have not yet been populated with options
-				fieldElement.attr('data-value', value);
+				// set "value" data attribute as well in case fields are select boxes that have not yet been populated with options
+				fieldElement.data('value', value);
 
 				// add error class for field if an error exists
 				var error = this.getErrorById(fieldElement.attr('id'));
 				if (error !== false)
 				{
-					var containerElement = fieldElement.parents('div.form-group');
-					containerElement.addClass(errorSettings.classAttribute);
-
-					var labelElement = containerElement.find('label');
-					labelElement.addClass(errorSettings.classAttribute);
-
-					fieldElement.addClass(errorSettings.classAttribute);
-
-					if (this.errorSettings.typeLabelTooltip)
-					{
-						// add attributes to tooltip's label
-						var attributes = errorSettings.typeLabelAttributes;
-
-						for (a in attributes)
-						{
-							var attribute = this.camelCaseToDashed(a);
-							var value     = attributes[a];
-
-							labelElement.addClass(errorSettings.typeLabelAttributes.classAttribute);
-
-							if (labelElement.attr(attribute) != undefined)
-								labelElement.attr(attribute, labelElement.attr(attribute) + ' ' + value);
-							else
-								labelElement.attr(attribute, value);
-						}
-
-						// set tooltip error message
-						labelElement.attr('title', error);
-					}
-					else
-					{
-						var errorHtml = '<'+errorSettings.element+' class="'+errorSettings.elementClass+'">' + error + '</'+errorSettings.element+'>';
-						fieldElement.after(errorHtml);
-					}
-
-					if (this.errorCallback)
-						this.executeFunction(this.errorCallback);
+					this.populateError(fieldElement, error);
 				}
 			}
 		}
+	},
+
+	getFieldClassFromName: function(field, parentField)
+	{
+		var fieldClass = field.replace(/\_/g, '-');
+
+		// if parent field is "pivot" array, add it to fieldElement
+		if (typeof parentField != "undefined" && parentField === "pivot")
+			fieldClass = parentField + "-" + fieldClass;
+
+		return this.field.prefix + fieldClass;
+	},
+
+	getFieldIdFromName: function(field, parentField)
+	{
+		var fieldId = field.replace(/\_/g, '-').replace(/\./g, '-');
+
+		// if parent field exists, add it to fieldElement
+		if (typeof parentField != "undefined")
+			fieldId = parentField + "-" + fieldId;
+
+		console.log(this.field.prefix + fieldId)
+
+		return this.field.prefix + fieldId;
+	},
+
+	populateErrors: function(errors, form)
+	{
+		this.setErrors(errors);
+
+		if (typeof form == "undefined")
+			form = $('body');
+
+		form.find('.'+this.errorSettings.classAttribute).removeClass(this.errorSettings.classAttribute);
+
+		form.find(this.errorSettings.element+'.'+this.errorSettings.elementClass).remove();
+
+		for (field in errors)
+		{
+			var fieldId   = this.getFieldIdFromName(field);
+			var fieldElement = form.find('#'+fieldId);
+
+			this.populateError(fieldElement, errors[field]);
+		}
+	},
+
+	populateError: function(fieldElement, error)
+	{
+		var errorSettings = this.errorSettings;
+
+		var containerElement = fieldElement.parents('div.form-group');
+		containerElement.addClass(errorSettings.classAttribute);
+
+		var labelElement = containerElement.find('label');
+		labelElement.addClass(errorSettings.classAttribute);
+		fieldElement.addClass(errorSettings.classAttribute);
+
+		if (errorSettings.typeLabelTooltip)
+		{
+			// add attributes to tooltip's label
+			var attributes = errorSettings.typeLabelAttributes;
+
+			for (a in attributes)
+			{
+				var attribute = this.camelCaseToDashed(a);
+				var value     = attributes[a];
+
+				labelElement.addClass(errorSettings.typeLabelAttributes.classAttribute);
+
+				if (labelElement.attr(attribute) != undefined)
+					labelElement.attr(attribute, labelElement.attr(attribute) + ' ' + value);
+				else
+					labelElement.attr(attribute, value);
+			}
+
+			// set tooltip error message
+			labelElement.attr('title', error);
+		}
+		else
+		{
+			var errorElement = fieldElement.closest('div.form-group').find(errorSettings.element+'.'+errorSettings.elementClass);
+
+			if (!fieldElement.length)
+				errorElement = fieldElement.closest('div').find(errorSettings.element+'.'+errorSettings.elementClass);
+
+			if (errorElement.length)
+			{
+				errorElement.html(error);
+			}
+			else
+			{
+				var errorHtml = '<'+errorSettings.element+' class="'+errorSettings.elementClass+'">' + error + '</'+errorSettings.element+'>';
+				fieldElement.after(errorHtml);
+			}
+		}
+
+		if (this.errorCallback)
+			this.executeFunction(this.errorCallback);
 	},
 
 	allItemsLoaded: function()
@@ -420,7 +522,10 @@ var Formation = {
 		// set options for each target select field and attempt to set to original value
 		$(settings.targetSelect).each(function()
 		{
-			var currentValue  = $(this).val();
+			var currentValue = $(this).val();
+			if (currentValue == "" && $(this).data('value') != "")
+				currentValue = $(this).data('value');
+
 			var customOptions = "";
 
 			if (typeof settings.nullOption == "undefined")
@@ -436,6 +541,9 @@ var Formation = {
 			customOptions += options;
 
 			$(this).html(customOptions);
+
+			console.log(customOptions);
+
 			$(this).val(currentValue);
 		});
 
@@ -508,8 +616,6 @@ var Formation = {
 	{
 		if (functionItem === undefined)
 			return null;
-
-
 
 		if (typeof functionItem == "function")
 			return functionItem(parameter1, parameter2);

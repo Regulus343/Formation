@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.0.7
-		last updated on February 6, 2015
+		version 1.1.0
+		last updated on February 9, 2015
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -740,12 +740,12 @@ class Formation {
 	}
 
 	/**
-	 * Set up whole form with one big array
+	 * Prepare a whole form with one big array
 	 *
 	 * @param  array    $form
 	 * @return array
 	 */
-	public function setup($form = [])
+	public function prepare($form = [])
 	{
 		$labels   = [];
 		$rules    = [];
@@ -1359,7 +1359,7 @@ class Formation {
 			$id = strtolower(str_replace('.', '-', str_replace('_', '-', str_replace(' ', '-', $name))));
 
 			// add ID prefix
-			$idPrefix = config('form.field.id_prefix');
+			$idPrefix = config('form.field.prefix');
 
 			if (!is_null($idPrefix) && $idPrefix !== false && $idPrefix != "")
 				$id = $idPrefix.$id;
@@ -1433,7 +1433,10 @@ class Formation {
 
 		if ($fieldClass != "")
 		{
-			$fieldClass = "field-".$fieldClass;
+			$classPrefix = config('form.field.prefix');
+
+			if (!is_null($classPrefix) && $classPrefix !== false && $classPrefix != "")
+				$fieldClass = config('form.field.prefix').$fieldClass;
 
 			// replace double dashes with single dash
 			$fieldClass = str_replace('--', '-', $fieldClass);
@@ -2136,6 +2139,10 @@ class Formation {
 
 		$value = str_replace('"', '&quot;', $value);
 
+		// store value in data attribute in case options are being populated with JS after page load
+		if (is_string($value))
+			$attributes['data-value'] = $value;
+
 		// add the field class if config option is set
 		$attributes = $this->setFieldClass($name, $attributes);
 
@@ -2603,117 +2610,46 @@ class Formation {
 	}
 
 	/**
-	 * Get the check state for a checkable input.
+	 * Prepare an options array from a set of records
+	 * for a select field, checkbox set, or radio button set.
 	 *
-	 * @param  string  $type
-	 * @param  string  $name
-	 * @param  mixed   $value
-	 * @param  bool    $checked
-	 * @return bool
-	 */
-	protected function getCheckedState($type, $name, $value, $checked)
-	{
-		switch ($type)
-		{
-			case 'checkbox':
-				return $this->getCheckboxCheckedState($name, $value, $checked);
-
-			case 'radio':
-				return $this->getRadioCheckedState($name, $value, $checked);
-
-			default:
-				return $this->getValueAttribute($name) == $value;
-		}
-	}
-
-	/**
-	 * Get the check state for a checkbox input.
-	 *
-	 * @param  string  $name
-	 * @param  mixed  $value
-	 * @param  bool  $checked
-	 * @return bool
-	 */
-	protected function getCheckboxCheckedState($name, $value, $checked)
-	{
-		if (isset($this->session) && ! $this->oldInputIsEmpty() && is_null($this->old($name)))
-			return false;
-
-		if ($this->missingOldAndModel($name))
-			return $checked;
-
-		$posted = $this->getValueAttribute($name);
-
-		return is_array($posted) ? in_array($value, $posted) : (bool) $posted;
-	}
-
-	/**
-	 * Get the check state for a radio input.
-	 *
-	 * @param  string  $name
-	 * @param  mixed  $value
-	 * @param  bool  $checked
-	 * @return bool
-	 */
-	protected function getRadioCheckedState($name, $value, $checked)
-	{
-		if ($this->missingOldAndModel($name)) return $checked;
-
-		return $this->getValueAttribute($name) == $value;
-	}
-
-	/**
-	 * Determine if old input or model input exists for a key.
-	 *
-	 * @param  string  $name
-	 * @return bool
-	 */
-	protected function missingOldAndModel($name)
-	{
-		return (is_null($this->old($name)) && is_null($this->getModelValueAttribute($name)));
-	}
-
-	/**
-	 * Prepare an options array from a database object or other complex
-	 * object/array for a select field, checkbox set, or radio button set.
-	 *
-	 * @param  array   $options
-	 * @param  array   $vars
+	 * @param  mixed   $records
+	 * @param  mixed   $labelValueFields
 	 * @return array
 	 */
-	public function prepOptions($options = [], $vars = [])
+	public function prepOptions($records = [], $labelValueFields = [])
 	{
-		$optionsFormatted = [];
+		$options = [];
 
-		// turn Eloquent instances into an array
-		$optionsArray = $options;
-		if (method_exists($options, 'toArray'))
-			$optionsArray = $options->toArray();
-
-		if (is_string($vars) || (is_array($vars) && count($vars) > 0))
+		if (is_string($labelValueFields) || (is_array($labelValueFields) && count($labelValueFields) > 0))
 		{
-			foreach ($optionsArray as $key => $option)
+			foreach ($records as $key => $record)
 			{
 				// turn object into array
-				$optionArray = $option;
-				if (is_object($option))
-					$optionArray = (array) $option;
+				$recordArray = $record;
+				if (is_object($record))
+				{
+					if (method_exists($record, 'toArray'))
+						$recordArray = $record->toArray();
+					else
+						$recordArray = (array) $record;
+				}
 
 				// set label and value according to specified variables
-				if (is_string($vars))
+				if (is_string($labelValueFields))
 				{
-					$label = $vars;
-					$value = $vars;
+					$label = $labelValueFields;
+					$value = $labelValueFields;
 				}
-				else if (is_array($vars) && count($vars) == 1)
+				else if (is_array($labelValueFields) && count($labelValueFields) == 1)
 				{
-					$label = $vars[0];
-					$value = $vars[0];
+					$label = $labelValueFields[0];
+					$value = $labelValueFields[0];
 				}
 				else
 				{
-					$label = $vars[0];
-					$value = $vars[1];
+					$label = $labelValueFields[0];
+					$value = $labelValueFields[1];
 				}
 
 				if (isset($optionValue))
@@ -2723,20 +2659,20 @@ class Formation {
 
 				if (!is_null($method)) // value is a method of object; call it
 				{
-					$optionValue = call_user_func_array([$options[$key], $method['name']], $method['parameters']);
+					$optionValue = call_user_func_array([$record, $method['name']], $method['parameters']);
 				}
-				else if (isset($optionArray[$value]))
+				else if (isset($record[$value]))
 				{
-					$optionValue = $optionArray[$value];
+					$optionValue = $record[$value];
 				}
 
 				// if a label and a value are set, add it to options array
-				if (isset($optionArray[$label]) && isset($optionValue))
-					$optionsFormatted[$optionArray[$label]] = $optionValue;
+				if (isset($recordArray[$label]) && isset($optionValue))
+					$options[$recordArray[$label]] = $optionValue;
 			}
 		}
 
-		return $optionsFormatted;
+		return $options;
 	}
 
 	/**
@@ -2837,141 +2773,9 @@ class Formation {
 	}
 
 	/**
-	 * Get an options array of countries.
-	 *
-	 * @return array
-	 */
-	public function countryOptions()
-	{
-		return $this->simpleOptions([
-			'Canada', 'United States', 'Afghanistan', 'Albania', 'Algeria', 'American Samoa', 'Andorra', 'Angola', 'Anguilla', 'Antarctica', 'Antigua And Barbuda', 'Argentina', 'Armenia', 'Aruba',
-			'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bermuda', 'Bhutan', 'Bolivia', 'Bosnia And Herzegowina',
-		 	'Botswana', 'Bouvet Island', 'Brazil', 'British Indian Ocean Territory', 'Brunei Darussalam', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Cape Verde', 'Cayman Islands',
-		 	'Central African Republic', 'Chad', 'Chile', 'China', 'Christmas Island', 'Cocos (Keeling) Islands', 'Colombia', 'Comoros', 'Congo', 'Congo, The Democratic Republic Of The', 'Cook Islands',
-		 	'Costa Rica', 'Cote D\'Ivoire', 'Croatia (Local Name: Hrvatska)', 'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'East Timor', 'Ecuador','Egypt',
-			'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Ethiopia', 'Falkland Islands (Malvinas)', 'Faroe Islands', 'Fiji', 'Finland', 'France', 'France, Metropolitan', 'French Guiana',
-		 	'French Polynesia', 'French Southern Territories', 'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Gibraltar', 'Greece', 'Greenland', 'Grenada', 'Guadeloupe', 'Guam', 'Guatemala','Guinea',
-		 	'Guinea-Bissau', 'Guyana', 'Haiti', 'Heard And Mc Donald Islands', 'Holy See (Vatican City State)', 'Honduras', 'Hong Kong', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland',
-		 	'Israel', 'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati', 'Korea, Democratic People\'S Republic Of', 'Korea, Republic Of', 'Kuwait', 'Kyrgyzstan',
-		 	'Lao People\'S Democratic Republic', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libyan Arab Jamahiriya', 'Liechtenstein', 'Lithuania', 'Luxembourg', 'Macau',
-		 	'Macedonia, Former Yugoslav Republic Of', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Martinique', 'Mauritania', 'Mauritius', 'Mayotte', 'Mexico',
-		 	'Micronesia, Federated States Of', 'Moldova, Republic Of', 'Monaco', 'Mongolia', 'Montserrat', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nauru', 'Nepal', 'Netherlands',
-		 	'Netherlands Antilles', 'New Caledonia', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'Niue', 'Norfolk Island', 'Northern Mariana Islands', 'Norway', 'Oman', 'Pakistan', 'Palau', 'Panama',
-		 	'Papua New Guinea', 'Paraguay', 'Peru','Philippines', 'Pitcairn', 'Poland', 'Portugal', 'Puerto Rico', 'Qatar', 'Reunion', 'Romania', 'Russian Federation', 'Rwanda', 'Saint Kitts And Nevis',
-		 	'Saint Lucia','Saint Vincent And The Grenadines', 'Samoa', 'San Marino', 'Sao Tome And Principe', 'Saudi Arabia', 'Senegal', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia (Slovak Republic)',
-		 	'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Georgia, South Sandwich Islands', 'Spain', 'Sri Lanka', 'St. Helena', 'St. Pierre And Miquelon', 'Sudan', 'Suriname',
-		 	'Svalbard And Jan Mayen Islands', 'Swaziland', 'Sweden', 'Switzerland', 'Syrian Arab Republic', 'Taiwan', 'Tajikistan', 'Tanzania, United Republic Of', 'Thailand', 'Togo', 'Tokelau', 'Tonga',
-		 	'Trinidad And Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Turks And Caicos Islands', 'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom',
-		 	'United States Minor Outlying Islands', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Venezuela', 'Viet Nam', 'Virgin Islands (British)', 'Virgin Islands (U.S.)', 'Wallis And Futuna Islands',
-		 	'Western Sahara', 'Yemen', 'Yugoslavia', 'Zambia', 'Zimbabwe',
-		]);
-	}
-
-	/**
-	 * Get an options array of Canadian provinces.
-	 *
-	 * @param  bool    $useAbbrev
-	 * @return array
-	 */
-	public function provinceOptions($useAbbrev = true)
-	{
-		$provinces = [
-			'AB' => 'Alberta',
-			'BC' => 'British Columbia',
-			'MB' => 'Manitoba',
-			'NB' => 'New Brunswick',
-			'NL' => 'Newfoundland',
-			'NT' => 'Northwest Territories',
-			'NS' => 'Nova Scotia',
-			'NU' => 'Nunavut',
-			'ON' => 'Ontario',
-			'PE' => 'Prince Edward Island',
-			'QC' => 'Quebec',
-			'SK' => 'Saskatchewan',
-			'YT' => 'Yukon Territory',
-		];
-
-		if ($useAbbrev)
-			return $provinces;
-		else
-			return $this->simpleOptions(array_values($provinces)); // remove abbreviation keys
-	}
-
-	/**
-	 * Get an options array of US states.
-	 *
-	 * @param  bool    $useAbbrev
-	 * @return array
-	 */
-	public function stateOptions($useAbbrev = true)
-	{
-		$states = [
-			'AL' => 'Alabama',
-			'AK' => 'Alaska',
-			'AZ' => 'Arizona',
-			'AR' => 'Arkansas',
-			'CA' => 'California',
-			'CO' => 'Colorado',
-			'CT' => 'Connecticut',
-			'DE' => 'Delaware',
-			'DC' => 'District of Columbia',
-			'FL' => 'Florida',
-			'GA' => 'Georgia',
-			'HI' => 'Hawaii',
-			'ID' => 'Idaho',
-			'IL' => 'Illinois',
-			'IN' => 'Indiana',
-			'IA' => 'Iowa',
-			'KS' => 'Kansas',
-			'KY' => 'Kentucky',
-			'LA' => 'Louisiana',
-			'ME' => 'Maine',
-			'MD' => 'Maryland',
-			'MA' => 'Massachusetts',
-			'MI' => 'Michigan',
-			'MN' => 'Minnesota',
-			'MS' => 'Mississippi',
-			'MO' => 'Missouri',
-			'MT' => 'Montana',
-			'NE' => 'Nebraska',
-			'NV' => 'Nevada',
-			'NH' => 'New Hampshire',
-			'NJ' => 'New Jersey',
-			'NM' => 'New Mexico',
-			'NY' => 'New York',
-			'NC' => 'North Carolina',
-			'ND' => 'North Dakota',
-			'OH' => 'Ohio',
-			'OK' => 'Oklahoma',
-			'OR' => 'Oregon',
-			'PA' => 'Pennsylvania',
-			'PR' => 'Puerto Rico',
-			'RI' => 'Rhode Island',
-			'SC' => 'South Carolina',
-			'SD' => 'South Dakota',
-			'TN' => 'Tennessee',
-			'TX' => 'Texas',
-			'UT' => 'Utah',
-			'VT' => 'Vermont',
-			'VA' => 'Virginia',
-			'VI' => 'Virgin Islands',
-			'WA' => 'Washington',
-			'WV' => 'West Virginia',
-			'WI' => 'Wisconsin',
-			'WY' => 'Wyoming',
-		];
-
-		if ($useAbbrev)
-			return $states;
-		else
-			return $this->simpleOptions(array_values($states)); // remove abbreviation keys
-	}
-
-	/**
 	 * Get an options array of times.
 	 *
 	 * @param  string  $minutes
-	 * @param  bool    $useAbbrev
 	 * @return array
 	 */
 	public function timeOptions($minutes = 'half')
@@ -2982,20 +2786,45 @@ class Formation {
 		switch ($minutes)
 		{
 			case "full":
-				$minutesOptions = ['00']; break;
+				$minutesOptions = ['00'];
+				break;
+
 			case "half":
-				$minutesOptions = ['00', '30']; break;
+				$minutesOptions = ['00', '30'];
+				break;
+
 			case "quarter":
-				$minutesOptions = ['00', '15', '30', '45']; break;
+				$minutesOptions = ['00', '15', '30', '45'];
+				break;
+
+			case "ten":
+			case 10:
+				$minutesOptions = [];
+				for ($m=0; $m < 60; $m += 10)
+				{
+					$minutesOptions[] = sprintf('%02d', $m);
+				}
+				break;
+
+			case "five":
+			case 5:
+				$minutesOptions = [];
+				for ($m=0; $m < 60; $m += 5)
+				{
+					$minutesOptions[] = sprintf('%02d', $m);
+				}
+				break;
+
 			case "all":
 				$minutesOptions = [];
-				for ($m=0; $m < 60; $m++) {
+				for ($m=0; $m < 60; $m ++)
+				{
 					$minutesOptions[] = sprintf('%02d', $m);
 				}
 				break;
 		}
 
-		for ($h=0; $h < 24; $h++)
+		for ($h = 0; $h < 24; $h ++)
 		{
 			$hour = sprintf('%02d', $h);
 			if ($h < 12)
@@ -3009,7 +2838,8 @@ class Formation {
 			if ($h > 12)
 				$hour = sprintf('%02d', ($hour - 12));
 
-			foreach ($minutesOptions as $minutes) {
+			foreach ($minutesOptions as $minutes)
+			{
 				$times[sprintf('%02d', $h).':'.$minutes.':00'] = $hour.':'.$minutes.$meridiem;
 			}
 		}
@@ -3070,7 +2900,9 @@ class Formation {
 				$options[$date] = date($format, strtotime($date));
 				$month = date('Y-m-01', strtotime($monthMid.' +1 month'));
 			}
-		} else {
+		}
+		else
+		{
 			while (strtotime($month) >= strtotime($end))
 			{
 				$monthMid = date('Y-m-15', strtotime($month));
@@ -3165,19 +2997,15 @@ class Formation {
 			$options[1] = "";
 
 		if ($startWithOne)
-		{
 			return [
 				1 => $options[0],
 				0 => $options[1],
 			];
-		}
 		else
-		{
 			return [
 				0 => $options[0],
 				1 => $options[1],
 			];
-		}
 	}
 
 	/**
