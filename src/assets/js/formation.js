@@ -3,7 +3,7 @@
 | Formation JS
 |------------------------------------------------------------------------------
 |
-| Last Updated: February 9, 2016
+| Last Updated: February 10, 2016
 |
 */
 
@@ -381,8 +381,6 @@ var Formation = {
 		if (typeof parentField != "undefined")
 			fieldId = parentField + "-" + fieldId;
 
-		console.log(this.field.prefix + fieldId)
-
 		return this.field.prefix + fieldId;
 	},
 
@@ -541,8 +539,6 @@ var Formation = {
 			customOptions += options;
 
 			$(this).html(customOptions);
-
-			console.log(customOptions);
 
 			$(this).val(currentValue);
 		});
