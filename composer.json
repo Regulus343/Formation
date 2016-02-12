@@ -13,7 +13,7 @@
 		"laravel/framework": "5.*",
 
 		"regulus/solid-site": "0.6.*",
-		"regulus/tetra-text": "0.5.*"
+		"regulus/tetra-text": "0.6.*"
 	},
 	"suggest": {
 		"regulus/elemental": "0.5.*"
