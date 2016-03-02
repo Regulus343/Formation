@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.1.1
-		last updated on February 11, 2015
+		version 1.1.2
+		last updated on March 1, 2016
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -289,13 +289,17 @@ class Formation {
 						{
 							if (!$relationField || $relationField == $field || ($relationField && $field == "pivot"))
 							{
-								if ($field == "pivot") {
+								if ($field == "pivot")
+								{
 									foreach ($value as $pivotField => $pivotValue)
 									{
-										if ($relationField) {
+										if ($relationField)
+										{
 											if ($relationField == $pivotField)
 												$defaultsArray[$itemPrefix.'.pivot.'][] = $pivotValue;
-										} else {
+										}
+										else
+										{
 											if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
 												$fieldName = str_replace($formattedSuffix, '', $pivotField);
 											else
@@ -304,7 +308,9 @@ class Formation {
 											$defaultsArray[$itemPrefix.'.'.$number.'.pivot.'.$fieldName] = $pivotValue;
 										}
 									}
-								} else {
+								}
+								else
+								{
 									$addValue = true;
 
 									if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
@@ -2434,10 +2440,12 @@ class Formation {
 
 				$checkbox = '<div'.$this->attributes($subContainerAttributes).'>' . "\n";
 
-				$checkboxAttributes            = $attributes;
-				$checkboxAttributes['id']      = $this->id($name);
-				$checkboxAttributes['value']   = $value;
-				$checkboxAttributes['checked'] = $checked;
+				$checkboxAttributes          = $attributes;
+				$checkboxAttributes['id']    = $this->id($name);
+				$checkboxAttributes['value'] = $value;
+
+				if ($checked)
+					$checkboxAttributes['checked'] = "checked";
 
 				if (isset($checkboxAttributes['associative']))
 					unset($checkboxAttributes['associative']);
@@ -2459,11 +2467,6 @@ class Formation {
 	/**
 	 * Create an HTML checkbox input element.
 	 *
-	 * <code>
-	 *		// Create a checkbox element
-	 *		echo Form::checkbox('terms', 'yes');
-	 * </code>
-	 *
 	 * @param  string  $name
 	 * @param  array   $attributes
 	 * @return string
@@ -2479,8 +2482,13 @@ class Formation {
 		if ($attributes['value'] == $this->value($name) && !isset($attributes['checked']))
 			$attributes['checked'] = true;
 
-		if (isset($attributes['checked']) && $attributes['checked'] == false)
-			unset($attributes['checked']);
+		if (isset($attributes['checked']) && $attributes['checked'] != "checked")
+		{
+			if ($attributes['checked'] === true)
+				$attributes['checked'] = "checked";
+			else
+				unset($attributes['checked']);
+		}
 
 		return $this->checkable('checkbox', $name, $attributes);
 	}
