@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.1.2
-		last updated on March 1, 2016
+		version 1.1.3
+		last updated on April 25, 2016
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -261,9 +261,20 @@ class Formation {
 
 				if (count($defaults->{$relation}))
 				{
-					$i = 1;
+					if (method_exists($defaults->{$relation}, 'toArray'))
+					{
+						$items = [$defaults->{$relation}];
 
-					foreach ($defaults->{$relation} as $item)
+						$i = null;
+					}
+					else
+					{
+						$items = $defaults->{$relation};
+
+						$i = 1;
+					}
+
+					foreach ($items as $item)
 					{
 						$number = $i;
 
@@ -279,6 +290,8 @@ class Formation {
 							&& isset($item->{$relationNumberField[0]}->{$relationNumberField[1]}->{$relationNumberField[2]}))
 								$number = $item->{$relationNumberField[0]}->{$relationNumberField[1]}->{$relationNumberField[2]};
 						}
+
+						$numberPrefix = !is_null($number) ? '.'.$prefix : '';
 
 						if (method_exists($item, 'toArray'))
 							$item = $item->toArray();
@@ -305,7 +318,7 @@ class Formation {
 											else
 												$fieldName = $pivotField;
 
-											$defaultsArray[$itemPrefix.'.'.$number.'.pivot.'.$fieldName] = $pivotValue;
+											$defaultsArray[$itemPrefix.$numberPrefix.'.pivot.'.$fieldName] = $pivotValue;
 										}
 									}
 								}
@@ -328,7 +341,7 @@ class Formation {
 										$value    = json_decode($value, true);
 										$addValue = false;
 
-										$prefixForArray = $itemPrefix.'.'.$number.'.'.$fieldName;
+										$prefixForArray = $itemPrefix.$numberPrefix.'.'.$fieldName;
 
 										$defaultsArray = $this->addArrayToDefaults($value, $prefixForArray, $defaultsArray);
 									}
@@ -338,7 +351,7 @@ class Formation {
 										if ($relationField)
 											$defaultsArray[$itemPrefix][] = $value;
 										else
-											$defaultsArray[$itemPrefix.'.'.$number.'.'.$fieldName] = $value;
+											$defaultsArray[$itemPrefix.$numberPrefix.'.'.$fieldName] = $value;
 									}
 								}
 							}
@@ -1595,7 +1608,8 @@ class Formation {
 		{
 			$label = $attributes['label'];
 			unset($attributes['label']);
-			$fieldLabel = true;
+
+			$fieldLabel = $label !== false;
 		}
 
 		if (is_null($label))
