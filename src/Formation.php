@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.1.3
-		last updated on April 25, 2016
+		version 1.1.4
+		last updated on April 30, 2016
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -119,6 +119,13 @@ class Formation {
 	 * @var array
 	 */
 	protected $errors = [];
+
+	/**
+	 * The IDs that have been used for form fields (to prevent duplicates).
+	 *
+	 * @var array
+	 */
+	protected $ids = [];
 
 	/**
 	 * Whether form fields are being reset to their default values rather than the POSTed values.
@@ -1182,7 +1189,7 @@ class Formation {
 		// get ID of field for label's "for" attribute
 		if (!isset($attributes['for']))
 		{
-			$id = $this->id($name);
+			$id = $this->id($name, [], false);
 			$attributes['for'] = $id;
 		}
 
@@ -1364,16 +1371,20 @@ class Formation {
 	 *
 	 * @param  string  $name
 	 * @param  array   $attributes
+	 * @param  boolean $usingIdIfAvailable
 	 * @return string
 	 */
-	protected function id($name, $attributes = [])
+	protected function id($name, $attributes = [], $usingIdIfAvailable = true)
 	{
 		// If an ID has been explicitly specified in the attributes, we will
 		// use that ID. Otherwise, we will look for an ID in the array of
 		// label names so labels and their elements have the same ID.
-		if (array_key_exists('id', $attributes)) {
+		if (array_key_exists('id', $attributes))
+		{
 			$id = $attributes['id'];
-		} else {
+		}
+		else
+		{
 			// replace array denoting periods and underscores with dashes
 			$id = strtolower(str_replace('.', '-', str_replace('_', '-', str_replace(' ', '-', $name))));
 
@@ -1401,9 +1412,16 @@ class Formation {
 		if (substr($id, -1) == "-")
 			$id = substr($id, 0, (strlen($id) - 1));
 
-		// unset ID attribute if ID is empty
-		if (!$id || $id == "")
-			unset($attributes['id']);
+		// unset ID attribute if ID is empty or already used
+		if (!$id || $id == "" || in_array($id, $this->ids))
+		{
+			$id = null;
+		}
+		else
+		{
+			if ($usingIdIfAvailable)
+				$this->ids[] = $id;
+		}
 
 		return $id;
 	}
@@ -1802,9 +1820,12 @@ class Formation {
 		else
 			$attributesFieldContainer['class'] .= ' '.config('form.field_container.class');
 
-		if (!isset($attributesFieldContainer['id'])) {
-			$attributesFieldContainer['id'] = $this->id($name, $attributesFieldContainer).'-area';
-		} else {
+		if (!isset($attributesFieldContainer['id']))
+		{
+			$attributesFieldContainer['id'] = $this->id($name, $attributesFieldContainer, false).'-area';
+		}
+		else
+		{
 			if (is_null($attributesFieldContainer['id']) || !$attributesFieldContainer['id'])
 				unset($attributesFieldContainer['id']);
 		}
@@ -2232,7 +2253,7 @@ class Formation {
 
 		$attributes = $this->addAccessKey($name, null, $attributes);
 
-		return '<select'.$this->attributes($attributes).'>'.implode("\n", $html). "\n" .'</select>' . "\n";
+		return '<select'.$this->attributes($attributes).'>' . "\n" . implode("\n", $html). "\n" .'</select>' . "\n";
 	}
 
 	/**
@@ -2543,7 +2564,7 @@ class Formation {
 			$html                = '<div'.$this->attributes($containerAttributes).'>';
 
 			$label    = $this->label($name); //set dummy label so ID can be created in line below
-			$idPrefix = $this->id($name, $attributes);
+			$idPrefix = $containerAttributes['id'];
 
 			if (!isset($attributes['value']) || is_null($attributes['value']))
 				$attributes['value'] = $this->value($name);
@@ -2611,7 +2632,11 @@ class Formation {
 			$attributes['checked'] = true;
 
 		if (!isset($attributes['id']))
-			$attributes['id'] = $this->id($name.'-'.strtolower($value), $attributes);
+		{
+			$nameForId = preg_replace('/[^a-zA-Z\_]/', '', $name.'_'.str_replace(' ', '_', strtolower($value)));
+
+			$attributes['id'] = $this->id($nameForId, $attributes);
+		}
 
 		return $this->checkable('radio', $name, $attributes);
 	}
