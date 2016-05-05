@@ -5,7 +5,7 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.1.5
+		version 1.1.6
 		last updated on May 4, 2016
 ----------------------------------------------------------------------------------------------------------*/
 
@@ -1269,6 +1269,8 @@ class Formation {
 		}
 
 		$attributes = $this->attributes($attributes);
+
+		Session::set('formLabels', $this->labels);
 
 		return '<label'.$attributes.'>'.$label.'</label>' . "\n";
 	}
@@ -3228,6 +3230,9 @@ class Formation {
 		}
 		else
 		{
+			if (empty($this->labels))
+				$this->labels = Session::get('formLabels', []);
+
 			if (isset($this->labels[$name]) && $this->labels[$name] != "")
 				$nameFormatted = $this->labels[$name];
 			else
