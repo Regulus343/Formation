@@ -683,11 +683,21 @@ class Formation {
 	 *
 	 * @param  array    $rules
 	 * @param  mixed    $prefix
+	 * @param  mixed    $input
 	 * @return array
 	 */
-	public function setValidationRules($rules = [], $prefix = null)
+	public function setValidationRules($rules = [], $prefix = null, $input = null)
 	{
 		$rulesFormatted = [];
+
+		if (is_array($prefix) && is_null($input))
+		{
+			$input  = $prefix;
+			$prefix = null;
+		}
+
+		if (is_null($input))
+			$input = Input::all();
 
 		foreach ($rules as $name => $rulesItem)
 		{
@@ -709,14 +719,16 @@ class Formation {
 		{
 			if ($name == "root")
 			{
-				$this->validation['root'] = Validator::make(Input::all(), $rules);
-			} else {
-				$data = Input::get($name);
+				$this->validation['root'] = Validator::make($input, $rules);
+			}
+			else
+			{
+				$limitedInput = isset($input[$name]) ? $input[$name] : null;
 
-				if (is_null($data))
-					$data = [];
+				if (is_null($limitedInput))
+					$limitedInput = [];
 
-				$this->validation[$name] = Validator::make($data, $rules);
+				$this->validation[$name] = Validator::make($limitedInput, $rules);
 			}
 		}
 
