@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.1.6
-		last updated on May 4, 2016
+		version 1.1.7
+		last updated on June 2, 2016
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -2502,8 +2502,7 @@ class Formation {
 				if (isset($checkboxAttributes['name-values']))
 					unset($checkboxAttributes['name-values']);
 
-				$checkbox .= $this->checkbox($name, $checkboxAttributes);
-				$checkbox .= $this->label($name, $label, ['accesskey' => false]);
+				$checkbox .= '<label>'.$this->checkbox($name, $checkboxAttributes).$label.'</label>';
 				$checkbox .= '</div>' . "\n";
 				$html     .= $checkbox;
 			}
