@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.1.7
-		last updated on June 2, 2016
+		version 1.1.8
+		last updated on September 12, 2016
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -723,7 +723,22 @@ class Formation {
 			}
 			else
 			{
-				$limitedInput = isset($input[$name]) ? $input[$name] : null;
+				$nameArray = explode('.', $name);
+
+				$limitedInput = null;
+
+				if (count($nameArray) == 1 && isset($input[$name]))
+				{
+					$limitedInput = $input[$name];
+				}
+				else if (count($nameArray) == 2 && isset($input[$nameArray[0]]) && isset($input[$nameArray[0]][$nameArray[1]]))
+				{
+					$limitedInput = $input[$nameArray[0]][$nameArray[1]];
+				}
+				else if (count($nameArray) == 3 && isset($input[$nameArray[0]]) && isset($input[$nameArray[0]][$nameArray[1]]) && isset($input[$nameArray[0]][$nameArray[1]][$nameArray[2]]))
+				{
+					$limitedInput = $input[$nameArray[0]][$nameArray[1]][$nameArray[2]];
+				}
 
 				if (is_null($limitedInput))
 					$limitedInput = [];
