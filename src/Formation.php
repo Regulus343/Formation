@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.1.8
-		last updated on September 12, 2016
+		version 1.1.9
+		last updated on September 17, 2016
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -2760,8 +2760,12 @@ class Formation {
 	{
 		$optionsFormatted = [];
 
-		foreach ($options as $option) {
-			$optionsFormatted[$option] = $option;
+		if (is_array($options))
+		{
+			foreach ($options as $option)
+			{
+				$optionsFormatted[$option] = $option;
+			}
 		}
 
 		return $optionsFormatted;
@@ -2777,10 +2781,14 @@ class Formation {
 	{
 		$optionsFormatted = [];
 
-		foreach ($options as $option) {
-			$fieldName = strtolower(str_replace('.', '', str_replace(' ', '_', trim($option))));
+		if (is_array($options))
+		{
+			foreach ($options as $option)
+			{
+				$fieldName = strtolower(str_replace('.', '', str_replace(' ', '_', trim($option))));
 
-			$optionsFormatted[$fieldName] = $option;
+				$optionsFormatted[$fieldName] = $option;
+			}
 		}
 
 		return $optionsFormatted;
@@ -2818,6 +2826,7 @@ class Formation {
 	public function numberOptions($start = 1, $end = 10, $increment = 1, $decimals = 0)
 	{
 		$options = [];
+
 		if (is_numeric($start) && is_numeric($end))
 		{
 			if ($start <= $end)
@@ -2831,7 +2840,9 @@ class Formation {
 
 					$options[$value] = $value;
 				}
-			} else {
+			}
+			else
+			{
 				for ($o = $start; $o >= $end; $o -= $increment)
 				{
 					if ($decimals)
