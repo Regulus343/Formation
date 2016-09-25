@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.1.9
-		last updated on September 17, 2016
+		version 1.2.0
+		last updated on September 25, 2016
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -1004,13 +1004,16 @@ class Formation {
 		if (is_string($name))
 			$name = str_replace('(', '', str_replace(')', '', $name));
 
-		if ($_POST && !$this->reset) {
-			return Input::get($name);
-		} else if (Input::old($name) && !$this->reset) {
-			return Input::old($name);
-		} else {
-			return $this->getDefaultsArray($name);
+		if (!$this->reset)
+		{
+			if ($_POST || isset($_GET[$name]))
+				return Input::get($name);
+
+			if (Input::old($name))
+				return Input::old($name);
 		}
+
+		return $this->getDefaultsArray($name);
 	}
 
 	/**
@@ -1029,11 +1032,14 @@ class Formation {
 		if (isset($this->defaults[$name]))
 			$value = $this->defaults[$name];
 
-		if ($_POST && !$this->reset)
-			$value = Input::get($name);
+		if (!$this->reset)
+		{
+			if ($_POST || isset($_GET[$name]))
+				$value = Input::get($name);
 
-		if (!is_null(Input::old($name)) && !$this->reset)
-			$value = Input::old($name);
+			if (Input::old($name))
+				$value = Input::old($name);
+		}
 
 		if ($type == "checkbox")
 			$value = (bool) $value;
