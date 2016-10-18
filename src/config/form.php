@@ -100,7 +100,7 @@ return [
 	*/
 	'format' => [
 		'date'     => 'm/d/Y',
-		'datetime' => 'm/d/Y g:i A',
+		'datetime' => 'm/d/Y g:ia',
 	],
 
 	/*
@@ -116,11 +116,23 @@ return [
 
 	/*
 	|--------------------------------------------------------------------------
+	| Camelize Array Keys
+	|--------------------------------------------------------------------------
+	|
+	| Whether or not to camelize the array / JSON object keys when the Base
+	| model or Extended model trait is being used.
+	|
+	*/
+	'camelize_array_keys' => true,
+
+	/*
+	|--------------------------------------------------------------------------
 	| Pivot Timestamps
 	|--------------------------------------------------------------------------
 	|
 	| Whether or not timestamps are present in the pivot tables. This is only
-	| used if Formation's BaseModel is used to extend Eloquent models.
+	| used when Formation's Base model is used to extend Eloquent models (or
+	| when the Extended trait is used in models).
 	|
 	*/
 	'pivot_timestamps' => true,

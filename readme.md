@@ -71,6 +71,7 @@ With this form, we can validate just the fields in the user array with `Form::is
 - [Buttons](#buttons)
 - [Field Method](#field-method)
 - [Integrating Handlebars JS Templates](#js-templates)
+- [Base Model and Trait](#model-trait)
 
 > **Note:** All input data displayed within form elements are filtered through the entities method.
 
@@ -80,7 +81,7 @@ With this form, we can validate just the fields in the user array with `Form::is
 To install Formation, make sure `regulus/formation` has been added to Laravel 5's `composer.json` file.
 
 	"require": {
-		"regulus/formation": "1.1.*"
+		"regulus/formation": "1.2.*"
 	},
 
 Then run `php composer.phar update` from the command line. Composer will install the Formation package. Now, all you have to do is register the service provider and set up Formation's alias in `config/app.php`. Add this to the `providers` array:
@@ -493,10 +494,126 @@ Here is a simple container element and example template that can be used in conj
 </script>
 ```
 
-> **Note:** The container element should have a `data-template-id` attribute and the item template should have a `data-item-number` attribute. If you are using the Blade templating engine, you should use `@include()` to load the template in another non-Blade file as Handlebars' `{{` and `}}` wrappers conflict with Blade. To see an example of `loadTemplates()` in action, please refer to the Laravel 5 CMS which uses Formation, [Fractal](https://github.com/Regulus343/Fractal).
-
 **Populate Errors for AJAX Forms:**
 
 ```js
 Formation.populateErrors(response.data.errors, form);
+```
+
+<a name="model-trait"></a>
+## Base Model and Trait
+
+Formation includes a base model which simply extends the Eloquent `Model` class and uses a trait which contains many advanced model features. You may extend the `Base` model directly from your model (`Regulus\Formation\Models\Base`) or just use the `Extended` trait (`Regulus\Formation\Traits\Extended`) in an existing model.
+
+**Types:**
+
+You may add a `protected static $types` array to your model to allow data to be automatically formatted before being used to populate a form or before saving data to the database. The following types can be used:
+
+- checkbox
+- date
+- date-time
+- datetime
+- timestamp
+- date-not-null
+- date-time-not-null
+- timestamp-not-null
+- slug
+- unique-slug
+
+> **Note:** You may refer to the `Regulus\Formation\Traits\Extended` trait for examples of this and all of the other assisting arrays. The trait contains commented out array examples for each of them.
+
+**Formats:**
+
+You may add `protected static $formats` and `protected static $formatsForDb` arrays to your model for some additional automatic data formatting prior to populating forms or data saving. The following formats can be used:
+
+- false-if-null
+- true-if-null
+- false-if-not-null
+- true-if-not-null
+- false-if-blank
+- true-if-blank
+- null-if-blank
+- false-if-not-blank
+- true-if-not-blank
+- null-if-not-blank
+- json
+- json-or-null
+- trim
+- uppercase-first
+- uppercase-words
+- uppercase
+- lowercase
+
+The formatting from `$types` and `$formats` will occur automatically before saving into the database when using the `saveData()` method. You may also run them by using the model or trait's own `setDefaults()` method. Alternately, you can use `getFormattedValues()` to get an array of formatted values.
+
+**Array-Included Methods:**
+
+You may add a `protected static $arrayIncludedMethods` array to your model to specify methods that you would like to include in the model when it is run through `toArray()` or `toJson()`. This can be very useful when using a front-end JS framework such as Vue. Laravel's Eloquent model system already contains the `appends` array for this purpose, but this is a more versatile approach as it allows you to pass parameters and name the field whatever you like:
+
+```php
+protected static $arrayIncludedMethods = [
+	'name' => 'getName(true)',
+	'url'  => 'getUrl', // parameters not required
+];
+```
+
+**Attribute Sets:**
+
+You may add a `protected static $attributeSets` array to your model to define specific sets of attributes to be returned using `toArray()` or `toJson()`, which can be obtained using `getAttributeSet()` and the name (the key in your array) of the set you would like to retrieve. This allows you to define different sets of attributes for different purposes You may also reference sets within related content. Here is a full example. Let's suppose we have a model called `Post` which belongs to a `User` using an `author()` relationship and the model has the following attribute sets:
+
+```php
+	protected static $attributeSets = [
+		'standard' => [
+			'id',
+			'content',
+		],
+
+		'standardRelated' => [
+			'author' => 'set:author', // this will use an attribute set from the model used for the 'author' relationship
+		],
+	];
+```
+
+In our user model, we have the following array-included method and attribute set defined:
+
+```php
+	protected static $arrayIncludedMethods = [
+		'name' => 'getName',
+	];
+
+	protected static $attributeSets = [
+		'author' => [
+			'id',
+			'username',
+			'name',
+		],
+	];
+```
+
+Now, we may query our `Post` model with its `author` relationship and return it as JSON data:
+
+```php
+	$post = Post::select(Post::getAttributeSet('standard'))
+		->with('author')
+		->limitRelatedData('standardRelated')
+		->first();
+
+	return $post->toJson();
+```
+
+> **Note:** Our example above doesn't really require the `standard` and `standardRelated` parameters as they are the assumed defaults for each of their respective functions.
+
+This will allow us to drastically reduce the amount of data returned so that we may obtain just the data we need and nothing more:
+
+```js
+	{
+		"id":343,
+		"content":"Taxation is theft, purely and simply even though it is theft on a grand and colossal scale which no acknowledged criminals could hope to match. It is a compulsory seizure of the property of the State's inhabitants, or subjects.",
+		"created_at":"1973-03-02 00:00:00",
+		"author":{
+			"id":1,
+			"username":"ForANewLiberty",
+			"name":"Murray Rothbard"
+		}
+	}
 ```
