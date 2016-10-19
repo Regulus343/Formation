@@ -5,7 +5,7 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.2.1
+		version 1.2.2
 		last updated on October 18, 2016
 ----------------------------------------------------------------------------------------------------------*/
 
@@ -301,7 +301,7 @@ class Formation {
 						$numberPrefix = !is_null($number) ? '.'.$prefix : '';
 
 						if (method_exists($item, 'toArray'))
-							$item = $item->toArray();
+							$item = $item->toArray(false);
 
 						$itemPrefix = $prefix.(snake_case($relation));
 
