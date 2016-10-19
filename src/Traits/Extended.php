@@ -128,7 +128,7 @@ trait Extended {
 	 * Set a given attribute on the model.
 	 *
 	 * @param  string  $key
-	 * @param  mixed  $value
+	 * @param  mixed   $value
 	 * @return $this
 	 */
 	public function setAttribute($key, $value)
@@ -168,12 +168,26 @@ trait Extended {
 	}
 
 	/**
-	 * Get an attribute array of all arrayable values.
+	 * Convert the model instance to an array.
 	 *
-	 * @param  array  $values
+	 * @param  mixed   $camelizeArrayKeys
 	 * @return array
 	 */
-	protected function getArrayableItems(array $values)
+	public function toArray($camelizeArrayKeys = null)
+	{
+		$attributes = $this->attributesToArray($camelizeArrayKeys);
+
+		return array_merge($attributes, $this->relationsToArray());
+	}
+
+	/**
+	 * Get an attribute array of all arrayable values.
+	 *
+	 * @param  array   $values
+	 * @param  mixed   $camelizeArrayKeys
+	 * @return array
+	 */
+	protected function getArrayableItems(array $values, $camelizeArrayKeys = null)
 	{
 		if (count($this->getVisible()) > 0)
 			$values = array_intersect_key($values, array_flip($this->getVisible()));
@@ -182,7 +196,11 @@ trait Extended {
 			$values = array_diff_key($values, array_flip($this->getHidden()));
 
 		$formattedValues = [];
-		if (config('form.camelize_array_keys'))
+
+		if ($camelizeArrayKeys === null)
+			$camelizeArrayKeys = config('form.camelize_array_keys');
+
+		if ($camelizeArrayKeys)
 		{
 			foreach ($values as $key => $value)
 			{
@@ -200,11 +218,12 @@ trait Extended {
 	/**
 	 * Convert the model's attributes to an array.
 	 *
+	 * @param  mixed   $camelizeArrayKeys
 	 * @return array
 	 */
-	public function attributesToArray()
+	public function attributesToArray($camelizeArrayKeys = null)
 	{
-		$attributes = $this->getArrayableAttributes();
+		$attributes = $this->getArrayableAttributes($camelizeArrayKeys);
 
 		$visible = $this->getVisible();
 		$hidden  = $this->getHidden();
@@ -214,11 +233,10 @@ trait Extended {
 		// formatting while accessing attributes vs. arraying / JSONing a model.
 		foreach ($this->getDates() as $key)
 		{
-			$key = static::formatArrayKey($key);
+			$key = static::formatArrayKey($key, $camelizeArrayKeys);
 
-			if (! isset($attributes[$key])) {
+			if (!isset($attributes[$key]))
 				continue;
-			}
 
 			$attributes[$key] = $this->serializeDate(
 				$this->asDateTime($attributes[$key])
@@ -232,11 +250,10 @@ trait Extended {
 		// we don't have to constantly check on attributes that actually change.
 		foreach ($mutatedAttributes as $key)
 		{
-			$key = static::formatArrayKey($key);
+			$key = static::formatArrayKey($key, $camelizeArrayKeys);
 
-			if (! array_key_exists($key, $attributes)) {
+			if (!array_key_exists($key, $attributes))
 				continue;
-			}
 
 			$attributes[$key] = $this->mutateAttributeForArray(
 				$key, $attributes[$key]
@@ -248,18 +265,17 @@ trait Extended {
 		// will not perform the cast on those attributes to avoid any confusion.
 		foreach ($this->getCasts() as $key => $value)
 		{
-			$key = static::formatArrayKey($key);
+			$key = static::formatArrayKey($key, $camelizeArrayKeys);
 
-			if (! array_key_exists($key, $attributes) ||
-				in_array($key, $mutatedAttributes)) {
+			if (!array_key_exists($key, $attributes) || in_array($key, $mutatedAttributes))
 				continue;
-			}
 
 			$attributes[$key] = $this->castAttribute(
 				$key, $attributes[$key]
 			);
 
-			if ($attributes[$key] && ($value === 'date' || $value === 'datetime')) {
+			if ($attributes[$key] && ($value === 'date' || $value === 'datetime'))
+			{
 				$attributes[$key] = $this->serializeDate($attributes[$key]);
 			}
 		}
@@ -269,7 +285,7 @@ trait Extended {
 		// when we need to array or JSON the model for convenience to the coder.
 		foreach ($this->getArrayableAppends() as $key)
 		{
-			$key = static::formatArrayKey($key);
+			$key = static::formatArrayKey($key, $camelizeArrayKeys);
 
 			$attributes[$key] = $this->mutateAttributeForArray($key, null);
 		}
@@ -277,7 +293,7 @@ trait Extended {
 		// additionally, we will append the "array-included methods" which allows for more advanced specification
 		foreach ($this->getArrayIncludedMethods() as $key => $includedMethod)
 		{
-			$keyFormatted = static::formatArrayKey($key);
+			$keyFormatted = static::formatArrayKey($key, $camelizeArrayKeys);
 
 			if (substr($includedMethod, -1) != ")")
 				$includedMethod .= "()";
@@ -315,17 +331,29 @@ trait Extended {
 	}
 
 	/**
-	 * Get the model's relationships in array form.
+	 * Get an attribute array of all arrayable attributes.
 	 *
+	 * @param  mixed   $camelizeArrayKeys
 	 * @return array
 	 */
-	public function relationsToArray()
+	protected function getArrayableAttributes($camelizeArrayKeys = null)
+	{
+		return $this->getArrayableItems($this->attributes, $camelizeArrayKeys);
+	}
+
+	/**
+	 * Get the model's relationships in array form.
+	 *
+	 * @param  mixed   $camelizeArrayKeys
+	 * @return array
+	 */
+	public function relationsToArray($camelizeArrayKeys = null)
 	{
 		$attributes = [];
 
 		$relatedDataRequested = static::$relatedDataRequested;
 
-		foreach ($this->getArrayableRelations() as $key => $value)
+		foreach ($this->getArrayableRelations($camelizeArrayKeys) as $key => $value)
 		{
 			// If the values implements the Arrayable interface we can just call this
 			// toArray method on the instances which will convert both models and
@@ -372,7 +400,7 @@ trait Extended {
 					}
 				}
 
-				$relation = $value->toArray();
+				$relation = $value->toArray($camelizeArrayKeys);
 			}
 
 			// If the value is null, we'll still go ahead and set it in this list of
@@ -400,6 +428,17 @@ trait Extended {
 		}
 
 		return $attributes;
+	}
+
+	/**
+	 * Get an attribute array of all arrayable relations.
+	 *
+	 * @param  mixed   $camelizeArrayKeys
+	 * @return array
+	 */
+	protected function getArrayableRelations($camelizeArrayKeys = null)
+	{
+		return $this->getArrayableItems($this->relations, $camelizeArrayKeys);
 	}
 
 	/**
@@ -523,7 +562,7 @@ trait Extended {
 			$fieldTested = isset($format[1]) ? $format[1] : $field;
 			$valueTested = $this->{$fieldTested} ? isset($this->{$field}) : null;
 
-			$this->{$field} = $this->formatValueForSpecialFormats($field, $this->toArray(), $formats);
+			$this->{$field} = $this->formatValueForSpecialFormats($field, $this->toArray(false), $formats);
 		}
 
 		foreach ($relations as $relation)
@@ -707,7 +746,7 @@ trait Extended {
 							$found = true;
 
 							// remove formatted fields from item to prevent errors in saving data
-							foreach ($item->toArray() as $field => $value)
+							foreach ($item->toArray(false) as $field => $value)
 							{
 								if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
 									unset($item->{$field});
@@ -1300,11 +1339,15 @@ trait Extended {
 	 * Format an array key.
 	 *
 	 * @param  string   $key
+	 * @param  mixed    $camelizeArrayKeys
 	 * @return string
 	 */
-	public static function formatArrayKey($key)
+	public static function formatArrayKey($key, $camelizeArrayKeys = null)
 	{
-		if (config('form.camelize_array_keys'))
+		if ($camelizeArrayKeys === null)
+			$camelizeArrayKeys = config('form.camelize_array_keys');
+
+		if ($camelizeArrayKeys)
 			$key = camel_case($key);
 
 		return $key;

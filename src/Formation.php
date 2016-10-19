@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.2.0
-		last updated on October 17, 2016
+		version 1.2.1
+		last updated on October 18, 2016
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -206,7 +206,7 @@ class Formation {
 
 		// turn Eloquent collection into an array
 		if (isset($defaults) && isset($defaults->incrementing) && isset($defaults->timestamps))
-			$defaultsFormatted = $defaults->toArray();
+			$defaultsFormatted = $defaults->toArray(false);
 		else
 			$defaultsFormatted = $defaults;
 
@@ -303,7 +303,7 @@ class Formation {
 						if (method_exists($item, 'toArray'))
 							$item = $item->toArray();
 
-						$itemPrefix = $prefix.($this->camelCaseToUnderscore($relation));
+						$itemPrefix = $prefix.(snake_case($relation));
 
 						foreach ($item as $field => $value)
 						{
@@ -3432,7 +3432,7 @@ class Formation {
 			{
 				$settingOriginal = $setting;
 
-				if ($setting == "class")
+				if ($setting == "class") // avoid JS "class" attribute conflict
 					$setting = "classAttribute";
 
 				$setting = $this->dashedToCamelCase($setting);
@@ -3478,35 +3478,7 @@ class Formation {
 	 */
 	public function dashedToCamelCase($string)
 	{
-		$string    = str_replace(' ', '', ucwords(str_replace('-', ' ', $string)));
-		$string[0] = strtolower($string[0]);
-
-		return $string;
-	}
-
-	/**
-	 * Turn an underscore formatted string into a camel case formatted string.
-	 *
-	 * @param  string  $string
-	 * @return string
-	 */
-	public function underscoredToCamelCase($string)
-	{
-		$string    = str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
-		$string[0] = strtolower($string[0]);
-
-		return $string;
-	}
-
-	/**
-	 * Turn a camel case formatted string into an underscore formatted string.
-	 *
-	 * @param  string  $string
-	 * @return string
-	 */
-	public function camelCaseToUnderscore($string)
-	{
-		return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $string));
+		return camel_case(str_replace('-', '_', $string));
 	}
 
 	/**
