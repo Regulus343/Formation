@@ -399,8 +399,6 @@ trait Extended {
 					{
 						foreach ($relatedDataRequested as $attribute)
 						{
-							if (is_array($attribute))
-								dd($attribute);
 							$attributeArray = explode('.', $attribute);
 
 							if ($attributeArray[0] == $key && count($attributeArray) > 1)
