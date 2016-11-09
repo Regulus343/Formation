@@ -84,11 +84,25 @@ trait Extended {
 	protected static $relatedDataRequested = null;
 
 	/**
+	 * The static cached data for the model.
+	 *
+	 * @var    mixed
+	 */
+	protected static $staticCached;
+
+	/**
 	 * The foreign key for the model.
 	 *
 	 * @var    mixed
 	 */
 	protected $foreignKey = null;
+
+	/**
+	 * The cached data for the model.
+	 *
+	 * @var    mixed
+	 */
+	protected $cached;
 
 	/**
 	 * Get the default foreign key name for the model.
@@ -307,6 +321,18 @@ trait Extended {
 
 			if (count($hidden) && !in_array($key, $visible) && !in_array($keyFormatted, $visible))
 				$add = true;
+
+			foreach ($method['parameters'] as &$parameter)
+			{
+				if (is_string($parameter))
+				{
+					if (substr($parameter, 0, 7) == "cached:")
+						$parameter = $this->getCached(substr($parameter, 7));
+
+					if (substr($parameter, 0, 14) == "static-cached:")
+						$parameter = static::getStaticCached(substr($parameter, 14));
+				}
+			}
 
 			if ($add)
 				$attributes[$keyFormatted] = call_user_func_array([$this, $method['name']], $method['parameters']);
@@ -1260,6 +1286,179 @@ trait Extended {
 		return $values;
 	}
 
+	/**
+	 * Get a cached value by key.
+	 *
+	 * @param  mixed    $key
+	 * @return mixed
+	 */
+	public function getCached($key = null)
+	{
+		if (is_null($key))
+			return $this->cached;
+
+		$keyArray = explode('.', $key);
+
+		switch (count($keyArray))
+		{
+			case 1:
+
+				if (isset($this->cached[$keyArray[0]]))
+					return $this->cached[$keyArray[0]];
+
+				break;
+
+			case 2:
+
+				if (isset($this->cached[$keyArray[0]][$keyArray[1]]))
+					return $this->cached[$keyArray[0]][$keyArray[1]];
+
+				break;
+
+			case 3:
+
+				if (isset($this->cached[$keyArray[0]][$keyArray[1]][$keyArray[2]]))
+					return $this->cached[$keyArray[0]][$keyArray[1]][$keyArray[2]];
+
+				break;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Set a cached value by key.
+	 *
+	 * @param  string   $key
+	 * @param  mixed    $value
+	 * @return mixed
+	 */
+	public function setCached($key, $value = null)
+	{
+		if (is_null($key))
+			return $this->cached;
+
+		$keyArray = explode('.', $key);
+
+		switch (count($keyArray))
+		{
+			case 1:
+
+				$this->cached[$keyArray[0]] = $value;
+
+				break;
+
+			case 2:
+
+				if (!isset($this->cached[$keyArray[0]]))
+					$this->cached[$keyArray[0]] = [];
+
+				$this->cached[$keyArray[0]][$keyArray[1]] = $value;
+
+				break;
+
+			case 3:
+
+				if (!isset($this->cached[$keyArray[0]]))
+					$this->cached[$keyArray[0]] = [];
+
+				if (!isset($this->cached[$keyArray[0]][$keyArray[1]]))
+					$this->cached[$keyArray[0]][$keyArray[1]] = [];
+
+				$this->cached[$keyArray[0]][$keyArray[1]][$keyArray[2]] = $value;
+
+				break;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get a static cached value by key.
+	 *
+	 * @param  mixed    $key
+	 * @return mixed
+	 */
+	public static function getStaticCached($key = null)
+	{
+		if (is_null($key))
+			return static::$staticCached;
+
+		$keyArray = explode('.', $key);
+
+		switch (count($keyArray))
+		{
+			case 1:
+
+				if (isset(static::$staticCached[$keyArray[0]]))
+					return static::$staticCached[$keyArray[0]];
+
+				break;
+
+			case 2:
+
+				if (isset(static::$staticCached[$keyArray[0]][$keyArray[1]]))
+					return static::$staticCached[$keyArray[0]][$keyArray[1]];
+
+				break;
+
+			case 3:
+
+				if (isset(static::$staticCached[$keyArray[0]][$keyArray[1]][$keyArray[2]]))
+					return static::$staticCached[$keyArray[0]][$keyArray[1]][$keyArray[2]];
+
+				break;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Set a static cached value by key.
+	 *
+	 * @param  string   $key
+	 * @param  mixed    $value
+	 * @return mixed
+	 */
+	public static function setStaticCached($key, $value = null)
+	{
+		if (is_null($key))
+			return static::$staticCached;
+
+		$keyArray = explode('.', $key);
+
+		switch (count($keyArray))
+		{
+			case 1:
+
+				static::$staticCached[$keyArray[0]] = $value;
+
+				break;
+
+			case 2:
+
+				if (!isset(static::$staticCached[$keyArray[0]]))
+					static::$staticCached[$keyArray[0]] = [];
+
+				static::$staticCached[$keyArray[0]][$keyArray[1]] = $value;
+
+				break;
+
+			case 3:
+
+				if (!isset(static::$staticCached[$keyArray[0]]))
+					static::$staticCached[$keyArray[0]] = [];
+
+				if (!isset(static::$staticCached[$keyArray[0]][$keyArray[1]]))
+					static::$staticCached[$keyArray[0]][$keyArray[1]] = [];
+
+				static::$staticCached[$keyArray[0]][$keyArray[1]][$keyArray[2]] = $value;
+
+				break;
+		}
+
+		return null;
+	}
 	/**
 	 * Create a model item and save the input data to the model.
 	 *
