@@ -399,10 +399,13 @@ trait Extended {
 					{
 						foreach ($relatedDataRequested as $attribute)
 						{
-							$attributeArray = explode('.', $attribute);
+							if (is_string($attribute))
+							{
+								$attributeArray = explode('.', $attribute);
 
-							if ($attributeArray[0] == $key && count($attributeArray) > 1)
-								$visibleAttributes[] = str_replace($key.'.', '', $attribute);
+								if ($attributeArray[0] == $key && count($attributeArray) > 1)
+									$visibleAttributes[] = str_replace($key.'.', '', $attribute);
+							}
 						}
 					}
 
