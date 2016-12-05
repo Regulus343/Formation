@@ -107,13 +107,6 @@ trait Extended {
 	protected $cached;
 
 	/**
-	 * The related data requested for related models' arrays / JSON objects.
-	 *
-	 * @var    mixed
-	 */
-	protected $relatedDataLimited = false;
-
-	/**
 	 * Get the default foreign key name for the model.
 	 *
 	 * @return string
@@ -393,15 +386,19 @@ trait Extended {
 
 		foreach ($this->getArrayableRelations($camelizeArrayKeys) as $key => $value)
 		{
+			//if ($key != "post") { dump($relatedDataRequested, $key, get_class($this)); }
 			// If the values implements the Arrayable interface we can just call this
 			// toArray method on the instances which will convert both models and
 			// collections to their proper array form and we'll set the values.
 			if ($value instanceof Arrayable || (is_object($value) && method_exists($value, 'toArray')))
 			{
 				// if "related data requested" is set, adjust visible and hidden arrays for related items
-				if (is_callable([$value, 'setVisible']) && $this->relatedDataRequested && !is_null($relatedDataRequested))
+				if (is_callable([$value, 'setVisible']) && !is_null($relatedDataRequested))
 				{
 					$visibleAttributes = [];
+
+					if (method_exists($value, 'scopeLimitRelatedData'))
+						$value->limitRelatedData();
 
 					if (isset($relatedDataRequested[$key]))
 					{
@@ -467,31 +464,6 @@ trait Extended {
 		}
 
 		return $attributes;
-	}
-
-	/**
-	 * Get a relationship value from a method.
-	 *
-	 * @param  string  $method
-	 * @return mixed
-	 *
-	 * @throws \LogicException
-	 */
-	protected function getRelationshipFromMethod($method)
-	{
-		$relations = $this->$method();
-
-		if (! $relations instanceof Relation) {
-			throw new LogicException('Relationship method must return an object of type '
-				.'Illuminate\Database\Eloquent\Relations\Relation');
-		}
-
-		$this->setRelation($method, $results = $relations->getResults());
-
-		if (method_exists($this, 'scopeLimitRelatedData'))
-			$this->limitRelatedData();
-
-		return $results;
 	}
 
 	/**
@@ -581,8 +553,6 @@ trait Extended {
 	{
 		if (is_string($relatedData))
 			$relatedData = $this->getAttributeSet($relatedData);
-
-		$this->relatedDataLimited = true;
 
 		static::$relatedDataRequested[get_class($this)] = $relatedData;
 
