@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Str;
 
+use Illuminate\Database\Eloquent\Relations\Relation;
+
 use Regulus\Formation\Facade as Form;
 use Regulus\TetraText\Facade as Format;
 
@@ -103,6 +105,13 @@ trait Extended {
 	 * @var    mixed
 	 */
 	protected $cached;
+
+	/**
+	 * The related data requested for related models' arrays / JSON objects.
+	 *
+	 * @var    mixed
+	 */
+	protected $relatedDataLimited = false;
 
 	/**
 	 * Get the default foreign key name for the model.
@@ -338,7 +347,7 @@ trait Extended {
 				$attributes[$keyFormatted] = call_user_func_array([$this, $method['name']], $method['parameters']);
 		}
 
-		// run through them one more time in case relationships added any attributes that are not allowed
+		// run through them one more time in case relationships and remove any attributes that are not allowed
 		foreach ($this->getRelations() as $key => $attribute)
 		{
 			$remove = false;
@@ -377,7 +386,10 @@ trait Extended {
 	{
 		$attributes = [];
 
-		$relatedDataRequested = static::$relatedDataRequested;
+		$relatedDataRequested = [];
+
+		if (isset(static::$relatedDataRequested[get_class($this)]))
+			$relatedDataRequested = static::$relatedDataRequested[get_class($this)];
 
 		foreach ($this->getArrayableRelations($camelizeArrayKeys) as $key => $value)
 		{
@@ -387,7 +399,7 @@ trait Extended {
 			if ($value instanceof Arrayable || (is_object($value) && method_exists($value, 'toArray')))
 			{
 				// if "related data requested" is set, adjust visible and hidden arrays for related items
-				if (is_callable([$value, 'setVisible']) && !is_null($relatedDataRequested))
+				if (is_callable([$value, 'setVisible']) && $this->relatedDataRequested && !is_null($relatedDataRequested))
 				{
 					$visibleAttributes = [];
 
@@ -458,6 +470,31 @@ trait Extended {
 	}
 
 	/**
+	 * Get a relationship value from a method.
+	 *
+	 * @param  string  $method
+	 * @return mixed
+	 *
+	 * @throws \LogicException
+	 */
+	protected function getRelationshipFromMethod($method)
+	{
+		$relations = $this->$method();
+
+		if (! $relations instanceof Relation) {
+			throw new LogicException('Relationship method must return an object of type '
+				.'Illuminate\Database\Eloquent\Relations\Relation');
+		}
+
+		$this->setRelation($method, $results = $relations->getResults());
+
+		if (method_exists($this, 'scopeLimitRelatedData'))
+			$this->limitRelatedData();
+
+		return $results;
+	}
+
+	/**
 	 * Get an attribute array of all arrayable relations.
 	 *
 	 * @param  mixed   $camelizeArrayKeys
@@ -509,6 +546,32 @@ trait Extended {
 	}
 
 	/**
+	 * Set an array-included method for the model.
+	 *
+	 * @param  string   $attribute
+	 * @param  string   $method
+	 * @return void
+	 */
+	public static function setArrayIncludedMethod($attribute, $method)
+	{
+		static::$arrayIncludedMethods[$attribute] = $method;
+	}
+
+	/**
+	 * Set array-included methods for the model.
+	 *
+	 * @param  array    $methods
+	 * @return void
+	 */
+	public static function setArrayIncludedMethods($methods)
+	{
+		foreach ($methods as $attribute => $method)
+		{
+			static::setArrayIncludedMethod($attribute, $method);
+		}
+	}
+
+	/**
 	 * Get the JSON-included methods for the model.
 	 *
 	 * @param  mixed    $relatedData
@@ -519,7 +582,9 @@ trait Extended {
 		if (is_string($relatedData))
 			$relatedData = $this->getAttributeSet($relatedData);
 
-		static::$relatedDataRequested = $relatedData;
+		$this->relatedDataLimited = true;
+
+		static::$relatedDataRequested[get_class($this)] = $relatedData;
 
 		return $query;
 	}
