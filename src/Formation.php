@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.2.6
-		last updated on December 4, 2016
+		version 1.2.7
+		last updated on January 25, 2017
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -1303,7 +1303,7 @@ class Formation {
 
 		$attributes = $this->attributes($attributes);
 
-		Session::set('formLabels', $this->labels);
+		Session::put('formLabels', $this->labels);
 
 		return '<label'.$attributes.'>'.$label.'</label>' . "\n";
 	}
