@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.2.7
-		last updated on January 25, 2017
+		version 1.2.8
+		last updated on February 16, 2017
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -766,7 +766,9 @@ class Formation {
 				if ($validation->fails())
 					return false;
 			}
-		} else {
+		}
+		else
+		{
 			// index ends in "."; validate all fields that start with that index
 			if (substr($index, -1) == ".")
 			{
@@ -1614,9 +1616,12 @@ class Formation {
 			$types = [
 				'text',
 				'search',
+				'email',
 				'password',
 				'url',
 				'number',
+				'telephone',
+				'phone',
 				'date',
 				'textarea',
 				'hidden',
@@ -1636,6 +1641,13 @@ class Formation {
 				$type = "submit";
 				$attributes = [];
 			}
+		}
+
+		// allow attributes array to be passed as the second parameter
+		if (is_array($type) && empty($attributes))
+		{
+			$attributes = $type;
+			$type       = isset($attributes['type']) ? $attributes['type'] : null;
 		}
 
 		// allow label to be set via attributes array (defaults to labels array and then to a label derived from the field's name)
@@ -1741,42 +1753,63 @@ class Formation {
 		switch ($type)
 		{
 			case "text":
+
 				$html .= $this->text($name, $attributesField);
 				break;
 
 			case "search":
+
 				$html .= $this->search($name, $attributesField);
 				break;
 
+			case "email":
+
+				$html .= $this->email($name, $attributesField);
+				break;
+
 			case "password":
+
 				$html .= $this->password($name, $attributesField);
 				break;
 
 			case "url":
+
 				$html .= $this->url($name, $attributesField);
 				break;
 
 			case "number":
+
 				$html .= $this->number($name, $attributesField);
 				break;
 
+			case "telephone":
+			case "phone":
+
+				$html .= $this->phone($name, $attributesField);
+				break;
+
 			case "date":
+
 				$html .= $this->date($name, $attributesField);
 				break;
 
 			case "textarea":
+
 				$html .= $this->textarea($name, $attributesField);
 				break;
 
 			case "hidden":
+
 				$html .= $this->hidden($name, $attributesField);
 				break;
 
 			case "select":
+
 				$html .= $this->select($name, $options, $attributesField);
 				break;
 
 			case "checkbox":
+
 				if (isset($attributesLabel['class']))
 					$attributesLabel['class'] .= " checkbox";
 				else
@@ -1786,6 +1819,7 @@ class Formation {
 				break;
 
 			case "radio":
+
 				if (isset($attributesLabel['class']))
 					$attributesLabel['class'] .= " radio";
 				else
@@ -1795,6 +1829,7 @@ class Formation {
 				break;
 
 			case "checkbox-set":
+
 				if (!is_null($name))
 					$attributesField['name-prefix'] = $name;
 
@@ -1802,18 +1837,22 @@ class Formation {
 				break;
 
 			case "radio-set":
+
 				$html .= $this->radioSet($name, $options, $attributesField);
 				break;
 
 			case "file":
+
 				$html .= $this->file($name, $attributesField) . "\n";
 				break;
 
 			case "button":
+
 				$html .= $this->button($label, $attributesField);
 				break;
 
 			case "submit":
+
 				$html .= $this->submit($label, $attributesField);
 				break;
 		}
@@ -2013,9 +2052,21 @@ class Formation {
 	 * @param  array   $attributes
 	 * @return string
 	 */
-	public function telephone($name, $attributes = [])
+	public function phone($name, $attributes = [])
 	{
 		return $this->input('tel', $name, $attributes);
+	}
+
+	/**
+	 * Create an HTML telephone input element.
+	 *
+	 * @param  string  $name
+	 * @param  array   $attributes
+	 * @return string
+	 */
+	public function telephone($name, $attributes = [])
+	{
+		return $this->phone($name, $attributes);
 	}
 
 	/**

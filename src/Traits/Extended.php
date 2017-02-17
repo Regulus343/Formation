@@ -1,12 +1,11 @@
 <?php namespace Regulus\Formation\Traits;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Str;
-
-use Illuminate\Database\Eloquent\Relations\Relation;
 
 use Regulus\Formation\Facade as Form;
 use Regulus\TetraText\Facade as Format;
@@ -72,11 +71,20 @@ trait Extended {
 			'created_at',
 		],
 
-		'standardRelated' => [
+		'related' => [
 			'items' => 'set:standard', // this will use an attribute set from the model used for the 'items' relationship
 		],
 		*/
 	];
+
+	/**
+	 * The aliases for polymorphic relationship models.
+	 *
+	 * @var    array
+	 */
+	/*protected static $morphMap = [
+		'Post' => App\Models\Post::class,
+	];*/
 
 	/**
 	 * The related data requested for related models' arrays / JSON objects.
@@ -105,6 +113,22 @@ trait Extended {
 	 * @var    mixed
 	 */
 	protected $cached;
+
+	/**
+	 * Create a new Eloquent model instance.
+	 *
+	 * @param  array  $attributes
+	 * @return void
+	 */
+	public function __construct(array $attributes = [])
+	{
+		if (isset(static::$morphMap) && !empty(static::$morphMap))
+		{
+			Relation::morphMap(static::$morphMap);
+		}
+
+		parent::__construct($attributes);
+	}
 
 	/**
 	 * Get the default foreign key name for the model.
@@ -386,7 +410,6 @@ trait Extended {
 
 		foreach ($this->getArrayableRelations($camelizeArrayKeys) as $key => $value)
 		{
-			//if ($key != "post") { dump($relatedDataRequested, $key, get_class($this)); }
 			// If the values implements the Arrayable interface we can just call this
 			// toArray method on the instances which will convert both models and
 			// collections to their proper array form and we'll set the values.
@@ -418,7 +441,7 @@ trait Extended {
 						}
 					}
 
-					if (!empty($visibleAttributes) && !in_array('*', $visibleAttributes))
+					if (!empty($visibleAttributes) && is_array($visibleAttributes) && !in_array('*', $visibleAttributes))
 					{
 						if (get_class($value) == "Illuminate\Database\Eloquent\Collection")
 						{
@@ -549,7 +572,7 @@ trait Extended {
 	 * @param  mixed    $relatedData
 	 * @return QueryBuilder
 	 */
-	public function scopeLimitRelatedData($query, $relatedData = 'standardRelated')
+	public function scopeLimitRelatedData($query, $relatedData = 'related')
 	{
 		if (is_string($relatedData))
 			$relatedData = $this->getAttributeSet($relatedData);
@@ -573,9 +596,10 @@ trait Extended {
 	 * Get the validation rules used by the model.
 	 *
 	 * @param  mixed    $id
+	 * @param  mixed    $input
 	 * @return array
 	 */
-	public static function validationRules($id = null)
+	public static function validationRules($id = null, $input = null)
 	{
 		return [];
 	}
@@ -1504,6 +1528,7 @@ trait Extended {
 	public static function createNew($input = null)
 	{
 		$item = static::create();
+
 		$item->saveData($input, $item->id);
 
 		return $item;
@@ -1600,19 +1625,37 @@ trait Extended {
 
 		foreach ($attributeSet as $attribute => $attributes)
 		{
-			if (is_string($attribute) && is_string($attributes) && strtolower(substr($attributes, 0, 4)) == "set:")
+			if (is_string($attribute) && is_string($attributes))
 			{
-				$set = substr($attributes, 4);
-
-				$model = new static;
-
-				if (method_exists($model, $attribute))
+				if (strtolower(substr($attributes, 0, 4)) == "set:")
 				{
-					$relationship = $model->{$attribute}();
+					$model = new static;
 
-					if (is_callable([$relationship, 'getModel']))
+					if (method_exists($model, $attribute))
 					{
-						$class = get_class($relationship->getModel());
+						$set = substr($attributes, 4);
+
+						$relationship = $model->{$attribute}();
+
+						if (is_callable([$relationship, 'getModel']))
+						{
+							$class = get_class($relationship->getModel());
+
+							$attributeSet[$attribute] = (new $class)->getAttributeSet($set);
+						}
+					}
+				}
+				else
+				{
+					if (strtolower(substr($attributes, 0, 6)) == "class:" && method_exists($model, $attribute))
+					{
+						$class = explode(';', substr($attributes, 6));
+						$set   = isset($class[1]) ? $class[1] : "standard";
+
+						// add leading backslash to namespaced class if it doesn't already exist
+						$class = $class[0];
+						if (substr($class, 0, 1) != "\\")
+							$class = "\\".$class;
 
 						$attributeSet[$attribute] = (new $class)->getAttributeSet($set);
 					}
