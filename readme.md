@@ -566,10 +566,15 @@ You may add a `protected static $attributeSets` array to your model to define sp
 		'standard' => [
 			'id',
 			'content',
+			'url', // this could even be a key listed in $arrayIncludedMethods for a getUrl() method
 		],
+	];
 
-		'standardRelated' => [
-			'author' => 'set:author', // this will use an attribute set from the model used for the 'author' relationship
+	protected static $relatedAttributeSets = [
+		'standard' => [
+			'author'  => 'set:author', // this will use an attribute set from the model used for the "author" relationship
+			'section' => 'class:'.Section::class, // this will look for an attribute set called "standard"
+			'tags'    => 'class:'.Tag::class.';set', // this will look for an attribute set called "set"
 		],
 	];
 ```
@@ -595,13 +600,13 @@ Now, we may query our `Post` model with its `author` relationship and return it 
 ```php
 	$post = Post::select(Post::getAttributeSet('standard'))
 		->with('author')
-		->limitRelatedData('standardRelated')
+		->limitRelatedData('standard')
 		->first();
 
 	return $post->toJson();
 ```
 
-> **Note:** Our example above doesn't really require the `standard` and `standardRelated` parameters as they are the assumed defaults for each of their respective functions.
+> **Note:** Our example above doesn't really require the `standard` parameters as they are the assumed defaults for each of their respective functions.
 
 This will allow us to drastically reduce the amount of data returned so that we may obtain just the data we need and nothing more:
 

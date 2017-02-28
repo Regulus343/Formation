@@ -6,7 +6,7 @@
 
 		created by Cody Jassman
 		version 1.2.9
-		last updated on February 21, 2017
+		last updated on February 28, 2017
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
