@@ -1,7 +1,6 @@
 <?php namespace Regulus\Formation\Traits;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\Relation;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
@@ -70,21 +69,21 @@ trait Extended {
 			'title',
 			'created_at',
 		],
-
-		'related' => [
-			'items' => 'set:standard', // this will use an attribute set from the model used for the 'items' relationship
-		],
 		*/
 	];
 
 	/**
-	 * The aliases for polymorphic relationship models.
+	 * The attribute sets for related models.
 	 *
 	 * @var    array
 	 */
-	/*protected static $morphMap = [
-		'Post' => App\Models\Post::class,
-	];*/
+	protected static $relatedAttributeSets = [
+		/*
+		'standard' => [
+			'items' => 'set:standard', // this will use an attribute set from the model used for the 'items' relationship
+		],
+		*/
+	];
 
 	/**
 	 * The related data requested for related models' arrays / JSON objects.
@@ -122,11 +121,6 @@ trait Extended {
 	 */
 	public function __construct(array $attributes = [])
 	{
-		if (isset(static::$morphMap) && !empty(static::$morphMap))
-		{
-			Relation::morphMap(static::$morphMap);
-		}
-
 		parent::__construct($attributes);
 	}
 
@@ -425,18 +419,25 @@ trait Extended {
 
 					if (isset($relatedDataRequested[$key]))
 					{
-						$visibleAttributes = $relatedDataRequested[$key];
+						$relatedDataRequestedForKey = [];
+						foreach ($relatedDataRequested[$key] as $field)
+						{
+							if (strtolower(substr($field, 0, 7)) != "select:")
+								$relatedDataRequestedForKey[] = $field;
+						}
+
+						$visibleAttributes = $relatedDataRequestedForKey;
 					}
 					else
 					{
-						foreach ($relatedDataRequested as $attribute)
+						foreach ($relatedDataRequested as $field)
 						{
-							if (is_string($attribute))
+							if (is_string($field) && strtolower(substr($field, 0, 7)) != "select:")
 							{
-								$attributeArray = explode('.', $attribute);
+								$fieldArray = explode('.', $field);
 
-								if ($attributeArray[0] == $key && count($attributeArray) > 1)
-									$visibleAttributes[] = str_replace($key.'.', '', $attribute);
+								if ($fieldArray[0] == $key && count($fieldArray) > 1)
+									$visibleAttributes[] = str_replace($key.'.', '', $field);
 							}
 						}
 					}
@@ -570,14 +571,56 @@ trait Extended {
 	 * Get the JSON-included methods for the model.
 	 *
 	 * @param  mixed    $relatedData
+	 * @param  boolean  $limitSelect
 	 * @return QueryBuilder
 	 */
-	public function scopeLimitRelatedData($query, $relatedData = 'related')
+	public function scopeLimitRelatedData($query, $relatedData = 'standard', $limitSelect = true)
 	{
 		if (is_string($relatedData))
-			$relatedData = $this->getAttributeSet($relatedData);
+			$relatedData = $this->getAttributeSet($relatedData, true);
 
 		static::$relatedDataRequested[get_class($this)] = $relatedData;
+
+		if ($limitSelect)
+		{
+			$with = [];
+
+			foreach ($relatedData as $relation => $fields)
+			{
+				// remove "select" prefixes that tell toArray() that field is only selected in query, not kept in returned array
+				if (is_array($fields))
+				{
+					foreach ($fields as &$field)
+					{
+						if (strtolower(substr($field, 0, 7)) == "select:")
+							$field = substr($field, 7);
+					}
+				}
+
+				$with[$relation] = function($relationQuery) use ($fields)
+				{
+					if (is_array($fields))
+					{
+						// remove array-included methods and relationships from select statement
+						$model = $relationQuery->getModel();
+
+						$arrayIncludedMethods = [];
+						if (method_exists($model, 'getArrayIncludedMethods'))
+							$arrayIncludedMethods = array_keys($relationQuery->getModel()->getArrayIncludedMethods());
+
+						foreach ($fields as $f => $field)
+						{
+							if (in_array($field, $arrayIncludedMethods) || method_exists($model, $field))
+								unset($fields[$f]);
+						}
+
+						$relationQuery->select($fields);
+					}
+				};
+			}
+
+			$query->with($with);
+		}
 
 		return $query;
 	}
@@ -632,30 +675,32 @@ trait Extended {
 	 */
 	public function getFormattedValues($relations = [])
 	{
+		$model = clone $this;
+
 		// format fields based on field types
-		foreach ($this->getFieldTypes() as $field => $type)
+		foreach ($model->getFieldTypes() as $field => $type)
 		{
-			if (isset($this->{$field}))
+			if (isset($model->{$field}))
 			{
-				$value = $this->{$field};
-				$this->{$field} = static::formatValue($value, $type);
+				$value = $model->{$field};
+				$model->{$field} = static::formatValue($value, $type);
 			}
 		}
 
 		// format fields based on special format rules
-		foreach ($this->getFieldFormats() as $field => $formats)
+		foreach ($model->getFieldFormats() as $field => $formats)
 		{
 			$fieldTested = isset($format[1]) ? $format[1] : $field;
-			$valueTested = $this->{$fieldTested} ? isset($this->{$field}) : null;
+			$valueTested = $model->{$fieldTested} ? isset($model->{$field}) : null;
 
-			$this->{$field} = $this->formatValueForSpecialFormats($field, $this->toArray(false), $formats);
+			$model->{$field} = $model->formatValueForSpecialFormats($field, $model->toArray(false), $formats);
 		}
 
 		foreach ($relations as $relation)
 		{
-			if ($this->{$relation})
+			if ($model->{$relation})
 			{
-				foreach ($this->{$relation} as &$item)
+				foreach ($model->{$relation} as &$item)
 				{
 					foreach ($item->getFieldTypes() as $field => $type)
 					{
@@ -668,14 +713,14 @@ trait Extended {
 
 					foreach ($item->getFieldFormats() as $field => $formats)
 					{
-						if (isset($this->{$field}))
-							$this->{$field} = $this->formatValueForSpecialFormats($this->{$field}, $formats);
+						if (isset($model->{$field}))
+							$model->{$field} = $model->formatValueForSpecialFormats($model->{$field}, $formats);
 					}
 				}
 			}
 		}
 
-		return $this;
+		return $model;
 	}
 
 	/**
@@ -756,17 +801,21 @@ trait Extended {
 	 * Save the input data to the model.
 	 *
 	 * @param  mixed    $input
-	 * @param  boolean  $new
+	 * @param  mixed    $create
 	 * @param  boolean  $saveRelational
 	 * @return void
 	 */
-	public function saveData($input = null, $new = false, $saveRelational = false)
+	public function saveData($input = null, $create = null, $saveRelational = false)
 	{
 		if (is_null($input))
 			$input = Input::all();
 
+		// if create is not specified, use ID to determine whether creating or updating record
+		if (is_null($create))
+			$create = is_null($this->id);
+
 		// format data for special types and special formats
-		$input = $this->formatValuesForDb($input, $new);
+		$input = $this->formatValuesForDb($input, $create);
 
 		$this->fill($input)->save();
 
@@ -789,12 +838,12 @@ trait Extended {
 	 * Save the input data to the model including the relational data if it is present.
 	 *
 	 * @param  mixed    $input
-	 * @param  boolean  $new
+	 * @param  mixed    $create
 	 * @return void
 	 */
-	public function saveDataWithRelational($input = null, $new = false)
+	public function saveDataWithRelational($input = null, $create = null)
 	{
-		return $this->saveData($input, $new, true);
+		return $this->saveData($input, $create, true);
 	}
 
 	/**
@@ -818,12 +867,12 @@ trait Extended {
 			if ($index != "pivot")
 			{
 				if (isset($itemData['id']) && $itemData['id'] > 0 && $itemData['id'] != "")
-					$new = false;
+					$create = false;
 				else
-					$new = true;
+					$create = true;
 
 				$found = false;
-				if (!$new)
+				if (!$create)
 				{
 					foreach ($items as $item)
 					{
@@ -854,7 +903,7 @@ trait Extended {
 				}
 
 				// if model was not found, it may still exist in the database but not have a current relationship with item
-				if (!$found && !$new)
+				if (!$found && !$create)
 				{
 					$item = $model::find($itemData['id']);
 
@@ -873,11 +922,11 @@ trait Extended {
 					}
 					else
 					{
-						$new = true;
+						$create = true;
 					}
 				}
 
-				if ($new)
+				if ($create)
 				{
 					$item = new $model;
 
@@ -1027,14 +1076,18 @@ trait Extended {
 	 * Format values for insertion into database.
 	 *
 	 * @param  array    $values
-	 * @param  boolean  $new
+	 * @param  mixed    $create
 	 * @return array
 	 */
-	public function formatValuesForDb($values, $new = false)
+	public function formatValuesForDb($values, $create = null)
 	{
+		// if create is not specified, use ID to determine whether creating or updating record
+		if (is_null($create))
+			$create = is_null($this->id);
+
 		$values = $this->formatValuesForTypes($values);
 		$values = $this->formatValuesForSpecialFormats($values);
-		$values = $this->formatValuesForModel($values, $new);
+		$values = $this->formatValuesForModel($values, $create);
 
 		return $values;
 	}
@@ -1048,6 +1101,7 @@ trait Extended {
 	public function fillFormattedValues($values)
 	{
 		$values = $this->formatValuesForDb($values);
+
 		$this->fill($values);
 	}
 
@@ -1338,10 +1392,10 @@ trait Extended {
 	 * custom formatting before data is inserted into the database.
 	 *
 	 * @param  array    $values
-	 * @param  boolean  $new
+	 * @param  boolean  $create
 	 * @return array
 	 */
-	public function formatValuesForModel($values, $new = false)
+	public function formatValuesForModel($values, $create = false)
 	{
 		return $values;
 	}
@@ -1519,23 +1573,25 @@ trait Extended {
 
 		return null;
 	}
+
 	/**
 	 * Create a model item and save the input data to the model.
 	 *
 	 * @param  mixed    $input
+	 * @param  boolean  $saveRelational
 	 * @return object
 	 */
-	public static function createNew($input = null)
+	public static function createNew($input = null, $saveRelational = false)
 	{
-		$item = static::create();
+		$item = new static;
 
-		$item->saveData($input, $item->id);
+		$item->saveData($input, true, $saveRelational);
 
 		return $item;
 	}
 
 	/**
-	 * Gets the model by a field other than its ID.
+	 * Get the model by a field other than its ID.
 	 *
 	 * @param  string   $field
 	 * @param  string   $value
@@ -1543,13 +1599,13 @@ trait Extended {
 	 * @param  boolean  $returnQuery
 	 * @return object
 	 */
-	public static function findBy($field = 'slug', $value, $relations = [], $returnQuery = false)
+	public static function findBy($field, $value, $relations = [], $returnQuery = false)
 	{
 		$item = new static;
 
 		if (is_null($relations) || is_bool($relations))
 		{
-			//if relations is boolean, assume it to be returnQuery instead
+			// if relations is boolean, assume it to be returnQuery instead
 			if (is_bool($relations))
 				$returnQuery = $relations;
 
@@ -1558,10 +1614,8 @@ trait Extended {
 
 		$item = $item->where($field, $value);
 
-		foreach ($relations as $relation)
-		{
-			$item = $item->with($relation);
-		}
+		if ((is_array($relations) && !empty($relations)) || is_string($relations))
+			$item = $item->with($relations);
 
 		if (!$returnQuery)
 			$item = $item->first();
@@ -1570,7 +1624,7 @@ trait Extended {
 	}
 
 	/**
-	 * Gets the model by its slug.
+	 * Get the model by its slug.
 	 *
 	 * @param  string   $slug
 	 * @param  mixed    $relations
@@ -1583,7 +1637,7 @@ trait Extended {
 	}
 
 	/**
-	 * Gets the model by its slug, stripped of dashes.
+	 * Get the model by its slug, stripped of dashes.
 	 *
 	 * @param  string   $slug
 	 * @param  mixed    $relations
@@ -1617,33 +1671,45 @@ trait Extended {
 	 * Get an attribute set for the model.
 	 *
 	 * @param  string   $key
+	 * @param  boolean  $related
 	 * @return array
 	 */
-	public static function getAttributeSet($key = 'standard')
+	public static function getAttributeSet($key = 'standard', $related = false)
 	{
-		$attributeSet = isset(static::$attributeSets[$key]) ? static::$attributeSets[$key] : [];
+		if ($related)
+			$attributeSet = isset(static::$relatedAttributeSets[$key]) ? static::$relatedAttributeSets[$key] : [];
+		else
+			$attributeSet = isset(static::$attributeSets[$key]) ? static::$attributeSets[$key] : [];
 
 		foreach ($attributeSet as $attribute => $attributes)
 		{
 			if (is_string($attribute) && is_string($attributes))
 			{
+				$model = new static;
+
 				if (strtolower(substr($attributes, 0, 4)) == "set:")
 				{
-					$model = new static;
+					$attributeSegments = explode('.', $attribute);
 
-					if (method_exists($model, $attribute))
+					foreach ($attributeSegments as $attributeSegment)
 					{
-						$set = substr($attributes, 4);
-
-						$relationship = $model->{$attribute}();
-
-						if (is_callable([$relationship, 'getModel']))
+						if (method_exists($model, $attributeSegment))
 						{
-							$class = get_class($relationship->getModel());
+							$relationship = $model->{$attributeSegment}();
 
-							$attributeSet[$attribute] = (new $class)->getAttributeSet($set);
+							if (is_callable([$relationship, 'getModel']))
+							{
+								$class = get_class($relationship->getModel());
+
+								$model = new $class;
+							}
 						}
 					}
+
+					$set = substr($attributes, 4);
+
+					if (method_exists($model, 'getAttributeSet'))
+						$attributeSet[$attribute] = $model->getAttributeSet($set);
 				}
 				else
 				{
@@ -1657,7 +1723,10 @@ trait Extended {
 						if (substr($class, 0, 1) != "\\")
 							$class = "\\".$class;
 
-						$attributeSet[$attribute] = (new $class)->getAttributeSet($set);
+						$model = new $class;
+
+						if (method_exists($model, 'getAttributeSet'))
+							$attributeSet[$attribute] = $model->getAttributeSet($set);
 					}
 				}
 			}

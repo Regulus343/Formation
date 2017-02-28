@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.2.8
-		last updated on February 16, 2017
+		version 1.2.9
+		last updated on February 21, 2017
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -206,9 +206,16 @@ class Formation {
 
 		// turn Eloquent collection into an array
 		if (isset($defaults) && isset($defaults->incrementing) && isset($defaults->timestamps))
+		{
+			if (method_exists($defaults, 'getFormattedValues'))
+				$defaults = $defaults->getFormattedValues();
+
 			$defaultsFormatted = $defaults->toArray(false);
+		}
 		else
+		{
 			$defaultsFormatted = $defaults;
+		}
 
 		foreach ($defaultsFormatted as $field => $value)
 		{
@@ -1148,7 +1155,7 @@ class Formation {
 			if (is_object($data))
 				$data->{$checkbox} = $value;
 			else
-				$data[$checkbox]   = $value;
+				$data[$checkbox] = $value;
 		}
 
 		return $data;
@@ -1896,7 +1903,10 @@ class Formation {
 
 		if (!isset($attributesFieldContainer['id']))
 		{
-			$attributesFieldContainer['id'] = $this->id($name, $attributesFieldContainer, false).'-area';
+			$id = $this->id($name, $attributesFieldContainer, false);
+
+			if (!is_null($id))
+				$attributesFieldContainer['id'] = $id.'-area';
 		}
 		else
 		{
