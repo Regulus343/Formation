@@ -3,6 +3,8 @@ Formation
 
 **A powerful form creation and form data saving composer package for Laravel 5.**
 
+[![Latest Stable Version](https://poser.pugx.org/regulus/formation/v/stable.svg)](https://packagist.org/packages/regulus/formation) [![License](https://poser.pugx.org/regulus/formation/license.svg)](https://packagist.org/packages/regulus/formation)
+
 Formation makes it really easy to build a form with form building methods that automatically:
 
 - populate forms with data (both default values and data provided by the POST array)
