@@ -601,7 +601,6 @@ Now, we may query our `Post` model with its `author` relationship and return it 
 
 ```php
 	$post = Post::select(Post::getAttributeSet('standard'))
-		->with('author')
 		->limitRelatedData('standard')
 		->first();
 
