@@ -344,11 +344,18 @@ Form::setDefaults($user, [
 $roleOptions = prep_options(App\Models\User\Role::get(), ['id', 'name']);
 ```
 
-	{!! Form::checkboxSet($roleOptions, ['name-prefix' => 'roles', 'associative' => true, 'name-values' => true]) !!}
+	{!! Form::checkboxSet($roleOptions, [
+		'name-prefix' => 'roles',
+		'associative' => true,
+		'name-values' => true,
+	]) !!}
 
 **Adding attributes to checkboxes and/or unordered list container for checkboxes:**
 
-	{!! Form::checkboxSet($checkboxes, ['class' => 'weather', 'id-container' => 'checkbox-set-weather']) !!}
+	{!! Form::checkboxSet($checkboxes, [
+		'class'        => 'weather',
+		'id-container' => 'checkbox-set-weather',
+	]) !!}
 
 > **Note:** Attributes ending with "-container" will be added to the container itself rather than to each of the checkboxes.
 
