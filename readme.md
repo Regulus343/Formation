@@ -129,7 +129,7 @@ One of the most useful features of Formation is its ability to take an array, ob
 ```php
 $defaults = [
 	'name'   => 'Ron Paul',
-	'email'  => 'ron@ronpaul.com',
+	'email'  => 'ron@paul.com',
 	'active' => true,
 ];
 
@@ -145,7 +145,7 @@ Form::setDefaults($defaults);
 **Set defaults with relationships:**
 
 ```php
-$user = User::find(343);
+$user = User::find(1);
 
 Form::setDefaults($user, ['posts']);
 ```
@@ -155,7 +155,7 @@ This will automatically set the defaults for the user's `posts` relationship def
 **Set defaults with relationships based on specific attribute:**
 
 ```php
-$user = User::find(343);
+$user = User::find(1);
 
 Form::setDefaults($user, [
 	'posts' => '*',
@@ -335,16 +335,16 @@ By default, the value of the checkboxes is simply `1`, but you may set the check
 **Managing selections in a belongs-to-many relationship:**
 
 ```php
-$user = App\Models\User\User::find(343);
+$user = App\Models\User\User::find(1);
 
 Form::setDefaults($user, [
 	'roles' => 'id',
 ]);
 
 $roleOptions = prep_options(App\Models\User\Role::get(), ['id', 'name']);
-
-echo {!! Form::checkboxSet(, ['name-prefix' => 'roles', 'associative' => true, 'name-values' => true]) !!}
 ```
+
+	{!! Form::checkboxSet($roleOptions, ['name-prefix' => 'roles', 'associative' => true, 'name-values' => true]) !!}
 
 **Adding attributes to checkboxes and/or unordered list container for checkboxes:**
 
