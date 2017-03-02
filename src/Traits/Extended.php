@@ -805,7 +805,7 @@ trait Extended {
 	 * @param  boolean  $saveRelational
 	 * @return void
 	 */
-	public function saveData($input = null, $create = null, $saveRelational = false)
+	public function formatSave($input = null, $create = null, $saveRelational = false)
 	{
 		if (is_null($input))
 			$input = Input::all();
@@ -841,9 +841,9 @@ trait Extended {
 	 * @param  mixed    $create
 	 * @return void
 	 */
-	public function saveDataWithRelational($input = null, $create = null)
+	public function formatSaveWithRelational($input = null, $create = null)
 	{
-		return $this->saveData($input, $create, true);
+		return $this->formatSave($input, $create, true);
 	}
 
 	/**
@@ -1581,11 +1581,11 @@ trait Extended {
 	 * @param  boolean  $saveRelational
 	 * @return object
 	 */
-	public static function createNew($input = null, $saveRelational = false)
+	public static function formatCreate($input = null, $saveRelational = false)
 	{
 		$item = new static;
 
-		$item->saveData($input, true, $saveRelational);
+		$item->formatSave($input, true, $saveRelational);
 
 		return $item;
 	}

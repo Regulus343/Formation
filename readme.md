@@ -128,8 +128,9 @@ One of the most useful features of Formation is its ability to take an array, ob
 
 ```php
 $defaults = [
-	'name'  => 'Cody Jassman',
-	'email' => 'me@codyjassman.com',
+	'name'   => 'Ron Paul',
+	'email'  => 'ron@ronpaul.com',
+	'active' => true,
 ];
 
 Form::setDefaults($defaults);
@@ -140,6 +141,29 @@ Form::setDefaults($defaults);
 **Forcing default values even after form POST:**
 
 	Form::resetDefaults();
+
+**Set defaults with relationships:**
+
+```php
+$user = User::find(343);
+
+Form::setDefaults($user, ['posts']);
+```
+
+This will automatically set the defaults for the user's `posts` relationship defined in the model.
+
+**Set defaults with relationships based on specific attribute:**
+
+```php
+$user = User::find(343);
+
+Form::setDefaults($user, [
+	'posts' => '*',
+	'roles' => 'id',
+]);
+```
+
+The `posts` item will work just like the above example (though this is the associative array version of the same thing) whereas the `roles` item will select only the `id` attributes in the relations to add to the defaults array. This could be used by a checkbox set with a `roles.` name prefix for managing record selections in a `belongsToMany()` relationship. There is an example in the [Checkbox and Radio Button Sets](#checkbox-radio-sets) section below.
 
 <a name="validation-rules"></a>
 ## Validation Rules
@@ -246,11 +270,19 @@ The above example will create a text field with a name of `user[][username]` and
 
 	{!! Form::checkbox('name', ['value' => 'X']) !!}
 
+**Generating a checkbox input element with a label:**
+
+	{!! Form::checkbox('name', ['label' => true]) !!}
+
+	{!! Form::checkbox('name', ['label' => 'Custom Label']) !!}
+
+	{!! Form::checkbox('name', ['label' => 'Custom Label', 'label-first' => true]) !!}
+
 **Generating a checkbox that is checked by default:**
 
 	{!! Form::checkbox('name', ['checked' => true]) !!}
 
-Please keep in mind that once again you will not need the third argument if you set up your default values with `Form::setDefaults()`.
+Please keep in mind that once again you will not need the second parameter to set the value if you set up your default values with `Form::setDefaults()`.
 
 > **Note:** The radio method has the same signature as the checkbox method. Two for one!
 
@@ -267,11 +299,56 @@ Please keep in mind that once again you will not need the third argument if you 
 
 **Adding a prefix to the name of each checkbox:**
 
-	{!! Form::checkboxSet($checkboxes, 'checkbox') !!}
+	{!! Form::checkboxSet($checkboxes, ['name-prefix' => 'weather']) !!}
 
-**Adding attributes to checkboxes and/or unordered list container for checkboxes:
+In this example, the name attributes of the checkboxes will all be `weather[]`.
 
-	{!! Form::checkboxSet($checkboxes, null, ['class' => 'weather', 'id-container' => 'checkbox-set-weather']) !!}
+**Adding a prefix to the name of each checkbox with explicit keys:**
+
+	{!! Form::checkboxSet($checkboxes, ['name-prefix' => 'weather', 'explicit-keys' => true]) !!}
+
+	{!! Form::checkboxSet($checkboxes, ['name-prefix' => 'weather.']) !!}
+
+Both examples will produce name attributes like `weather[Thunder]`. Including a `.` character at the end will automatically use explicit keys, but you may pass it as an attribute instead to make it easier to understand what is happening.
+
+**Force interpretation of checkbox options as associative array:**
+
+	{!! Form::checkboxSet($checkboxes, ['associative' => true]) !!}
+
+By default `checkboxSet()` will interpret your array as associative unless the keys are integers or the keys are strings that evaluate to positive integers, but you can force it to interpret your checkbox options either way by passing an `associative` boolean value.
+
+**Specify what to use as your checkbox values:**
+
+```php
+<?php $checkboxes = [
+	'checkbox_name'  => 'Checkbox Label!',
+	'checkbox_name2' => 'Checkbox Label 2!',
+]; ?>
+```
+
+	{!! Form::checkboxSet($checkboxes, ['name-values' => true]) !!}
+
+	{!! Form::checkboxSet($checkboxes, ['label-values' => true]) !!}
+
+By default, the value of the checkboxes is simply `1`, but you may set the checkbox set to use the names as the values (keys of the associative array) or the labels as the values (values of the associative array).
+
+**Managing selections in a belongs-to-many relationship:**
+
+```php
+$user = App\Models\User\User::find(343);
+
+Form::setDefaults($user, [
+	'roles' => 'id',
+]);
+
+$roleOptions = prep_options(App\Models\User\Role::get(), ['id', 'name']);
+
+echo {!! Form::checkboxSet(, ['name-prefix' => 'roles', 'associative' => true, 'name-values' => true]) !!}
+```
+
+**Adding attributes to checkboxes and/or unordered list container for checkboxes:**
+
+	{!! Form::checkboxSet($checkboxes, ['class' => 'weather', 'id-container' => 'checkbox-set-weather']) !!}
 
 > **Note:** Attributes ending with "-container" will be added to the container itself rather than to each of the checkboxes.
 
@@ -300,9 +377,9 @@ You may append "-container" to attribute names to assign them to the container e
 <?php // you may pass either a "selected" or "value" attribute to select an option ?>
 ```
 
-	{!! Form::select('size', ['L' => 'Large', 'S' => 'Small'], ['null-option' => 'Select a Size', 'value' => 'S') !!}
+	{!! Form::select('size', ['L' => 'Large', 'S' => 'Small'], ['null-option' => 'Select a Size', 'value' => 'S']) !!}
 
-	{!! Form::select('size', ['L' => 'Large', 'S' => 'Small'], ['null-option' => 'Select a Size', 'selected' => 'S') !!}
+	{!! Form::select('size', ['L' => 'Large', 'S' => 'Small'], ['null-option' => 'Select a Size', 'selected' => 'S']) !!}
 
 Of course, you may use `Form::setDefaults()` to populate select boxes without the need for the third `selected` or `value` attribute.
 
@@ -314,6 +391,10 @@ Of course, you may use `Form::setDefaults()` to populate select boxes without th
 **Turn a simple array into an options array with values the same as its labels:**
 
 	{!! Form::select('animal', simple_options(['Tiger', 'Zebra', 'Elephant']), ['null-option' => Select an Animal']) !!}
+
+**Turn a simple array into an options array with values the same as its labels except lowercase:**
+
+	{!! Form::select('animal', simple_options(['Tiger', 'Zebra', 'Elephant'], true), ['null-option' => Select an Animal']) !!}
 
 **Turn a simple array into a simple options array with numeric values that start at one instead of zero:**
 

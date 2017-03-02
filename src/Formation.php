@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.2.9
-		last updated on February 28, 2017
+		version 1.3.0
+		last updated on March 1, 2017
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -275,7 +275,7 @@ class Formation {
 
 				if (count($defaults->{$relation}))
 				{
-					if (method_exists($defaults->{$relation}, 'toArray'))
+					if (is_object($defaults->{$relation}) && get_class($defaults->{$relation}) != "Illuminate\Database\Eloquent\Collection")
 					{
 						$items = [$defaults->{$relation}];
 
@@ -314,7 +314,7 @@ class Formation {
 
 						foreach ($item as $field => $value)
 						{
-							if (!$relationField || $relationField == $field || ($relationField && $field == "pivot"))
+							if (!$relationField || $relationField == "*" || $relationField == $field || ($relationField && $field == "pivot"))
 							{
 								if ($field == "pivot")
 								{
@@ -1817,22 +1817,16 @@ class Formation {
 
 			case "checkbox":
 
-				if (isset($attributesLabel['class']))
-					$attributesLabel['class'] .= " checkbox";
-				else
-					$attributesLabel['class'] = "checkbox";
+				$attributesField['label'] = $label;
 
-				$html .= '<label>'.$this->checkbox($name, $attributesField).' '.$label.'</label>';
+				$html .= $this->checkbox($name, $attributesField);
 				break;
 
 			case "radio":
 
-				if (isset($attributesLabel['class']))
-					$attributesLabel['class'] .= " radio";
-				else
-					$attributesLabel['class'] = "radio";
+				$attributesField['label'] = $label;
 
-				$html .= '<label>'.$this->radio($name, $value, $attributesField).' '.$label.'</label>';
+				$html .= $this->radio($name, $value, $attributesField);
 				break;
 
 			case "checkbox-set":
@@ -2496,6 +2490,20 @@ class Formation {
 				$namePrefix = null;
 			}
 
+			$valueType  = null;
+			$valueTypes = ['name', 'label'];
+
+			foreach ($valueTypes as $valueTypeListed)
+			{
+				if (isset($attributes[$valueTypeListed.'-values']))
+				{
+					if ($attributes[$valueTypeListed.'-values'])
+						$valueType = $valueTypeListed;
+
+					unset($attributes[$valueTypeListed.'-values']);
+				}
+			}
+
 			foreach ($attributes as $attribute => $value)
 			{
 				// appending "-container" to attributes means they apply to the
@@ -2514,6 +2522,21 @@ class Formation {
 			$containerAttributes = $this->addErrorClass('roles', $containerAttributes);
 			$html = '<div'.$this->attributes($containerAttributes).'>';
 
+			if (!is_null($namePrefix))
+			{
+				$explicitKeys = substr($namePrefix, -1) == ".";
+
+				if (isset($attributes['explicit-keys']))
+				{
+					$explicitKeys = $attributes['explicit-keys'];
+
+					if ($explicitKeys && substr($namePrefix, -1) != ".")
+						$namePrefix .= ".";
+
+					unset($attributes['explicit-keys']);
+				}
+			}
+
 			foreach ($names as $name => $label)
 			{
 				// if a simple array is used, automatically create the label from the name
@@ -2522,30 +2545,42 @@ class Formation {
 				{
 					if (!$attributes['associative'])
 						$associativeArray = false;
-				} else {
-					if (is_numeric($name))
+				}
+				else
+				{
+					if (is_numeric($name) || (int) $name || $name === "0")
 						$associativeArray = false;
 				}
 
-				if (!$associativeArray) {
+				if (!$associativeArray)
+				{
 					$name  = $label;
 					$label = $this->nameToLabel($name);
 				}
 
-				if (isset($attributes['name-values']) && $attributes['name-values'])
+				if ($valueType == "name")
+				{
 					$value = $name;
-				elseif (isset($attributes['label-values']) && $attributes['label-values'])
+				}
+				elseif ($valueType == "label")
+				{
 					$value = $label;
+				}
 				else
+				{
 					$value = 1;
+				}
 
 				$nameToCheck = $name;
 				if (!is_null($namePrefix))
 				{
-					if (substr($namePrefix, -1) == ".") {
+					if ($explicitKeys)
+					{
 						$nameToCheck = $namePrefix . $name;
 						$name        = $nameToCheck;
-					} else {
+					}
+					else
+					{
 						$nameToCheck = $namePrefix;
 						$name        = $namePrefix . '.('.$name.')';
 					}
@@ -2554,26 +2589,27 @@ class Formation {
 				$valueToCheck = $this->value($nameToCheck);
 				$checked      = false;
 
-				if (is_array($valueToCheck) && in_array($value, $valueToCheck)) {
-					$checked = true;
-				} else if (is_bool($value) && $value == $this->value($nameToCheck, 'checkbox')) {
-					$checked = true;
-				} else if ($value && $value == $valueToCheck) {
-					$checked = true;
-				} else if (!$value && $value === $valueToCheck) {
+				if (is_array($valueToCheck) && in_array($value, $valueToCheck))
+				{
 					$checked = true;
 				}
-
-				// add selected class to list item if checkbox is checked to allow styling for selected checkboxes in set
-				$subContainerAttributes = ['class' => 'checkbox'];
-				if ($checked)
-					$subContainerAttributes['class'] .= ' selected';
-
-				$checkbox = '<div'.$this->attributes($subContainerAttributes).'>' . "\n";
+				else if (is_bool($value) && $value == $this->value($nameToCheck, 'checkbox'))
+				{
+					$checked = true;
+				}
+				else if ($value && $value == $valueToCheck)
+				{
+					$checked = true;
+				}
+				else if (!$value && $value === $valueToCheck)
+				{
+					$checked = true;
+				}
 
 				$checkboxAttributes          = $attributes;
 				$checkboxAttributes['id']    = $this->id($name);
 				$checkboxAttributes['value'] = $value;
+				$checkboxAttributes['label'] = $label;
 
 				if ($checked)
 					$checkboxAttributes['checked'] = "checked";
@@ -2584,12 +2620,12 @@ class Formation {
 				if (isset($checkboxAttributes['name-values']))
 					unset($checkboxAttributes['name-values']);
 
-				$checkbox .= '<label>'.$this->checkbox($name, $checkboxAttributes).$label.'</label>';
-				$checkbox .= '</div>' . "\n";
-				$html     .= $checkbox;
+				$checkbox = $this->checkbox($name, $checkboxAttributes);
+
+				$html .= $checkbox;
 			}
 
-			$html .= '</div>' . "\n";
+			$html .= '</div><!-- /.checkbox-set -->' . "\n";
 			return $html;
 		}
 	}
@@ -2609,18 +2645,83 @@ class Formation {
 		if (is_string($attributes['value']))
 			$attributes['value'] = str_replace('"', '&quot;', $attributes['value']);
 
+		$checked = false;
+
 		if ($attributes['value'] == $this->value($name) && !isset($attributes['checked']))
+		{
+			$checked = true;
+
 			$attributes['checked'] = true;
+		}
 
 		if (isset($attributes['checked']) && $attributes['checked'] != "checked")
 		{
 			if ($attributes['checked'] === true)
+			{
+				$checked = true;
+
 				$attributes['checked'] = "checked";
+			}
 			else
+			{
 				unset($attributes['checked']);
+			}
 		}
 
-		return $this->checkable('checkbox', $name, $attributes);
+		// add selected class to list item if checkbox is checked to allow styling for selected checkboxes in set
+		$containerAttributes = ['class' => 'checkbox'];
+		if ($checked)
+			$containerAttributes['class'] .= ' selected';
+
+		$html = '<div'.$this->attributes($containerAttributes).'>' . "\n";
+
+		$label      = null;
+		$labelFirst = false;
+
+		if (isset($attributes['label']))
+		{
+			if ($attributes['label'] === true)
+			{
+				$label = $this->nameToLabel($name);
+			}
+			elseif (is_string($attributes['label']))
+			{
+				$label = $attributes['label'];
+			}
+
+			unset($attributes['label']);
+
+			if (!is_null($label))
+			{
+				$html .= '<label>' . "\n";
+
+				if (isset($attributes['label-first']))
+				{
+					$labelFirst = $attributes['label-first'];
+
+					unset($attributes['label-first']);
+				}
+
+				$label = '<span class="label'.($labelFirst ? ' label-first' : '').'">'.$label.'</span>';
+
+				if ($labelFirst)
+					$html .= $label.' ';
+			}
+		}
+
+		$html .= $this->checkable('checkbox', $name, $attributes);
+
+		if (!is_null($label))
+		{
+			if (!$labelFirst)
+				$html .= ' '.$label;
+
+			$html .= "\n" . '</label>' . "\n";
+		}
+
+		$html .= '</div><!-- /.checkbox -->' . "\n";
+
+		return $html;
 	}
 
 	/**
@@ -2668,32 +2769,28 @@ class Formation {
 			{
 				$radioButtonAttributes = $attributes;
 
-				// add selected class to list item if radio button is set to allow styling for selected radio buttons in set
-				$subContainerAttributes = ['class' => 'radio'];
-
 				if ($attributes['value'] == (string) $optionValue)
 					$radioButtonAttributes['checked'] = "checked";
 
 				if (isset($radioButtonAttributes['checked']))
 				{
 					$radioButtonAttributes['checked'] = "checked";
-					$subContainerAttributes['class'] .= ' selected';
 				}
-
-				$radioButton = '<div'.$this->attributes($subContainerAttributes).'>' . "\n";
 
 				// append radio button value to the end of ID to prevent all radio buttons from having the same ID
 				$idSuffix = str_replace('"', '', str_replace('.', '-', str_replace(' ', '-', str_replace('_', '-', strtolower($optionValue)))));
 				if ($idSuffix == "")
 					$idSuffix = "blank";
 
-				$radioButtonAttributes['id'] = $idPrefix.'-'.$idSuffix;
+				$radioButtonAttributes['id']    = $idPrefix.'-'.$idSuffix;
+				$radioButtonAttributes['label'] = $optionLabel;
 
-				$radioButton .= '<label>'.$this->radio($name, $optionValue, $radioButtonAttributes).' '.$optionLabel.'</label></div>' . "\n";
-				$html        .= $radioButton;
+				$radioButton = $this->radio($name, $optionValue, $radioButtonAttributes);
+
+				$html .= $radioButton;
 			}
 
-			$html .= '</div>' . "\n";
+			$html .= '</div><!-- /.radio-set -->' . "\n";
 
 			return $html;
 		}
@@ -2716,6 +2813,13 @@ class Formation {
 	 */
 	public function radio($name, $value = null, $attributes = [])
 	{
+		if (is_array($value))
+		{
+			$attributes = $value;
+
+			$value = isset($attributes['value']) ? $attributes['value'] : null;
+		}
+
 		if (is_null($value))
 			$value = $name;
 
@@ -2723,8 +2827,28 @@ class Formation {
 
 		$attributes['value'] = $value;
 
+		$checked = false;
+
 		if ((string) $value === $this->value($name) && !isset($attributes['checked']))
+		{
+			$checked = true;
+
 			$attributes['checked'] = true;
+		}
+
+		if (isset($attributes['checked']) && $attributes['checked'] != "checked")
+		{
+			if ($attributes['checked'] === true)
+			{
+				$checked = true;
+
+				$attributes['checked'] = "checked";
+			}
+			else
+			{
+				unset($attributes['checked']);
+			}
+		}
 
 		if (!isset($attributes['id']))
 		{
@@ -2733,7 +2857,60 @@ class Formation {
 			$attributes['id'] = $this->id($nameForId, $attributes);
 		}
 
-		return $this->checkable('radio', $name, $attributes);
+		// add selected class to list item if radio button is checked to allow styling for selected checkboxes in set
+		$containerAttributes = ['class' => 'radio'];
+		if ($checked)
+			$containerAttributes['class'] .= ' selected';
+
+		$html = '<div'.$this->attributes($containerAttributes).'>' . "\n";
+
+		$label      = null;
+		$labelFirst = false;
+
+		if (isset($attributes['label']))
+		{
+			if ($attributes['label'] === true)
+			{
+				$label = $this->nameToLabel($value);
+			}
+			elseif (is_string($attributes['label']))
+			{
+				$label = $attributes['label'];
+			}
+
+			unset($attributes['label']);
+
+			if (!is_null($label))
+			{
+				$html .= '<label>' . "\n";
+
+				if (isset($attributes['label-first']))
+				{
+					$labelFirst = $attributes['label-first'];
+
+					unset($attributes['label-first']);
+				}
+
+				$label = '<span class="label'.($labelFirst ? ' label-first' : '').'">'.$label.'</span>';
+
+				if ($labelFirst)
+					$html .= $label.' ';
+			}
+		}
+
+		$html .= $this->checkable('radio', $name, $attributes);
+
+		if (!is_null($label))
+		{
+			if (!$labelFirst)
+				$html .= ' '.$label;
+
+			$html .= "\n" . '</label>' . "\n";
+		}
+
+		$html .= '</div><!-- /.radio -->' . "\n";
+
+		return $html;
 	}
 
 	/**
@@ -2821,9 +2998,10 @@ class Formation {
 	 * Create an associative array from a simple array for a select field, checkbox set, or radio button set.
 	 *
 	 * @param  array   $options
+	 * @param  boolean $lowercaseKeys
 	 * @return array
 	 */
-	public function simpleOptions($options = [])
+	public function simpleOptions($options = [], $lowercaseKeys = false)
 	{
 		$optionsFormatted = [];
 
@@ -2831,7 +3009,9 @@ class Formation {
 		{
 			foreach ($options as $option)
 			{
-				$optionsFormatted[$option] = $option;
+				$key = $lowercaseKeys ? strtolower($option) : $option;
+
+				$optionsFormatted[$key] = $option;
 			}
 		}
 

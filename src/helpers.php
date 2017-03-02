@@ -31,11 +31,12 @@ if (!function_exists('simple_options'))
 	 * Create an associative array from a simple array for a select field, checkbox set, or radio button set.
 	 *
 	 * @param  array   $options
+	 * @param  boolean $lowercaseKeys
 	 * @return array
 	 */
-	function simple_options($options = [])
+	function simple_options($options = [], $lowercaseKeys = false)
 	{
-		return \Regulus\Formation\Facade::simpleOptions($options);
+		return \Regulus\Formation\Facade::simpleOptions($options, $lowercaseKeys);
 	}
 }
 
