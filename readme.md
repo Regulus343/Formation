@@ -609,6 +609,7 @@ You may add a `protected static $types` array to your model to allow data to be 
 - timestamp-not-null
 - slug
 - unique-slug
+- checkbox-timestamp (if field is `active`, saved timestamp becomes `active_at`, but you can specify a custom field like `checkbox-timestamp:activated_at`)
 
 > **Note:** You may refer to the `Regulus\Formation\Traits\Extended` trait for examples of this and all of the other assisting arrays. The trait contains commented out array examples for each of them.
 
@@ -634,7 +635,7 @@ You may add `protected static $formats` and `protected static $formatsForDb` arr
 - uppercase
 - lowercase
 
-The formatting from `$types` and `$formats` will occur automatically before saving into the database when using the `saveData()` method. You may also run them by using the model or trait's own `setDefaults()` method. Alternately, you can use `getFormattedValues()` to get an array of formatted values.
+The formatting from `$types` and `$formats` will occur automatically before saving into the database when using the `formatSave()` or `formatCreate()` methods. You may also run them by using the model or trait's own `setDefaults()` method. Alternately, you can use `getFormattedValues()` to get an array of formatted values.
 
 **Array-Included Methods:**
 
