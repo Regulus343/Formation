@@ -100,6 +100,13 @@ trait Extended {
 	protected static $staticCached;
 
 	/**
+	 * The content type for the model.
+	 *
+	 * @var string
+	 */
+	protected static $contentType = "Section";
+
+	/**
 	 * The foreign key for the model.
 	 *
 	 * @var    mixed
@@ -135,6 +142,16 @@ trait Extended {
 			return $this->foreignKey;
 		else
 			return snake_case(class_basename($this)).'_id';
+	}
+
+	/**
+	 * Get the content type for the record.
+	 *
+	 * @return boolean
+	 */
+	public function getContentType()
+	{
+		return static::$contentType;
 	}
 
 	/**
@@ -833,6 +850,9 @@ trait Extended {
 				}
 			}
 		}
+
+		// execute save triggers for custom post-save logic in your model
+		$this->executeSaveTriggers($create);
 	}
 
 	/**
@@ -1088,7 +1108,7 @@ trait Extended {
 
 		$values = $this->formatValuesForTypes($values, $create);
 		$values = $this->formatValuesForSpecialFormats($values);
-		$values = $this->formatValuesForModel($values, $create);
+		$values = $this->formatValuesForModel($values);
 
 		return $values;
 	}
@@ -1288,107 +1308,125 @@ trait Extended {
 			switch ($format[0])
 			{
 				case "false-if-null":
+
 					if (is_null($valueTested))
 						$value = false;
 
 					break;
 
 				case "true-if-null":
+
 					if (is_null($valueTested))
 						$value = true;
 
 					break;
 
 				case "false-if-not-null":
+
 					if (!is_null($valueTested))
 						$value = false;
 
 					break;
 
 				case "true-if-not-null":
+
 					if (!is_null($valueTested))
 						$value = true;
 
 					break;
 
 				case "false-if-blank":
+
 					if ($valueTested == "" || $valueTested == "0000-00-00" || $valueTested == "0000-00-00 00:00:00")
 						$value = false;
 
 					break;
 
 				case "true-if-blank":
+
 					if ($valueTested == "" || $valueTested == "0000-00-00" || $valueTested == "0000-00-00 00:00:00")
 						$value = true;
 
 					break;
 
 				case "null-if-blank":
+
 					if ($valueTested == "" || $valueTested == "0000-00-00" || $valueTested == "0000-00-00 00:00:00")
 						$value = null;
 
 					break;
 
 				case "false-if-not-blank":
+
 					if ($valueTested != "")
 						$value = false;
 
 					break;
 
 				case "true-if-not-blank":
+
 					if ($valueTested != "")
 						$value = true;
 
 					break;
 
 				case "null-if-not-blank":
+
 					if ($valueTested != "")
 						$value = null;
 
 					break;
 
 				case "false-if-set":
+
 					if ($valueTested)
 						$value = false;
 
 					break;
 
 				case "true-if-set":
+
 					if ($valueTested)
 						$value = true;
 
 					break;
 
 				case "null-if-set":
+
 					if ($valueTested)
 						$value = null;
 
 					break;
 
 				case "false-if-not-set":
+
 					if (!$valueTested)
 						$value = false;
 
 					break;
 
 				case "true-if-not-set":
+
 					if (!$valueTested)
 						$value = true;
 
 					break;
 
 				case "null-if-not-set":
+
 					if (!$valueTested)
 						$value = null;
 
 					break;
 
 				case "json":
+
 					$value = json_encode($value);
 
 					break;
 
 				case "json-or-null":
+
 					if (is_null($value) || empty($value))
 						$value = null;
 					else
@@ -1397,27 +1435,36 @@ trait Extended {
 					break;
 
 				case "trim":
+
 					$value = $this->trimValue($value);
 
 					break;
 
 				case "uppercase-first":
-					$value = ucfirst(trim($value));
+
+					if (is_string($value))
+						$value = ucfirst(trim($value));
 
 					break;
 
 				case "uppercase-words":
-					$value = ucwords(trim($value));
+
+					if (is_string($value))
+						$value = ucwords(trim($value));
 
 					break;
 
 				case "uppercase":
-					$value = strtoupper($value);
+
+					if (is_string($value))
+						$value = strtoupper($value);
 
 					break;
 
 				case "lowercase":
-					$value = strtolower($value);
+
+					if (is_string($value))
+						$value = strtolower($value);
 
 					break;
 			}
@@ -1455,12 +1502,22 @@ trait Extended {
 	 * custom formatting before data is inserted into the database.
 	 *
 	 * @param  array    $values
-	 * @param  boolean  $create
 	 * @return array
 	 */
-	public function formatValuesForModel($values, $create = false)
+	public function formatValuesForModel($values)
 	{
 		return $values;
+	}
+
+	/**
+	 * Custom logic in your model that is run post-save.
+	 *
+	 * @param  boolean  $create
+	 * @return void
+	 */
+	public function executeSaveTriggers($create = false)
+	{
+		//
 	}
 
 	/**
