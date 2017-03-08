@@ -8,9 +8,9 @@
 
 	$(document).ready(function()
 	{
-		Formation.setErrorSettings($.parseJSON('{!! Form::getJsonErrorSettings() !!}'));
+		Formation.setErrorSettings({!! Form::getJsonErrorSettings() !!});
 
-		Formation.setErrors($.parseJSON('{!! Form::getJsonErrors() !!}'));
+		Formation.setErrors({!! Form::getJsonErrors() !!});
 	});
 
 </script>

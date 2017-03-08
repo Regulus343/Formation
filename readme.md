@@ -557,8 +557,8 @@ $attributes = [
 This view automatically loads the `formation.js` script and executes the following javascript code:
 
 ```js
-Formation.setErrorSettings($.parseJSON('{{ Form::getJsonErrorSettings() }}'));
-Formation.setErrors($.parseJSON('{{ Form::getJsonErrors() }}'));
+Formation.setErrorSettings({!! Form::getJsonErrorSettings() !!});
+Formation.setErrors({!! Form::getJsonErrors() !!});
 ```
 
 This will automatically pass Formation's error settings and any Formation errors to the `formation.js` library.
