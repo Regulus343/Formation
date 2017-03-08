@@ -641,6 +641,9 @@ You may add `protected static $formats` and `protected static $formatsForDb` arr
 - false-if-set
 - true-if-set
 - null-if-set
+- false-if-not-set
+- true-if-not-set
+- null-if-not-set
 - json
 - json-or-null
 - trim
@@ -649,7 +652,11 @@ You may add `protected static $formats` and `protected static $formatsForDb` arr
 - uppercase
 - lowercase
 
-The formatting from `$types` and `$formats` will occur automatically before saving into the database when using the `formatSave()` or `formatCreate()` methods. You may also run them by using the model or trait's own `setDefaults()` method. Alternately, you can use `getFormattedValues()` to get an array of formatted values.
+The formatting from `$types`, `$formats`, and `$formatsForDb` will occur automatically before saving into the database when using the `formatSave()` or `formatCreate()` methods. You may also run them by using the model or trait's own `setDefaults()` method. Alternately, you can use `getFormattedValues()` to get an array of formatted values.
+
+**Formatting & Saving Data:**
+
+After you set up the formatting above, you can use `$record->formatSave()` and `Record::formatCreate()` to automatically format the data and save it. If you set up a `formatValuesForModel()` method in your model, you can add custom-formatting rules beyond what's available in the `$types`, `$formats`, and `$formatsForDb` arrays. Additionally, you can add extra logic post-save in a `executeSaveTriggers($create = false)` method (for saving related data in relationships or doing other things that require the record to exist first).
 
 **Array-Included Methods:**
 
