@@ -6,7 +6,7 @@
 
 		created by Cody Jassman
 		version 1.3.0
-		last updated on March 1, 2017
+		last updated on March 7, 2017
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -1456,6 +1456,8 @@ class Formation {
 		if (substr($id, -1) == "-")
 			$id = substr($id, 0, (strlen($id) - 1));
 
+		$id = Format::slug($id); // strip illegal characters from ID
+
 		// unset ID attribute if ID is empty or already used
 		if (!$id || $id == "" || in_array($id, $this->ids))
 		{
@@ -1511,6 +1513,8 @@ class Formation {
 		// remove end dash if one exists
 		if (substr($fieldClass, -1) == "-")
 			$fieldClass = substr($fieldClass, 0, (strlen($fieldClass) - 1));
+
+		$fieldClass = Format::slug($fieldClass); // strip illegal characters from class name
 
 		if ($fieldClass != "")
 		{
@@ -1650,6 +1654,9 @@ class Formation {
 			}
 		}
 
+		if (is_string($attributes) || is_null($attributes))
+			$attributes = ['value' => $attributes];
+
 		// allow attributes array to be passed as the second parameter
 		if (is_array($type) && empty($attributes))
 		{
@@ -1716,6 +1723,7 @@ class Formation {
 
 		// set attributes up for label and field (remove element-specific attributes from label and vice versa)
 		$attributesLabel = [];
+
 		foreach ($attributes as $key => $attribute)
 		{
 			if (substr($key, -6) == "-label")
@@ -1951,6 +1959,9 @@ class Formation {
 	 */
 	public function input($type, $name, $attributes = [])
 	{
+		if (is_string($attributes) || is_null($attributes))
+			$attributes = ['value' => $attributes];
+
 		if (!isset($attributes['value']))
 			$attributes['value'] = null;
 
@@ -2568,7 +2579,7 @@ class Formation {
 				}
 				else
 				{
-					$value = 1;
+					$value = ($associativeArray && !$explicitKeys) ? $name : 1;
 				}
 
 				$nameToCheck = $name;

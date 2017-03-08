@@ -60,6 +60,7 @@ The above code is an example of how simple and versatile Formation is. The top 3
 With this form, we can validate just the fields in the user array with `Form::isValid('user')`, the final field with `Form::isValid('root')`, or all of the fields in the form with `Form::isValid()`.
 
 - [Installation](#installation)
+- [Example Routes](#example-routes)
 - [Opening a Form](#opening-form)
 - [Default Form Values](#default-values)
 - [Validation Rules](#validation-rules)
@@ -83,7 +84,7 @@ With this form, we can validate just the fields in the user array with `Form::is
 To install Formation, make sure `regulus/formation` has been added to Laravel 5's `composer.json` file.
 
 	"require": {
-		"regulus/formation": "1.2.*"
+		"regulus/formation": "1.3.*"
 	},
 
 Then run `php composer.phar update` from the command line. Composer will install the Formation package. Now, all you have to do is register the service provider and set up Formation's alias in `config/app.php`. Add this to the `providers` array:
@@ -95,6 +96,15 @@ And add this to the `aliases` array:
 	'Form' => Regulus\Formation\Facade::class,
 
 You may use 'Formation', or another alias, but 'Form' is recommended for the sake of simplicity. Formation is now ready to go.
+
+Now, publish the config file, `form.php`, as well as the views and JS file, from the command line:
+
+	php artisan vendor:publish
+
+<a name="example-routes"></a>
+## Example Routes
+
+If you set `example_routes` in `config/form.php` to `true` or you leave it set to `null` and set your `APP_ENV` variable in `.env` to anything other than `production`, you can go to `/formation` to load the examples view and see Formation in action. It is recommended you review this along with the documentation to better understand what is possible with Formation and how it works.
 
 <a name="opening-form"></a>
 ## Opening a Form
@@ -607,6 +617,7 @@ You may add a `protected static $types` array to your model to allow data to be 
 - date-not-null
 - date-time-not-null
 - timestamp-not-null
+- token (only set on record creation, default length is 32, but a custom length can be set like `token:16`)
 - slug
 - unique-slug
 - checkbox-timestamp (if field is `active`, saved timestamp becomes `active_at`, but you can specify a custom field like `checkbox-timestamp:activated_at`)

@@ -147,4 +147,16 @@ return [
 	*/
 	'encoding' => 'UTF-8',
 
+	/*
+	|--------------------------------------------------------------------------
+	| Example Routes
+	|--------------------------------------------------------------------------
+	|
+	| Whether or not to map the example routes to "/formation" (true or false).
+	| If left null, they will be mapped only if APP_ENV is not set to
+	| "production".
+	|
+	*/
+	'example_routes' => null,
+
 ];

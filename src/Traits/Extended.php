@@ -18,7 +18,7 @@ trait Extended {
 	 */
 	protected static $types = [
 		/*
-		'activated_at' => 'date-time',
+		'activated_at' => 'timestamp',
 		'published_at' => 'checkbox-timestamp',
 		*/
 	];
@@ -1085,7 +1085,7 @@ trait Extended {
 		if (is_null($create))
 			$create = is_null($this->id);
 
-		$values = $this->formatValuesForTypes($values);
+		$values = $this->formatValuesForTypes($values, $create);
 		$values = $this->formatValuesForSpecialFormats($values);
 		$values = $this->formatValuesForModel($values, $create);
 
@@ -1109,71 +1109,97 @@ trait Extended {
 	 * Format values based on the model's special field types for data insertion into database.
 	 *
 	 * @param  array    $values
+	 * @param  boolean  $create
 	 * @return array
 	 */
-	public function formatValuesForTypes($values)
+	public function formatValuesForTypes($values, $create = false)
 	{
 		foreach ($this->getFieldTypes() as $field => $type)
 		{
 			$value      = isset($values[$field]) ? $values[$field] : null;
 			$unsetValue = false;
 
-			switch ($type)
+			$typeArray = explode(':', $type);
+
+			switch ($typeArray[0])
 			{
 				case "checkbox":
-					$value = (!is_null($value) && $value != false); break;
+
+					$value = (!is_null($value) && $value != false);
+					break;
 
 				case "date":
-					$value = (!is_null($value) && $value != "" ? date('Y-m-d', strtotime($value)) : null); break;
+
+					$value = (!is_null($value) && $value != "" ? date('Y-m-d', strtotime($value)) : null);
+					break;
 
 				case "date-time":
 				case "datetime":
 				case "timestamp":
-					$value = (!is_null($value) && $value != "" ? date('Y-m-d H:i:s', strtotime($value)) : null); break;
+
+					$value = (!is_null($value) && $value != "" ? date('Y-m-d H:i:s', strtotime($value)) : null);
+					break;
 
 				case "date-not-null":
-					$value = (!is_null($value) && $value != "" ? date('Y-m-d', strtotime($value)) : "0000-00-00"); break;
+
+					$value = (!is_null($value) && $value != "" ? date('Y-m-d', strtotime($value)) : "0000-00-00");
+					break;
 
 				case "date-time-not-null":
 				case "datetime-not-null":
 				case "timestamp-not-null":
-					$value = (!is_null($value) && $value != "" ? date('Y-m-d H:i:s', strtotime($value)) : "0000-00-00 00:00:00"); break;
+
+					$value = (!is_null($value) && $value != "" ? date('Y-m-d H:i:s', strtotime($value)) : "0000-00-00 00:00:00");
+					break;
+
+				case "checkbox-timestamp":
+				case "checkbox-date-time":
+				case "checkbox-datetime":
+
+					$value = (!is_null($value) && $value != false);
+
+					// set checkbox value in case checkbox field actually exists in model
+					$values[$field] = (bool) $value;
+
+					// set field name for timestamp field
+					if (count($typeArray) == 1)
+						$field .= "_at";
+					else
+						$field = $typeArray[1];
+
+					// set timestamp based on checkbox status and previous timestamp value
+					if ($value)
+					{
+						if (is_null($this->{$field}))
+							$value = date('Y-m-d H:i:s');
+						else
+							$unsetValue = true;
+					}
+					else
+					{
+						$value = null;
+					}
+
+					break;
 
 				case "slug":
-					$value = Format::slug($value); break;
+
+					$value = Format::slug($value);
+					break;
 
 				case "unique-slug":
-					$value = Format::uniqueSlug($value, $this->table, $field, $this->id); break;
-			}
 
-			// set a timestamp based on the checked status of a checkbox
-			if (in_array(substr($type, 0, 18), ['checkbox-timestamp', 'checkbox-date-time', 'checkbox-datetime']))
-			{
-				$value = (!is_null($value) && $value != false);
+					$value = Format::uniqueSlug($value, $this->table, $field, $this->id);
+					break;
 
-				$typeArray = explode(':', $type);
+				case "token":
 
-				// set checkbox value in case checkbox field actually exists in model
-				$values[$field] = (bool) $value;
-
-				// set field name for timestamp field
-				if (count($typeArray) == 1)
-					$field .= "_at";
-				else
-					$field = $typeArray[1];
-
-				// set timestamp based on checkbox status and previous timestamp value
-				if ($value)
-				{
-					if (is_null($this->{$field}))
-						$value = date('Y-m-d H:i:s');
+					if ($create)
+						$value = str_random(isset($typeArray[1]) ? $typeArray[1] : 32);
 					else
 						$unsetValue = true;
-				}
-				else
-				{
-					$value = null;
-				}
+
+					break;
 			}
 
 			if (!$unsetValue)

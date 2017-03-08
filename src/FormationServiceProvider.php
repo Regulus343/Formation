@@ -2,6 +2,8 @@
 
 use Illuminate\Support\ServiceProvider;
 
+use Route;
+
 class FormationServiceProvider extends ServiceProvider {
 
 	/**
@@ -9,7 +11,7 @@ class FormationServiceProvider extends ServiceProvider {
 	 *
 	 * @var bool
 	 */
-	protected $defer = true;
+	protected $defer = false;
 
 	/**
 	 * Bootstrap the application events.
@@ -19,13 +21,19 @@ class FormationServiceProvider extends ServiceProvider {
 	public function boot()
 	{
 		$this->publishes([
-			__DIR__.'/config/form.php' => config_path('form.php'),
-			__DIR__.'/assets'          => assets_path('regulus/formation'),
+			__DIR__.'/config/form.php'  => config_path('form.php'),
+			__DIR__.'/resources/assets' => assets_path('regulus/formation'),
+			__DIR__.'/resources/lang'   => resource_path('lang/vendor/formation'),
+			__DIR__.'/resources/views'  => resource_path('views/vendor/formation'),
 		]);
 
-		$this->loadTranslationsFrom(__DIR__.'/lang', 'formation');
+		$this->loadRoutesFrom(__DIR__.'/routes.php');
 
-		$this->loadViewsFrom(__DIR__.'/views', 'formation');
+		$this->loadTranslationsFrom(__DIR__.'/resources/lang', 'formation');
+
+		$this->loadViewsFrom(__DIR__.'/resources/views', 'formation');
+
+		//Route::get('formation', 'Regulus\Formation\Controllers\ExamplesController@index');
 	}
 
 	/**
