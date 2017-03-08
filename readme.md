@@ -638,6 +638,9 @@ You may add `protected static $formats` and `protected static $formatsForDb` arr
 - false-if-not-blank
 - true-if-not-blank
 - null-if-not-blank
+- false-if-set
+- true-if-set
+- null-if-set
 - json
 - json-or-null
 - trim

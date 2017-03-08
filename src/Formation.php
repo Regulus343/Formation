@@ -2580,7 +2580,7 @@ class Formation {
 				}
 				else
 				{
-					$value = ($associativeArray && !$explicitKeys) ? $name : 1;
+					$value = ($associativeArray && !is_null($namePrefix) && !$explicitKeys) ? $name : 1;
 				}
 
 				$nameToCheck = $name;

@@ -683,6 +683,7 @@ trait Extended {
 			if (isset($model->{$field}))
 			{
 				$value = $model->{$field};
+
 				$model->{$field} = static::formatValue($value, $type);
 			}
 		}
@@ -732,26 +733,26 @@ trait Extended {
 	 */
 	private static function formatValue($value, $type)
 	{
-		$formattedValue = null;
-
 		switch ($type)
 		{
 			case "date":
 
 				if ($value != "0000-00-00" && $value != "" && !is_null($value))
-					$formattedValue = date(Form::getDateFormat(), strtotime($value));
+					$value = date(Form::getDateFormat(), strtotime($value));
 
 				break;
 
 			case "date-time":
+			case "datetime":
+			case "timestamp":
 
 				if ($value != "0000-00-00 00:00:00" && $value != "" && !is_null($value))
-					$formattedValue = date(Form::getDateTimeFormat(), strtotime($value));
+					$value = date(Form::getDateTimeFormat(), strtotime($value));
 
 				break;
 		}
 
-		return $formattedValue;
+		return $value;
 	}
 
 	/**
@@ -1342,6 +1343,42 @@ trait Extended {
 
 				case "null-if-not-blank":
 					if ($valueTested != "")
+						$value = null;
+
+					break;
+
+				case "false-if-set":
+					if ($valueTested)
+						$value = false;
+
+					break;
+
+				case "true-if-set":
+					if ($valueTested)
+						$value = true;
+
+					break;
+
+				case "null-if-set":
+					if ($valueTested)
+						$value = null;
+
+					break;
+
+				case "false-if-not-set":
+					if (!$valueTested)
+						$value = false;
+
+					break;
+
+				case "true-if-not-set":
+					if (!$valueTested)
+						$value = true;
+
+					break;
+
+				case "null-if-not-set":
+					if (!$valueTested)
 						$value = null;
 
 					break;
