@@ -2533,6 +2533,7 @@ class Formation {
 			$containerAttributes = $this->addErrorClass('roles', $containerAttributes);
 			$html = '<div'.$this->attributes($containerAttributes).'>';
 
+			$explicitKeys = false;
 			if (!is_null($namePrefix))
 			{
 				$explicitKeys = substr($namePrefix, -1) == ".";
