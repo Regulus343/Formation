@@ -1205,10 +1205,16 @@ trait Extended {
 
 				case "slug":
 
+					if (isset($typeArray[1]) && isset($values[$typeArray[1]]))
+						$value = $values[$typeArray[1]];
+
 					$value = Format::slug($value);
 					break;
 
 				case "unique-slug":
+
+					if (isset($typeArray[1]) && isset($values[$typeArray[1]]))
+						$value = $values[$typeArray[1]];
 
 					$value = Format::uniqueSlug($value, $this->table, $field, $this->id);
 					break;
