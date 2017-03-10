@@ -658,6 +658,23 @@ The formatting from `$types`, `$formats`, and `$formatsForDb` will occur automat
 
 After you set up the formatting above, you can use `$record->formatSave()` and `Record::formatCreate()` to automatically format the data and save it. If you set up a `formatValuesForModel()` method in your model, you can add custom-formatting rules beyond what's available in the `$types`, `$formats`, and `$formatsForDb` arrays. Additionally, you can add extra logic post-save in a `executeSaveTriggers($create = false)` method (for saving related data in relationships or doing other things that require the record to exist first).
 
+**Validation:**
+
+You can always just use `Form::setValidationRules($rules, $input)`, but if you're using the base model or trait, you can do any of the following, after defining a `validationRules($record = null, $input = null, $action = null)` function in your model. It is recommended that you copy the empty one from the Extended trait to use as a starting point. The third parameter, `$action`, is unused by default, but exists to offer the ability to set different validation rules based on different data updating actions. If you set up the method in your model, you can set the validation rules using any of the following:
+
+```php
+// new record
+Form::setValidationRulesForNew($input);
+
+// existing record
+$record->setValidationRules($input);
+
+// new or existing record ($record can be null)
+Form::setValidationRulesForModel($record, $input);
+```
+
+> **Note:** You don't need to pass `$input` if you want to use all input values, it will default to `Input::all()`.
+
 **Array-Included Methods:**
 
 You may add a `protected static $arrayIncludedMethods` array to your model to specify methods that you would like to include in the model when it is run through `toArray()` or `toJson()`. This can be very useful when using a front-end JS framework such as Vue. Laravel's Eloquent model system already contains the `appends` array for this purpose, but this is a more versatile approach as it allows you to pass parameters and name the field whatever you like:

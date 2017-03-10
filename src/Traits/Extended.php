@@ -655,33 +655,66 @@ trait Extended {
 	/**
 	 * Get the validation rules used by the model.
 	 *
-	 * @param  mixed    $id
+	 * @param  mixed    $record
 	 * @param  mixed    $input
+	 * @param  mixed    $action
 	 * @return array
 	 */
-	public static function validationRules($id = null, $input = null)
+	public static function validationRules($record = null, $input = null, $action = null)
 	{
-		return [];
-	}
+		if (is_integer($record) || is_string($record))
+			$record = static::find($record);
 
-	/**
-	 * Set the validation rules for the model for a new record.
-	 *
-	 * @return void
-	 */
-	public static function setValidationRulesForNew()
-	{
-		Form::setValidationRules(static::validationRules());
+		if (is_null($input))
+			$input = Input::all();
+
+		return [];
 	}
 
 	/**
 	 * Set the validation rules for the model.
 	 *
+	 * @param  mixed    $record
+	 * @param  mixed    $input
+	 * @param  mixed    $action
 	 * @return void
 	 */
-	public function setValidationRules()
+	public static function setValidationRulesForModel($record = null, $input = null, $action = null)
 	{
-		Form::setValidationRules(static::validationRules((int) $this->id));
+		if ($record)
+			$record->setValidationRules($input, $action);
+		else
+			static::setValidationRulesForNew($input, $action);
+	}
+
+	/**
+	 * Set the validation rules for the model for a new record.
+	 *
+	 * @param  mixed    $input
+	 * @param  mixed    $action
+	 * @return void
+	 */
+	public static function setValidationRulesForNew($input = null, $action = null)
+	{
+		if (is_null($input))
+			$input = Input::all();
+
+		Form::setValidationRules(static::validationRules(null, $input, $action), $input);
+	}
+
+	/**
+	 * Set the validation rules for the model.
+	 *
+	 * @param  mixed    $input
+	 * @param  mixed    $action
+	 * @return void
+	 */
+	public function setValidationRules($input = null, $action = null)
+	{
+		if (is_null($input))
+			$input = Input::all();
+
+		Form::setValidationRules(static::validationRules($this, $input, $action), $input);
 	}
 
 	/**
