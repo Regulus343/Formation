@@ -616,6 +616,7 @@ You may add a `protected static $types` array to your model to allow data to be 
 - timestamp
 - date-not-null
 - date-time-not-null
+- datetime-not-null
 - timestamp-not-null
 - token (only set on record creation, default length is 32, but a custom length can be set like `token:16`)
 - slug
@@ -652,7 +653,7 @@ You may add `protected static $formats` and `protected static $formatsForDb` arr
 - uppercase
 - lowercase
 
-The formatting from `$types`, `$formats`, and `$formatsForDb` will occur automatically before saving into the database when using the `formatSave()` or `formatCreate()` methods. You may also run them by using the model or trait's own `setDefaults()` method. Alternately, you can use `getFormattedValues()` to get an array of formatted values.
+The formatting from `$types`, `$formats`, and `$formatsForDb` will occur automatically before saving into the database when using the `formatSave()` or `formatCreate()` methods. You may also run them by using the model or trait's own `setDefaults()` method. Alternately, you can use `getFormattedValues()` to get an array of formatted values. Many of the format options, such as `null-if-not-set` will allow you to pass a checked field in case the field to be checked is not the field that the formatting rule is being applied to. For example, if you have a field called `location_info`, you can set `null-if-not-set:location`, so if a `location` boolean is not set in the POST data, `location_info` will be changed to `null`.
 
 **Formatting & Saving Data:**
 
