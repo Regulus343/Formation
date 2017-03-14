@@ -20,8 +20,7 @@
 	},
 	"autoload": {
 		"files": [
-			"src/helpers.php",
-			"src/routes.php"
+			"src/helpers.php"
 		],
 		"psr-4": {
 			"Regulus\\Formation\\": "src/"
