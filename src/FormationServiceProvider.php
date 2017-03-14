@@ -32,8 +32,6 @@ class FormationServiceProvider extends ServiceProvider {
 		$this->loadTranslationsFrom(__DIR__.'/resources/lang', 'formation');
 
 		$this->loadViewsFrom(__DIR__.'/resources/views', 'formation');
-
-		//Route::get('formation', 'Regulus\Formation\Controllers\ExamplesController@index');
 	}
 
 	/**
