@@ -2,6 +2,9 @@
 
 class Facade extends \Illuminate\Support\Facades\Facade {
 
-	protected static function getFacadeAccessor() { return 'Regulus\Formation\Formation'; }
+	protected static function getFacadeAccessor()
+	{
+		return 'Regulus\Formation\Formation';
+	}
 
 }

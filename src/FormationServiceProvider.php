@@ -45,8 +45,6 @@ class FormationServiceProvider extends ServiceProvider {
 
 			return new Formation($app['url'], $session, csrf_token());
 		});
-
-		$this->app->register('Regulus\SolidSite\SolidSiteServiceProvider');
 	}
 
 	/**
