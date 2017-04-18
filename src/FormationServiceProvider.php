@@ -2,8 +2,6 @@
 
 use Illuminate\Support\ServiceProvider;
 
-use Route;
-
 class FormationServiceProvider extends ServiceProvider {
 
 	/**
@@ -43,7 +41,9 @@ class FormationServiceProvider extends ServiceProvider {
 	{
 		$this->app->singleton('Regulus\Formation\Formation', function($app)
 		{
-			return new Formation($app['url'], csrf_token());
+			$session = isset($app['session.store']) ? $app['session.store'] : null;
+
+			return new Formation($app['url'], $session, csrf_token());
 		});
 
 		$this->app->register('Regulus\SolidSite\SolidSiteServiceProvider');

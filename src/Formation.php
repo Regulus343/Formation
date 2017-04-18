@@ -5,11 +5,12 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.3.0
-		last updated on March 7, 2017
+		version 1.3.1
+		last updated on April 17, 2017
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
+
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
@@ -151,14 +152,15 @@ class Formation {
 	/**
 	 * Create a new Formation instance.
 	 *
-	 * @param  \Illuminate\Html\HtmlBuilder      $html
 	 * @param  \Illuminate\Routing\UrlGenerator  $url
+	 * @param  \Illuminate\Session\Store         $session
 	 * @param  string  $csrfToken
 	 * @return void
 	 */
-	public function __construct(UrlGenerator $url, $csrfToken)
+	public function __construct(UrlGenerator $url, $session, $csrfToken)
 	{
 		$this->url       = $url;
+		$this->session   = $session;
 		$this->csrfToken = $csrfToken;
 	}
 
@@ -169,8 +171,10 @@ class Formation {
 	 */
 	public function post()
 	{
-		if (Input::old())
-			return Input::old();
+		$oldInput = $this->old();
+
+		if (!empty($oldInput))
+			return $oldInput;
 
 		return Input::all();
 	}
@@ -472,24 +476,31 @@ class Formation {
 	 * @param  boolean  $defaults
 	 * @return mixed
 	 */
-	public function getValuesArray($name = null, $object = false, $defaults = false) {
+	public function getValuesArray($name = null, $object = false, $defaults = false)
+	{
 		$result = [];
 
-		if (!$defaults && (Input::all() || Input::old())) {
+		$oldInput = $this->old();
+
+		if (!$defaults && (Input::all() || !empty($oldInput)))
+		{
 			if (Input::all())
 				$values = Input::all();
 			else
-				$values = Input::old();
+				$values = $this->old();
 
 			$result = $values;
-		} else {
+		}
+		else
+		{
 			foreach ($this->defaults as $field => $value)
 			{
 				$s = explode('.', $field);
 
 				if (!is_null($value))
 				{
-					switch (count($s)) {
+					switch (count($s))
+					{
 						case 1:	$result[$s[0]] = $value; break;
 						case 2:	$result[$s[0]][$s[1]] = $value; break;
 						case 3:	$result[$s[0]][$s[1]][$s[2]] = $value; break;
@@ -884,11 +895,19 @@ class Formation {
 	/**
 	 * Open up a new HTML form.
 	 *
-	 * @param  array    $options
+	 * @param  mixed    $options
+	 * @param  array    $additionalOptions
 	 * @return string
 	 */
-	public function open(array $options = [])
+	public function open($options = [], $additionalOptions = [])
 	{
+		if (is_string($options))
+		{
+			$options = array_merge([
+				'url' => $options,
+			], $additionalOptions);
+		}
+
 		$method = array_get($options, 'method', 'post');
 
 		// We need to extract the proper method from the attributes. If the method is
@@ -1018,8 +1037,8 @@ class Formation {
 			if ($_POST || isset($_GET[$name]))
 				return Input::get($name);
 
-			if (Input::old($name))
-				return Input::old($name);
+			if ($this->old($name))
+				return $this->old($name);
 		}
 
 		return $this->getDefaultsArray($name);
@@ -1040,14 +1059,14 @@ class Formation {
 
 		if (isset($this->defaults[$name]))
 			$value = $this->defaults[$name];
-
+//dd($name, $this->old($name), $this->session);
 		if (!$this->reset)
 		{
 			if ($_POST || isset($_GET[$name]))
 				$value = Input::get($name);
 
-			if (Input::old($name))
-				$value = Input::old($name);
+			if ($this->old($name))
+				$value = $this->old($name);
 		}
 
 		if ($type == "checkbox")
@@ -1953,51 +1972,66 @@ class Formation {
 	 * </code>
 	 *
 	 * @param  string  $type
-	 * @param  string  $name
+	 * @param  mixed   $name
 	 * @param  array   $attributes
 	 * @return string
 	 */
 	public function input($type, $name, $attributes = [])
 	{
-		if (is_string($attributes) || is_null($attributes))
-			$attributes = ['value' => $attributes];
+		if (is_array($name)) // allow array to be passed to create multiple fields
+		{
+			$html = "";
 
-		if (!isset($attributes['value']))
-			$attributes['value'] = null;
+			$names = $name;
+			foreach ($names as $name)
+			{
+				$html .= $this->input($type, $name, $attributes);
+			}
 
-		// automatically set placeholder attribute if config option is set
-		if (!in_array($type, ['hidden', 'checkbox', 'radio']))
-			$attributes = $this->setFieldPlaceholder($name, $attributes);
+			return $html;
+		}
+		else
+		{
+			if (is_string($attributes) || is_null($attributes))
+				$attributes = ['value' => $attributes];
 
-		// add the field class if config option is set
-		$attributes = $this->setFieldClass($name, $attributes, $type);
+			if (!isset($attributes['value']))
+				$attributes['value'] = null;
 
-		// remove "placeholder" attribute if it is set to false
-		if (isset($attributes['placeholder']) && !$attributes['placeholder'])
-			unset($attributes['placeholder']);
+			// automatically set placeholder attribute if config option is set
+			if (!in_array($type, ['hidden', 'checkbox', 'radio']))
+				$attributes = $this->setFieldPlaceholder($name, $attributes);
 
-		$name       = (isset($attributes['name'])) ? $attributes['name'] : $name;
-		$attributes = $this->addErrorClass($name, $attributes);
+			// add the field class if config option is set
+			$attributes = $this->setFieldClass($name, $attributes, $type);
 
-		$attributes['id'] = $this->id($name, $attributes);
+			// remove "placeholder" attribute if it is set to false
+			if (isset($attributes['placeholder']) && !$attributes['placeholder'])
+				unset($attributes['placeholder']);
 
-		if ($name == $this->spoofer || $name == "_token")
-			unset($attributes['id']);
+			$name       = (isset($attributes['name'])) ? $attributes['name'] : $name;
+			$attributes = $this->addErrorClass($name, $attributes);
 
-		if (is_null($attributes['value']) && $type != "password")
-			$attributes['value'] = $this->value($name);
+			$attributes['id'] = $this->id($name, $attributes);
 
-		if (isset($attributes['value']))
-			$attributes['value'] = str_replace('"', '&quot;', $attributes['value']);
+			if ($name == $this->spoofer || $name == "_token")
+				unset($attributes['id']);
 
-		$name = $this->name($name);
+			if (is_null($attributes['value']) && $type != "password")
+				$attributes['value'] = $this->value($name);
 
-		if ($type != "hidden")
-			$attributes = $this->addAccessKey($name, null, $attributes);
+			if (isset($attributes['value']))
+				$attributes['value'] = str_replace('"', '&quot;', $attributes['value']);
 
-		$attributes = array_merge($attributes, compact('type', 'name'));
+			$name = $this->name($name);
 
-		return '<input'.$this->attributes($attributes).'>' . "\n";
+			if ($type != "hidden")
+				$attributes = $this->addAccessKey($name, null, $attributes);
+
+			$attributes = array_merge($attributes, compact('type', 'name'));
+
+			return '<input'.$this->attributes($attributes).'>' . "\n";
+		}
 	}
 
 	/**
@@ -4068,12 +4102,16 @@ class Formation {
 	 * @param  string  $name
 	 * @return string
 	 */
-	public function old($name)
+	public function old($name = null)
 	{
-		if (isset($this->session))
-			return $this->session->getOldInput($this->transformKey($name));
+		if (!is_null($this->session))
+		{
+			$name = !is_null($name) ? $this->transformKey($name) : null;
 
-		return "";
+			return $this->session->getOldInput($name);
+		}
+
+		return !is_null($name) ? "" : [];
 	}
 
 	/**
@@ -4083,7 +4121,7 @@ class Formation {
 	 */
 	public function oldInputIsEmpty()
 	{
-		return (isset($this->session) && count($this->session->getOldInput()) == 0);
+		return !is_null($this->session) && count($this->session->getOldInput()) == 0;
 	}
 
 	/**
@@ -4094,7 +4132,7 @@ class Formation {
 	 */
 	protected function transformKey($key)
 	{
-		return str_replace(array('.', '[]', '[', ']'), array('_', '', '.', ''), $key);
+		return str_replace(['.', '[]', '[', ']'], ['_', '', '.', ''], $key);
 	}
 
 	/**
