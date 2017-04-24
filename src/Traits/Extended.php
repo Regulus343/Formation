@@ -359,20 +359,26 @@ trait Extended {
 			if (count($hidden) && !in_array($key, $visible) && !in_array($keyFormatted, $visible))
 				$add = true;
 
-			foreach ($method['parameters'] as &$parameter)
-			{
-				if (is_string($parameter))
-				{
-					if (substr($parameter, 0, 7) == "cached:")
-						$parameter = $this->getCached(substr($parameter, 7));
-
-					if (substr($parameter, 0, 14) == "static-cached:")
-						$parameter = static::getStaticCached(substr($parameter, 14));
-				}
-			}
+			// if method could not be determined from string, do not add attribute
+			if (!is_array($method) || !isset($method['parameters']))
+				$add = false;
 
 			if ($add)
+			{
+				foreach ($method['parameters'] as &$parameter)
+				{
+					if (is_string($parameter))
+					{
+						if (substr($parameter, 0, 7) == "cached:")
+							$parameter = $this->getCached(substr($parameter, 7));
+
+						if (substr($parameter, 0, 14) == "static-cached:")
+							$parameter = static::getStaticCached(substr($parameter, 14));
+					}
+				}
+
 				$attributes[$keyFormatted] = call_user_func_array([$this, $method['name']], $method['parameters']);
+			}
 		}
 
 		// run through them one more time in case relationships and remove any attributes that are not allowed
