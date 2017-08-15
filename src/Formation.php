@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.3.3
-		last updated on April 24, 2017
+		version 1.3.4
+		last updated August 15, 2017
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -309,7 +309,7 @@ class Formation {
 								$number = $item->{$relationNumberField[0]}->{$relationNumberField[1]}->{$relationNumberField[2]};
 						}
 
-						$numberPrefix = !is_null($number) ? '.'.$prefix : '';
+						$numberPrefix = !is_null($number) ? '.'.$number : '';
 
 						if (method_exists($item, 'toArray'))
 							$item = $item->toArray(false);
