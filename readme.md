@@ -751,3 +751,11 @@ This will allow us to drastically reduce the amount of data returned so that we 
 		}
 	}
 ```
+
+You may also specify an attribute set in the `toArray()` method, or use `toLimitedArray()` which just uses `standard` as the first parameter to automatically select the standard attribute set:
+
+```php
+	return $post->toArray('standard');
+
+	return $post->toLimitedArray();
+```

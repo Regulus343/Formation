@@ -221,14 +221,27 @@ trait Extended {
 	/**
 	 * Convert the model instance to an array.
 	 *
+	 * @param  mixed   $attributeSet
 	 * @param  mixed   $camelizeArrayKeys
 	 * @return array
 	 */
-	public function toArray($camelizeArrayKeys = null)
+	public function toArray($attributeSet = null, $camelizeArrayKeys = null)
 	{
-		$attributes = $this->attributesToArray($camelizeArrayKeys);
+		$attributes = $this->attributesToArray($attributeSet, $camelizeArrayKeys);
 
-		return array_merge($attributes, $this->relationsToArray());
+		return array_merge($attributes, $this->relationsToArray($camelizeArrayKeys));
+	}
+
+	/**
+	 * Convert the model instance to an array.
+	 *
+	 * @param  mixed   $attributeSet
+	 * @param  mixed   $camelizeArrayKeys
+	 * @return array
+	 */
+	public function toLimitedArray($attributeSet = 'standard', $camelizeArrayKeys = null)
+	{
+		return $this->toArray($attributeSet, $camelizeArrayKeys);
 	}
 
 	/**
@@ -269,10 +282,11 @@ trait Extended {
 	/**
 	 * Convert the model's attributes to an array.
 	 *
+	 * @param  mixed   $attributeSet
 	 * @param  mixed   $camelizeArrayKeys
 	 * @return array
 	 */
-	public function attributesToArray($camelizeArrayKeys = null)
+	public function attributesToArray($attributeSet = null, $camelizeArrayKeys = null)
 	{
 		$attributes = $this->getArrayableAttributes($camelizeArrayKeys);
 
@@ -342,44 +356,7 @@ trait Extended {
 		}
 
 		// additionally, we will append the "array-included methods" which allows for more advanced specification
-		foreach ($this->getArrayIncludedMethods() as $key => $includedMethod)
-		{
-			$keyFormatted = static::formatArrayKey($key, $camelizeArrayKeys);
-
-			if (substr($includedMethod, -1) != ")")
-				$includedMethod .= "()";
-
-			$method = Format::getMethodFromString($includedMethod);
-
-			$add = !count($visible) && !count($hidden);
-
-			if (count($visible) && (in_array($key, $visible) || in_array($keyFormatted, $visible)))
-				$add = true;
-
-			if (count($hidden) && !in_array($key, $visible) && !in_array($keyFormatted, $visible))
-				$add = true;
-
-			// if method could not be determined from string, do not add attribute
-			if (!is_array($method) || !isset($method['parameters']))
-				$add = false;
-
-			if ($add)
-			{
-				foreach ($method['parameters'] as &$parameter)
-				{
-					if (is_string($parameter))
-					{
-						if (substr($parameter, 0, 7) == "cached:")
-							$parameter = $this->getCached(substr($parameter, 7));
-
-						if (substr($parameter, 0, 14) == "static-cached:")
-							$parameter = static::getStaticCached(substr($parameter, 14));
-					}
-				}
-
-				$attributes[$keyFormatted] = call_user_func_array([$this, $method['name']], $method['parameters']);
-			}
-		}
+		$attributes = $this->addArrayIncludedMethods($attributes, $camelizeArrayKeys);
 
 		// run through them one more time in case relationships and remove any attributes that are not allowed
 		foreach ($this->getRelations() as $key => $attribute)
@@ -396,6 +373,9 @@ trait Extended {
 				unset($attributes[$key]);
 		}
 
+		// prune the attributes that are not in the set
+		$attributes = static::pruneAttributesBySet($attributes, $attributeSet, $camelizeArrayKeys);
+
 		return $attributes;
 	}
 
@@ -411,6 +391,44 @@ trait Extended {
 	}
 
 	/**
+	 * Trim attributes that aren't part of the set.
+	 *
+	 * @param  array   $attributes
+	 * @param  mixed   $attributeSet
+	 * @param  mixed   $camelizeArrayKeys
+	 * @return array
+	 */
+	public static function pruneAttributesBySet($attributes, $attributeSet, $camelizeArrayKeys = null)
+	{
+		if ($camelizeArrayKeys === null)
+			$camelizeArrayKeys = config('form.camelize_array_keys');
+
+		if (!is_null($attributeSet))
+		{
+			$attributeSet = static::getAttributeSet($attributeSet, false, true);
+
+			if (!empty($attributeSet))
+			{
+				if ($camelizeArrayKeys)
+				{
+					foreach ($attributeSet as &$attributeInSet)
+					{
+						$attributeInSet = camel_case($attributeInSet);
+					}
+				}
+
+				foreach (array_keys($attributes) as $attribute)
+				{
+					if (!in_array($attribute, $attributeSet))
+						unset($attributes[$attribute]);
+				}
+			}
+		}
+
+		return $attributes;
+	}
+
+	/**
 	 * Get the model's relationships in array form.
 	 *
 	 * @param  mixed   $camelizeArrayKeys
@@ -418,6 +436,9 @@ trait Extended {
 	 */
 	public function relationsToArray($camelizeArrayKeys = null)
 	{
+		if ($camelizeArrayKeys === null)
+			$camelizeArrayKeys = config('form.camelize_array_keys');
+
 		$attributes = [];
 
 		$relatedDataRequested = [];
@@ -483,27 +504,24 @@ trait Extended {
 					}
 				}
 
-				$relation = $value->toArray($camelizeArrayKeys);
+				$relation = $value->toArray(null, $camelizeArrayKeys);
 			}
 
 			// If the value is null, we'll still go ahead and set it in this list of
 			// attributes since null is used to represent empty relationships if
 			// if it a has one or belongs to type relationships on the models.
-			elseif (is_null($value)) {
+			elseif (is_null($value))
+			{
 				$relation = $value;
 			}
 
-			// If the relationships snake-casing is enabled, we will snake case this
-			// key so that the relation attribute is snake cased in this returned
-			// array to the developers, making this consistent with attributes.
-			if (static::$snakeAttributes) {
-				$key = Str::snake($key);
-			}
+			$key = static::formatArrayKey($key, $camelizeArrayKeys);
 
 			// If the relation value has been set, we will set it on this attributes
 			// list for returning. If it was not arrayable or null, we'll not set
 			// the value on the array because it is some type of invalid value.
-			if (isset($relation) || is_null($value)) {
+			if (isset($relation) || is_null($value))
+			{
 				$attributes[$key] = $relation;
 			}
 
@@ -522,6 +540,57 @@ trait Extended {
 	protected function getArrayableRelations($camelizeArrayKeys = null)
 	{
 		return $this->getArrayableItems($this->relations, $camelizeArrayKeys);
+	}
+
+	/**
+	 * Add the array-included methods to an attributes array.
+	 *
+	 * @param  array   $attributes
+	 * @param  mixed   $camelizeArrayKeys
+	 * @return array
+	 */
+	public function addArrayIncludedMethods($attributes = [], $camelizeArrayKeys = null)
+	{
+		if ($camelizeArrayKeys === null)
+			$camelizeArrayKeys = config('form.camelize_array_keys');
+
+		$visible = $this->getVisible();
+		$hidden  = $this->getHidden();
+
+		foreach ($this->getArrayIncludedMethods() as $key => $includedMethod)
+		{
+			$keyFormatted = static::formatArrayKey($key, $camelizeArrayKeys);
+
+			if (substr($includedMethod, -1) != ")")
+				$includedMethod .= "()";
+
+			$method = Format::getMethodFromString($includedMethod);
+
+			$add = !count($visible) && !count($hidden);
+
+			if (count($visible) && (in_array($key, $visible) || in_array($keyFormatted, $visible)))
+				$add = true;
+
+			if (count($hidden) && !in_array($key, $visible) && !in_array($keyFormatted, $visible))
+				$add = true;
+
+			foreach ($method['parameters'] as &$parameter)
+			{
+				if (is_string($parameter))
+				{
+					if (substr($parameter, 0, 7) == "cached:")
+						$parameter = $this->getCached(substr($parameter, 7));
+
+					if (substr($parameter, 0, 14) == "static-cached:")
+						$parameter = static::getStaticCached(substr($parameter, 14));
+				}
+			}
+
+			if ($add)
+				$attributes[$keyFormatted] = call_user_func_array([$this, $method['name']], $method['parameters']);
+		}
+
+		return $attributes;
 	}
 
 	/**
@@ -750,7 +819,7 @@ trait Extended {
 			$fieldTested = isset($format[1]) ? $format[1] : $field;
 			$valueTested = $model->{$fieldTested} ? isset($model->{$field}) : null;
 
-			$model->{$field} = $model->formatValueForSpecialFormats($field, $model->toArray(false), $formats);
+			$model->{$field} = $model->formatValueForSpecialFormats($field, $model->toArray(null, false), $formats);
 		}
 
 		foreach ($relations as $relation)
@@ -941,7 +1010,7 @@ trait Extended {
 							$found = true;
 
 							// remove formatted fields from item to prevent errors in saving data
-							foreach ($item->toArray(false) as $field => $value)
+							foreach ($item->toArray(null, false) as $field => $value)
 							{
 								if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
 									unset($item->{$field});
@@ -1828,6 +1897,8 @@ trait Extended {
 
 		if ($camelizeArrayKeys)
 			$key = camel_case($key);
+		else
+			$key = snake_case($key);
 
 		return $key;
 	}
@@ -1837,9 +1908,10 @@ trait Extended {
 	 *
 	 * @param  string   $key
 	 * @param  boolean  $related
+	 * @param  boolean  $removePrefixes
 	 * @return array
 	 */
-	public static function getAttributeSet($key = 'standard', $related = false)
+	public static function getAttributeSet($key = 'standard', $related = false, $removePrefixes = false)
 	{
 		if ($related)
 			$attributeSet = isset(static::$relatedAttributeSets[$key]) ? static::$relatedAttributeSets[$key] : [];
@@ -1894,6 +1966,14 @@ trait Extended {
 							$attributeSet[$attribute] = $model->getAttributeSet($set);
 					}
 				}
+			}
+		}
+
+		if ($removePrefixes)
+		{
+			foreach ($attributeSet as &$attribute)
+			{
+				$attribute = str_replace('select:', '', $attribute);
 			}
 		}
 

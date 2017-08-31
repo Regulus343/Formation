@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.3.4
-		last updated August 15, 2017
+		version 1.3.5
+		last updated August 30, 2017
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -978,9 +978,19 @@ class Formation {
 	 * @param  array  $options
 	 * @return string
 	 */
-	public function model($model, array $options = array())
+	public function model($model, array $options = [])
 	{
 		$this->model = $model;
+
+		$relations = [];
+		if (isset($options['relations']))
+		{
+			$relations = $options['relations'];
+
+			unset($options['relations']);
+		}
+
+		$this->setDefaults($model, $relations);
 
 		return $this->open($options);
 	}
@@ -1003,7 +1013,7 @@ class Formation {
 	 */
 	public function close()
 	{
-		$this->labels = array();
+		$this->labels = [];
 
 		$this->model = null;
 
@@ -1017,6 +1027,8 @@ class Formation {
 	 */
 	public function token()
 	{
+		$token = !empty($this->csrfToken) ? $this->csrfToken : $this->session->token();
+
 		return $this->hidden('_token', ['value' => $this->csrfToken]);
 	}
 
@@ -1059,7 +1071,7 @@ class Formation {
 
 		if (isset($this->defaults[$name]))
 			$value = $this->defaults[$name];
-//dd($name, $this->old($name), $this->session);
+
 		if (!$this->reset)
 		{
 			if ($_POST || isset($_GET[$name]))
