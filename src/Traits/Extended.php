@@ -229,7 +229,11 @@ trait Extended {
 	{
 		$attributes = $this->attributesToArray($attributeSet, $camelizeArrayKeys);
 
-		return array_merge($attributes, $this->relationsToArray($camelizeArrayKeys));
+		$attributes = array_merge($attributes, $this->relationsToArray($camelizeArrayKeys));
+
+		$attributes = static::pruneAttributesBySet($attributes, $attributeSet, $camelizeArrayKeys);
+
+		return $attributes;
 	}
 
 	/**
