@@ -1,6 +1,7 @@
 <?php namespace Regulus\Formation\Traits;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
@@ -635,6 +636,26 @@ trait Extended {
 	public function getArrayIncludedMethods()
 	{
 		return static::$arrayIncludedMethods;
+	}
+
+	/**
+	 * Create an array from a collection with attribute set limiting and the option to camelize array keys.
+	 *
+	 * @param  Collection  $collection
+	 * @param  mixed       $attributeSet
+	 * @param  mixed       $camelizeArrayKeys
+	 * @return array
+	 */
+	public static function collectionToArray(Collection $collection, $attributeSet = null, $camelizeArrayKeys = null)
+	{
+		$array = [];
+
+		foreach ($collection as $record)
+		{
+			$array[] = $record->toArray($attributeSet, $camelizeArrayKeys);
+		}
+
+		return $array;
 	}
 
 	/**
