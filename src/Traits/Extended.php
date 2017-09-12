@@ -360,8 +360,10 @@ trait Extended {
 			$attributes[$key] = $this->mutateAttributeForArray($key, null);
 		}
 
+		$attributeSet = static::getAttributeSet($attributeSet, false, true);
+
 		// additionally, we will append the "array-included methods" which allows for more advanced specification
-		$attributes = $this->addArrayIncludedMethods($attributes, $camelizeArrayKeys);
+		$attributes = $this->addArrayIncludedMethods($attributes, $attributeSet, $camelizeArrayKeys);
 
 		// run through them one more time in case relationships and remove any attributes that are not allowed
 		foreach ($this->getRelations() as $key => $attribute)
@@ -410,7 +412,8 @@ trait Extended {
 
 		if (!is_null($attributeSet))
 		{
-			$attributeSet = static::getAttributeSet($attributeSet, false, true);
+			if (!is_array($attributeSet))
+				$attributeSet = static::getAttributeSet($attributeSet, false, true);
 
 			if (!empty($attributeSet))
 			{
@@ -551,48 +554,55 @@ trait Extended {
 	 * Add the array-included methods to an attributes array.
 	 *
 	 * @param  array   $attributes
+	 * @param  mixed   $attributeSet
 	 * @param  mixed   $camelizeArrayKeys
 	 * @return array
 	 */
-	public function addArrayIncludedMethods($attributes = [], $camelizeArrayKeys = null)
+	public function addArrayIncludedMethods($attributes = [], $attributeSet = null, $camelizeArrayKeys = null)
 	{
 		if ($camelizeArrayKeys === null)
 			$camelizeArrayKeys = config('form.camelize_array_keys');
+
+		if (!is_null($attributeSet) && !is_array($attributeSet))
+			$attributeSet = static::getAttributeSet($attributeSet, false, true);
 
 		$visible = $this->getVisible();
 		$hidden  = $this->getHidden();
 
 		foreach ($this->getArrayIncludedMethods() as $key => $includedMethod)
 		{
-			$keyFormatted = static::formatArrayKey($key, $camelizeArrayKeys);
-
-			if (substr($includedMethod, -1) != ")")
-				$includedMethod .= "()";
-
-			$method = Format::getMethodFromString($includedMethod);
-
-			$add = !count($visible) && !count($hidden);
-
-			if (count($visible) && (in_array($key, $visible) || in_array($keyFormatted, $visible)))
-				$add = true;
-
-			if (count($hidden) && !in_array($key, $visible) && !in_array($keyFormatted, $visible))
-				$add = true;
-
-			foreach ($method['parameters'] as &$parameter)
+			if (is_null($attributeSet) || (is_array($attributeSet) && in_array($key, $attributeSet)))
 			{
-				if (is_string($parameter))
+				$keyFormatted = static::formatArrayKey($key, $camelizeArrayKeys);
+
+				if (substr($includedMethod, -1) != ")")
+					$includedMethod .= "()";
+
+				$method = Format::getMethodFromString($includedMethod);
+
+				$add = !count($visible) && !count($hidden);
+
+				if (count($visible) && (in_array($key, $visible) || in_array($keyFormatted, $visible)))
+					$add = true;
+
+				if (count($hidden) && !in_array($key, $visible) && !in_array($keyFormatted, $visible))
+					$add = true;
+
+				foreach ($method['parameters'] as &$parameter)
 				{
-					if (substr($parameter, 0, 7) == "cached:")
-						$parameter = $this->getCached(substr($parameter, 7));
+					if (is_string($parameter))
+					{
+						if (substr($parameter, 0, 7) == "cached:")
+							$parameter = $this->getCached(substr($parameter, 7));
 
-					if (substr($parameter, 0, 14) == "static-cached:")
-						$parameter = static::getStaticCached(substr($parameter, 14));
+						if (substr($parameter, 0, 14) == "static-cached:")
+							$parameter = static::getStaticCached(substr($parameter, 14));
+					}
 				}
-			}
 
-			if ($add)
-				$attributes[$keyFormatted] = call_user_func_array([$this, $method['name']], $method['parameters']);
+				if ($add)
+					$attributes[$keyFormatted] = call_user_func_array([$this, $method['name']], $method['parameters']);
+			}
 		}
 
 		return $attributes;
@@ -656,6 +666,19 @@ trait Extended {
 		}
 
 		return $array;
+	}
+
+	/**
+	 * Create a limited array from a collection with attribute set limiting and the option to camelize array keys.
+	 *
+	 * @param  Collection  $collection
+	 * @param  mixed       $attributeSet
+	 * @param  mixed       $camelizeArrayKeys
+	 * @return array
+	 */
+	public static function collectionToLimitedArray(Collection $collection, $attributeSet = 'standard', $camelizeArrayKeys = null)
+	{
+		return static::collectionToArray($collection, $attributeSet, $camelizeArrayKeys);
 	}
 
 	/**
