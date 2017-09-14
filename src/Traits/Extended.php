@@ -512,7 +512,9 @@ trait Extended {
 					}
 				}
 
-				$relation = $value->toArray($relatedDataRequestedForKey, $camelizeArrayKeys);
+				$attributeSet = isset($relatedDataRequestedForKey) ? $relatedDataRequestedForKey : null;
+
+				$relation = $value->toArray($attributeSet, $camelizeArrayKeys);
 			}
 
 			// If the value is null, we'll still go ahead and set it in this list of
