@@ -512,7 +512,7 @@ trait Extended {
 					}
 				}
 
-				$relation = $value->toArray(null, $camelizeArrayKeys);
+				$relation = $value->toArray($relatedDataRequestedForKey, $camelizeArrayKeys);
 			}
 
 			// If the value is null, we'll still go ahead and set it in this list of
@@ -1961,6 +1961,9 @@ trait Extended {
 	 */
 	public static function getAttributeSet($key = 'standard', $related = false, $removePrefixes = false)
 	{
+		if (is_array($key)) // attribute set is already an array; return it
+			return $key;
+
 		if ($related)
 			$attributeSet = isset(static::$relatedAttributeSets[$key]) ? static::$relatedAttributeSets[$key] : [];
 		else
