@@ -729,16 +729,6 @@ trait Extended {
 
 			foreach ($relatedData as $relation => $fields)
 			{
-				// remove "select" prefixes that tell toArray() that field is only selected in query, not kept in returned array
-				if (is_array($fields))
-				{
-					foreach ($fields as &$field)
-					{
-						if (strtolower(substr($field, 0, 7)) == "select:")
-							$field = substr($field, 7);
-					}
-				}
-
 				$with[$relation] = function($relationQuery) use ($fields)
 				{
 					if (is_array($fields))
@@ -750,13 +740,19 @@ trait Extended {
 						if (method_exists($model, 'getArrayIncludedMethods'))
 							$arrayIncludedMethods = array_keys($relationQuery->getModel()->getArrayIncludedMethods());
 
-						foreach ($fields as $f => $field)
+						$fieldsFormatted = $fields;
+
+						foreach ($fieldsFormatted as $f => &$field)
 						{
+							// remove "select" prefixes that tell toArray() that field is only selected in query, not kept in returned array
+							if (strtolower(substr($field, 0, 7)) == "select:")
+								$field = substr($field, 7);
+
 							if (in_array($field, $arrayIncludedMethods) || method_exists($model, $field))
-								unset($fields[$f]);
+								unset($fieldsFormatted[$f]);
 						}
 
-						$relationQuery->select($fields);
+						$relationQuery->select($fieldsFormatted);
 					}
 				};
 			}
@@ -1959,18 +1955,39 @@ trait Extended {
 	 * @param  string   $key
 	 * @param  boolean  $related
 	 * @param  boolean  $removeSelectPrefixes
-	 * @param  boolean  $addTablePrefixes
+	 * @param  boolean  $selectable
 	 * @return array
 	 */
-	public static function getAttributeSet($key = 'standard', $related = false, $removeSelectPrefixes = false, $addTablePrefixes = false)
+	public static function getAttributeSet($key = 'standard', $related = false, $removeSelectPrefixes = false, $selectable = false)
 	{
 		if (is_array($key)) // attribute set is already an array; return it
 			return $key;
+
+		$keySwitched = false;
+
+		if ($selectable && $key == "standard")
+		{
+			$key = "select";
+
+			$keySwitched = true;
+		}
 
 		if ($related)
 			$attributeSet = isset(static::$relatedAttributeSets[$key]) ? static::$relatedAttributeSets[$key] : [];
 		else
 			$attributeSet = isset(static::$attributeSets[$key]) ? static::$attributeSets[$key] : [];
+
+		if ($keySwitched && empty($attributeSet))
+		{
+			$key = "standard";
+
+			$keySwitched = true;
+
+			if ($related)
+				$attributeSet = isset(static::$relatedAttributeSets[$key]) ? static::$relatedAttributeSets[$key] : [];
+			else
+				$attributeSet = isset(static::$attributeSets[$key]) ? static::$attributeSets[$key] : [];
+		}
 
 		$model = new static;
 
@@ -1982,25 +1999,27 @@ trait Extended {
 				{
 					$attributeSegments = explode('.', $attribute);
 
-					foreach ($attributeSegments as $attributeSegment)
-					{
-						if (method_exists($model, $attributeSegment))
-						{
-							$relationship = $model->{$attributeSegment}();
+					$modelUsed = $model;
 
-							if (is_callable([$relationship, 'getModel']))
+					foreach ($attributeSegments as $s => $attributeSegment)
+					{
+						if (method_exists($modelUsed, $attributeSegment))
+						{
+							$relationship = $modelUsed->{$attributeSegment}();
+
+							if ($related && is_callable([$relationship, 'getModel']))
 							{
 								$class = get_class($relationship->getModel());
 
-								$model = new $class;
+								$modelUsed = new $class;
 							}
 						}
 					}
 
 					$set = substr($attributes, 4);
 
-					if (method_exists($model, 'getAttributeSet'))
-						$attributeSet[$attribute] = $model->getAttributeSet($set);
+					if (is_object($modelUsed) && method_exists($modelUsed, 'getAttributeSet'))
+						$attributeSet[$attribute] = $modelUsed->getAttributeSet($set);
 				}
 				else
 				{
@@ -2023,17 +2042,36 @@ trait Extended {
 			}
 		}
 
-		if ($removeSelectPrefixes || $addTablePrefixes)
+		if ($removeSelectPrefixes || $selectable)
 		{
 			$prefix = !is_null($model->table) ? $model->table.'.' : '';
 
-			foreach ($attributeSet as &$attribute)
-			{
-				$attribute = str_replace('select:', '', $attribute);
+			$arrayIncludedMethods = array_keys(static::$arrayIncludedMethods);
+			$relationships        = isset(static::$relatedAttributeSets[$key]) ? array_keys(static::$relatedAttributeSets[$key]) : [];
 
-				if ($addTablePrefixes)
-					$attribute = $prefix.$attribute;
+			$removed = false;
+
+			foreach ($attributeSet as $a => $attribute)
+			{
+				$attributeSet[$a] = str_replace('select:', '', $attribute);
+
+				if ($selectable)
+				{
+					if (in_array($attribute, $arrayIncludedMethods) || in_array($attribute, $relationships))
+					{
+						unset($attributeSet[$a]);
+
+						$removed = true;
+					}
+					else
+					{
+						$attributeSet[$a] = $prefix.$attribute;
+					}
+				}
 			}
+
+			if ($removed) // re-key array if any items were removed
+				$attributeSet = array_values($attributeSet);
 		}
 
 		return $attributeSet;
