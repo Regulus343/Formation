@@ -728,14 +728,14 @@ In our user model, we have the following array-included method and attribute set
 Now, we may query our `Post` model with its `author` relationship and return it as JSON data:
 
 ```php
-	$post = Post::select(Post::getAttributeSet('standard'))
+	$post = Post::select(Post::getSelectableAttributeSet('standard'))
 		->limitRelatedData('standard')
 		->first();
 
 	return $post->toJson();
 ```
 
-> **Note:** Our example above doesn't really require the `standard` parameters as they are the assumed defaults for each of their respective functions.
+> **Note:** Our example above doesn't really require the `standard` parameters as they are the assumed defaults for each of their respective functions. Also, `getSelectableAttributeSet()` makes use of `getAttributeSet()`, but it also adds a table prefix if possible (in case you are using JOINs with ambiguous column names) and removes `select:` prefixes that are used to denote fields that are to be selected but not returned in an array (for cases where underlying columns are used for array-included methods).
 
 This will allow us to drastically reduce the amount of data returned so that we may obtain just the data we need and nothing more:
 

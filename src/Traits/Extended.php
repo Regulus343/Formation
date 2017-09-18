@@ -1958,10 +1958,11 @@ trait Extended {
 	 *
 	 * @param  string   $key
 	 * @param  boolean  $related
-	 * @param  boolean  $removePrefixes
+	 * @param  boolean  $removeSelectPrefixes
+	 * @param  boolean  $addTablePrefixes
 	 * @return array
 	 */
-	public static function getAttributeSet($key = 'standard', $related = false, $removePrefixes = false)
+	public static function getAttributeSet($key = 'standard', $related = false, $removeSelectPrefixes = false, $addTablePrefixes = false)
 	{
 		if (is_array($key)) // attribute set is already an array; return it
 			return $key;
@@ -1971,12 +1972,12 @@ trait Extended {
 		else
 			$attributeSet = isset(static::$attributeSets[$key]) ? static::$attributeSets[$key] : [];
 
+		$model = new static;
+
 		foreach ($attributeSet as $attribute => $attributes)
 		{
 			if (is_string($attribute) && is_string($attributes))
 			{
-				$model = new static;
-
 				if (strtolower(substr($attributes, 0, 4)) == "set:")
 				{
 					$attributeSegments = explode('.', $attribute);
@@ -2022,15 +2023,32 @@ trait Extended {
 			}
 		}
 
-		if ($removePrefixes)
+		if ($removeSelectPrefixes || $addTablePrefixes)
 		{
+			$prefix = !is_null($model->table) ? $model->table.'.' : '';
+
 			foreach ($attributeSet as &$attribute)
 			{
 				$attribute = str_replace('select:', '', $attribute);
+
+				if ($addTablePrefixes)
+					$attribute = $prefix.$attribute;
 			}
 		}
 
 		return $attributeSet;
+	}
+
+	/**
+	 * Get a selectable attribute set for the model.
+	 *
+	 * @param  string   $key
+	 * @param  boolean  $related
+	 * @return array
+	 */
+	public static function getSelectableAttributeSet($key = 'standard', $related = false)
+	{
+		return static::getAttributeSet($key, $related, true, true);
 	}
 
 }

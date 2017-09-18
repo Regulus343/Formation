@@ -5,7 +5,7 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.3.9
+		version 1.3.10
 		last updated September 14, 2017
 ----------------------------------------------------------------------------------------------------------*/
 
