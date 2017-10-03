@@ -335,18 +335,20 @@ trait Extended {
 		// will not perform the cast on those attributes to avoid any confusion.
 		foreach ($this->getCasts() as $key => $value)
 		{
-			$key = static::formatArrayKey($key, $camelizeArrayKeys);
+			$keyFormatted = static::formatArrayKey($key, $camelizeArrayKeys);
 
-			if (!array_key_exists($key, $attributes) || in_array($key, $mutatedAttributes))
+			if ((!array_key_exists($key, $attributes) && !array_key_exists($keyFormatted, $attributes)) || in_array($key, $mutatedAttributes))
 				continue;
 
-			$attributes[$key] = $this->castAttribute(
-				$key, $attributes[$key]
+			$attribute = array_key_exists($key, $attributes) ? $attributes[$key] : $attributes[$keyFormatted];
+
+			$attributes[$keyFormatted] = $this->castAttribute(
+				$key, $attribute
 			);
 
-			if ($attributes[$key] && ($value === 'date' || $value === 'datetime'))
+			if ($attributes[$keyFormatted] && ($value === 'date' || $value === 'datetime'))
 			{
-				$attributes[$key] = $this->serializeDate($attributes[$key]);
+				$attributes[$keyFormatted] = $this->serializeDate($attribute);
 			}
 		}
 
