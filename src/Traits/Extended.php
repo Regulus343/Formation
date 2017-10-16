@@ -463,6 +463,8 @@ trait Extended {
 			// collections to their proper array form and we'll set the values.
 			if ($value instanceof Arrayable || (is_object($value) && method_exists($value, 'toArray')))
 			{
+				$collection = get_class($value) == "Illuminate\Database\Eloquent\Collection";
+
 				// if "related data requested" is set, adjust visible and hidden arrays for related items
 				if (is_callable([$value, 'setVisible']) && !is_null($relatedDataRequested))
 				{
@@ -498,7 +500,7 @@ trait Extended {
 
 					if (!empty($visibleAttributes) && is_array($visibleAttributes) && !in_array('*', $visibleAttributes))
 					{
-						if (get_class($value) == "Illuminate\Database\Eloquent\Collection")
+						if ($collection)
 						{
 							foreach ($value as $item)
 							{
@@ -516,7 +518,14 @@ trait Extended {
 
 				$attributeSet = isset($relatedDataRequestedForKey) ? $relatedDataRequestedForKey : null;
 
-				$relation = $value->toArray($attributeSet, $camelizeArrayKeys);
+				if ($collection)
+				{
+					$relation = static::collectionToArray($value, $attributeSet, $camelizeArrayKeys);
+				}
+				else
+				{
+					$relation = $value->toArray($attributeSet, $camelizeArrayKeys);
+				}
 			}
 
 			// If the value is null, we'll still go ahead and set it in this list of
