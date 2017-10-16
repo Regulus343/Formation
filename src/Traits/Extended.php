@@ -750,7 +750,7 @@ trait Extended {
 							if (strtolower(substr($field, 0, 7)) == "select:")
 								$field = substr($field, 7);
 
-							if (in_array($field, $arrayIncludedMethods) || method_exists($model, $field))
+							if (in_array($field, $arrayIncludedMethods) || method_exists($model, $field) || method_exists($model, camel_case($field)))
 								unset($fieldsFormatted[$f]);
 						}
 
