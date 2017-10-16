@@ -415,7 +415,7 @@ trait Extended {
 		if (!is_null($attributeSet))
 		{
 			if (!is_array($attributeSet))
-				$attributeSet = static::getAttributeSet($attributeSet, false, true);
+				$attributeSet = static::getAttributeSet($attributeSet);
 
 			if (!empty($attributeSet))
 			{
