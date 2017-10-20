@@ -254,14 +254,32 @@ trait Extended {
 	 *
 	 * @param  array   $values
 	 * @param  mixed   $camelizeArrayKeys
+	 * @param  array   $relations
 	 * @return array
 	 */
-	protected function getArrayableItems(array $values, $camelizeArrayKeys = null)
+	protected function getArrayableItems(array $values, $camelizeArrayKeys = null, $relations = false)
 	{
-		if (count($this->getVisible()) > 0)
-			$values = array_intersect_key($values, array_flip($this->getVisible()));
+		$visibleAttributes = $this->getVisible();
 
-		if (count($this->getHidden()) > 0)
+		if (count($visibleAttributes))
+		{
+			if ($relations)
+			{
+				foreach ($values as $key => $value)
+				{
+					if (!in_array(snake_case($key), $visibleAttributes))
+					{
+						unset($values[$key]);
+					}
+				}
+			}
+			else
+			{
+				$values = array_intersect_key($values, array_flip($visibleAttributes));
+			}
+		}
+
+		if (count($this->getHidden()))
 			$values = array_diff_key($values, array_flip($this->getHidden()));
 
 		$formattedValues = [];
@@ -427,10 +445,12 @@ trait Extended {
 					}
 				}
 
-				foreach (array_keys($attributes) as $attribute)
+				foreach ($attributes as $attribute => $value)
 				{
 					if (!in_array($attribute, $attributeSet))
+					{
 						unset($attributes[$attribute]);
+					}
 				}
 			}
 		}
@@ -560,7 +580,7 @@ trait Extended {
 	 */
 	protected function getArrayableRelations($camelizeArrayKeys = null)
 	{
-		return $this->getArrayableItems($this->relations, $camelizeArrayKeys);
+		return $this->getArrayableItems($this->relations, $camelizeArrayKeys, true);
 	}
 
 	/**
