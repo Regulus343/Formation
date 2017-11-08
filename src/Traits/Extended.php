@@ -767,6 +767,8 @@ trait Extended {
 						// remove array-included methods and relationships from select statement
 						$model = $relationQuery->getModel();
 
+						$prefix = !is_null($model->getTable()) ? $model->getTable().'.' : '';
+
 						$arrayIncludedMethods = [];
 						if (method_exists($model, 'getArrayIncludedMethods'))
 							$arrayIncludedMethods = array_keys($relationQuery->getModel()->getArrayIncludedMethods());
@@ -780,7 +782,13 @@ trait Extended {
 								$field = substr($field, 7);
 
 							if (in_array($field, $arrayIncludedMethods) || method_exists($model, $field) || method_exists($model, camel_case($field)))
+							{
 								unset($fieldsFormatted[$f]);
+							}
+							else // add table name prefix to prevent ambiguous selects made possible due to inner joins for many-to-many relationships
+							{
+								$field = $prefix.'.'.$field;
+							}
 						}
 
 						$relationQuery->select($fieldsFormatted);
@@ -2075,7 +2083,7 @@ trait Extended {
 
 		if ($removeSelectPrefixes || $selectable)
 		{
-			$prefix = !is_null($model->table) ? $model->table.'.' : '';
+			$prefix = !is_null($model->getTable()) ? $model->getTable().'.' : '';
 
 			$arrayIncludedMethods = array_keys(static::$arrayIncludedMethods);
 			$relationships        = isset(static::$relatedAttributeSets[$key]) ? array_keys(static::$relatedAttributeSets[$key]) : [];
