@@ -2020,8 +2020,6 @@ trait Extended {
 		{
 			$key = "standard";
 
-			$keySwitched = true;
-
 			if ($related)
 				$attributeSet = isset(static::$relatedAttributeSets[$key]) ? static::$relatedAttributeSets[$key] : [];
 			else
@@ -2092,20 +2090,17 @@ trait Extended {
 
 			foreach ($attributeSet as $a => $attribute)
 			{
-				$attributeSet[$a] = str_replace('select:', '', $attribute);
+				$attribute = str_replace('select:', '', $attribute);
 
-				if ($selectable)
+				if ($selectable && (in_array($attribute, $arrayIncludedMethods) || in_array($attribute, $relationships)))
 				{
-					if (in_array($attribute, $arrayIncludedMethods) || in_array($attribute, $relationships))
-					{
-						unset($attributeSet[$a]);
+					unset($attributeSet[$a]);
 
-						$removed = true;
-					}
-					else
-					{
-						$attributeSet[$a] = $prefix.$attribute;
-					}
+					$removed = true;
+				}
+				else
+				{
+					$attributeSet[$a] = $prefix.$attribute;
 				}
 			}
 
