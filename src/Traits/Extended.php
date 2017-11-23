@@ -2081,7 +2081,7 @@ trait Extended {
 
 		if ($removeSelectPrefixes || $selectable)
 		{
-			$prefix = !is_null($model->getTable()) ? $model->getTable().'.' : '';
+			$prefix = $selectable && !is_null($model->getTable()) ? $model->getTable().'.' : '';
 
 			$arrayIncludedMethods = array_keys(static::$arrayIncludedMethods);
 			$relationships        = isset(static::$relatedAttributeSets[$key]) ? array_keys(static::$relatedAttributeSets[$key]) : [];
