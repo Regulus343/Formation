@@ -385,7 +385,7 @@ trait Extended {
 		// additionally, we will append the "array-included methods" which allows for more advanced specification
 		$attributes = $this->addArrayIncludedMethods($attributes, $attributeSet, $camelizeArrayKeys);
 
-		// run through them one more time in case relationships and remove any attributes that are not allowed
+		// run through relationships one more time and remove any attributes that are not allowed
 		foreach ($this->getRelations() as $key => $attribute)
 		{
 			$remove = false;
@@ -476,97 +476,102 @@ trait Extended {
 		if (isset(static::$relatedDataRequested[get_class($this)]))
 			$relatedDataRequested = static::$relatedDataRequested[get_class($this)];
 
+		$arrayIncludedMethodAttributes = array_keys(static::$arrayIncludedMethods);
+
 		foreach ($this->getArrayableRelations($camelizeArrayKeys) as $key => $value)
 		{
-			// If the values implements the Arrayable interface we can just call this
-			// toArray method on the instances which will convert both models and
-			// collections to their proper array form and we'll set the values.
-			if ($value instanceof Arrayable || (is_object($value) && method_exists($value, 'toArray')))
+			if (!in_array(snake_case($key), $arrayIncludedMethodAttributes)) // ensure relationship is not being overridden by array-included methods
 			{
-				$collection = get_class($value) == "Illuminate\Database\Eloquent\Collection";
-
-				// if "related data requested" is set, adjust visible and hidden arrays for related items
-				if (is_callable([$value, 'setVisible']) && !is_null($relatedDataRequested))
+				// If the values implements the Arrayable interface we can just call this
+				// toArray method on the instances which will convert both models and
+				// collections to their proper array form and we'll set the values.
+				if ($value instanceof Arrayable || (is_object($value) && method_exists($value, 'toArray')))
 				{
-					$visibleAttributes = [];
+					$collection = get_class($value) == "Illuminate\Database\Eloquent\Collection";
 
-					if (method_exists($value, 'scopeLimitRelatedData'))
-						$value->limitRelatedData();
-
-					if (isset($relatedDataRequested[$key]))
+					// if "related data requested" is set, adjust visible and hidden arrays for related items
+					if (is_callable([$value, 'setVisible']) && !is_null($relatedDataRequested))
 					{
-						$relatedDataRequestedForKey = [];
-						foreach ($relatedDataRequested[$key] as $field)
-						{
-							if (strtolower(substr($field, 0, 7)) != "select:")
-								$relatedDataRequestedForKey[] = $field;
-						}
+						$visibleAttributes = [];
 
-						$visibleAttributes = $relatedDataRequestedForKey;
-					}
-					else
-					{
-						foreach ($relatedDataRequested as $field)
+						if (method_exists($value, 'scopeLimitRelatedData'))
+							$value->limitRelatedData();
+
+						if (isset($relatedDataRequested[$key]))
 						{
-							if (is_string($field) && strtolower(substr($field, 0, 7)) != "select:")
+							$relatedDataRequestedForKey = [];
+							foreach ($relatedDataRequested[$key] as $field)
 							{
-								$fieldArray = explode('.', $field);
-
-								if ($fieldArray[0] == $key && count($fieldArray) > 1)
-									$visibleAttributes[] = str_replace($key.'.', '', $field);
+								if (strtolower(substr($field, 0, 7)) != "select:")
+									$relatedDataRequestedForKey[] = $field;
 							}
-						}
-					}
 
-					if (!empty($visibleAttributes) && is_array($visibleAttributes) && !in_array('*', $visibleAttributes))
-					{
-						if ($collection)
-						{
-							foreach ($value as $item)
-							{
-								$item->setVisible($visibleAttributes);
-								$item->setHidden([]);
-							}
+							$visibleAttributes = $relatedDataRequestedForKey;
 						}
 						else
 						{
-							$value->setVisible($visibleAttributes);
-							$value->setHidden([]);
+							foreach ($relatedDataRequested as $field)
+							{
+								if (is_string($field) && strtolower(substr($field, 0, 7)) != "select:")
+								{
+									$fieldArray = explode('.', $field);
+
+									if ($fieldArray[0] == $key && count($fieldArray) > 1)
+										$visibleAttributes[] = str_replace($key.'.', '', $field);
+								}
+							}
 						}
+
+						if (!empty($visibleAttributes) && is_array($visibleAttributes) && !in_array('*', $visibleAttributes))
+						{
+							if ($collection)
+							{
+								foreach ($value as $item)
+								{
+									$item->setVisible($visibleAttributes);
+									$item->setHidden([]);
+								}
+							}
+							else
+							{
+								$value->setVisible($visibleAttributes);
+								$value->setHidden([]);
+							}
+						}
+					}
+
+					$attributeSet = isset($relatedDataRequestedForKey) ? $relatedDataRequestedForKey : null;
+
+					if ($collection)
+					{
+						$relation = static::collectionToArray($value, $attributeSet, $camelizeArrayKeys);
+					}
+					else
+					{
+						$relation = $value->toArray($attributeSet, $camelizeArrayKeys);
 					}
 				}
 
-				$attributeSet = isset($relatedDataRequestedForKey) ? $relatedDataRequestedForKey : null;
-
-				if ($collection)
+				// If the value is null, we'll still go ahead and set it in this list of
+				// attributes since null is used to represent empty relationships if
+				// if it a has one or belongs to type relationships on the models.
+				elseif (is_null($value))
 				{
-					$relation = static::collectionToArray($value, $attributeSet, $camelizeArrayKeys);
+					$relation = $value;
 				}
-				else
+
+				$key = static::formatArrayKey($key, $camelizeArrayKeys);
+
+				// If the relation value has been set, we will set it on this attributes
+				// list for returning. If it was not arrayable or null, we'll not set
+				// the value on the array because it is some type of invalid value.
+				if (isset($relation) || is_null($value))
 				{
-					$relation = $value->toArray($attributeSet, $camelizeArrayKeys);
+					$attributes[$key] = $relation;
 				}
+
+				unset($relation);
 			}
-
-			// If the value is null, we'll still go ahead and set it in this list of
-			// attributes since null is used to represent empty relationships if
-			// if it a has one or belongs to type relationships on the models.
-			elseif (is_null($value))
-			{
-				$relation = $value;
-			}
-
-			$key = static::formatArrayKey($key, $camelizeArrayKeys);
-
-			// If the relation value has been set, we will set it on this attributes
-			// list for returning. If it was not arrayable or null, we'll not set
-			// the value on the array because it is some type of invalid value.
-			if (isset($relation) || is_null($value))
-			{
-				$attributes[$key] = $relation;
-			}
-
-			unset($relation);
 		}
 
 		return $attributes;
