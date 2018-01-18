@@ -5,8 +5,8 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.3.17
-		last updated November 24, 2017
+		version 1.3.18
+		last updated January 17, 2018
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -3606,9 +3606,10 @@ class Formation {
 
 				if (count($nameArray) < 2)
 				{
-					if ($_POST && $fieldName == "root" && $messages->first($name) != "")
+					if ($fieldName == "root" && $messages->first($name) != "")
 					{
 						$this->errors[$name] = str_replace(str_replace('_', ' ', $name), $nameFormatted, $messages->first($name));
+
 						$errorMessage = $this->errors[$name];
 					}
 				}
