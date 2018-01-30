@@ -441,6 +441,11 @@ trait Extended {
 				{
 					foreach ($attributeSet as &$attributeInSet)
 					{
+						if (substr($attributeInSet, 0, 10) == "attribute:")
+						{
+							$attributeInSet = substr($attributeInSet, 10);
+						}
+
 						$attributeInSet = camel_case($attributeInSet);
 					}
 				}
@@ -499,14 +504,26 @@ trait Extended {
 
 						if (isset($relatedDataRequested[$key]))
 						{
-							$relatedDataRequestedForKey = [];
+							$relatedDataRequestedForKey          = [];
+							$relatedDataRequestedForKeyFormatted = [];
+
 							foreach ($relatedDataRequested[$key] as $field)
 							{
 								if (strtolower(substr($field, 0, 7)) != "select:")
-									$relatedDataRequestedForKey[] = $field;
+								{
+									$fieldFormatted = $field;
+
+									if (strtolower(substr($fieldFormatted, 0, 10)) == "attribute:")
+									{
+										$fieldFormatted = substr($fieldFormatted, 10);
+									}
+
+									$relatedDataRequestedForKey[]          = $field;
+									$relatedDataRequestedForKeyFormatted[] = $fieldFormatted;
+								}
 							}
 
-							$visibleAttributes = $relatedDataRequestedForKey;
+							$visibleAttributes = $relatedDataRequestedForKeyFormatted;
 						}
 						else
 						{
@@ -514,10 +531,17 @@ trait Extended {
 							{
 								if (is_string($field) && strtolower(substr($field, 0, 7)) != "select:")
 								{
-									$fieldArray = explode('.', $field);
+									$fieldFormatted = $field;
+
+									if (strtolower(substr($fieldFormatted, 0, 10)) == "attribute:")
+									{
+										$fieldFormatted = substr($fieldFormatted, 10);
+									}
+
+									$fieldArray = explode('.', $fieldFormatted);
 
 									if ($fieldArray[0] == $key && count($fieldArray) > 1)
-										$visibleAttributes[] = str_replace($key.'.', '', $field);
+										$visibleAttributes[] = str_replace($key.'.', '', $fieldFormatted);
 								}
 							}
 						}
@@ -746,6 +770,16 @@ trait Extended {
 	}
 
 	/**
+	 * Get the field prefixes.
+	 *
+	 * @return array
+	 */
+	public static function getFieldPrefixes()
+	{
+		return ['select', 'attribute'];
+	}
+
+	/**
 	 * Get the JSON-included methods for the model.
 	 *
 	 * @param  mixed    $relatedData
@@ -763,9 +797,11 @@ trait Extended {
 		{
 			$with = [];
 
+			$fieldPrefixes = static::getFieldPrefixes();
+
 			foreach ($relatedData as $relation => $fields)
 			{
-				$with[$relation] = function($relationQuery) use ($fields)
+				$with[$relation] = function($relationQuery) use ($relation, $fields, $fieldPrefixes)
 				{
 					if (is_array($fields))
 					{
@@ -776,23 +812,37 @@ trait Extended {
 
 						$arrayIncludedMethods = [];
 						if (method_exists($model, 'getArrayIncludedMethods'))
+						{
 							$arrayIncludedMethods = array_keys($relationQuery->getModel()->getArrayIncludedMethods());
+						}
 
 						$fieldsFormatted = $fields;
 
 						foreach ($fieldsFormatted as $f => &$field)
 						{
-							// remove "select" prefixes that tell toArray() that field is only selected in query, not kept in returned array
-							if (strtolower(substr($field, 0, 7)) == "select:")
-								$field = substr($field, 7);
+							$attributePreferred = false;
 
-							if (in_array($field, $arrayIncludedMethods) || method_exists($model, $field) || method_exists($model, camel_case($field)))
+							// remove field prefixes
+							foreach ($fieldPrefixes as $fieldPrefix)
+							{
+								$length = (strlen($fieldPrefix) + 1);
+
+								if (strtolower(substr($field, 0, $length)) == $fieldPrefix . ":")
+								{
+									$field = substr($field, $length);
+
+									$attributePreferred = true;
+								}
+							}
+
+							// remove array included methods from select clause
+							if (!$attributePreferred && (in_array($field, $arrayIncludedMethods) || method_exists($model, $field) || method_exists($model, camel_case($field))))
 							{
 								unset($fieldsFormatted[$f]);
 							}
 							else // add table name prefix to prevent ambiguous selects made possible due to inner joins for many-to-many relationships
 							{
-								$field = $prefix.'.'.$field;
+								$field = $prefix.$field;
 							}
 						}
 

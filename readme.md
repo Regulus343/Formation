@@ -735,7 +735,7 @@ Now, we may query our `Post` model with its `author` relationship and return it 
 	return $post->toJson();
 ```
 
-> **Note:** Our example above doesn't really require the `standard` parameters as they are the assumed defaults for each of their respective functions. `getSelectableAttributeSet()` makes use of `getAttributeSet()`, but it also uses the `select` attribute set key by default (and falls back to `standard` if `select` is not available) and adds a table prefix if possible (in case you are using JOINs with ambiguous column names) and removes `select:` prefixes that are used to denote fields that are to be selected but not returned in an array (for cases where underlying columns are used for array-included methods).
+> **Note:** Our example above doesn't really require the `standard` parameters as they are the assumed defaults for each of their respective functions. `getSelectableAttributeSet()` makes use of `getAttributeSet()`, but it also uses the `select` attribute set key by default (and falls back to `standard` if `select` is not available) and adds a table prefix if possible (in case you are using JOINs with ambiguous column names) and removes `select:` prefixes that are used to denote fields that are to be selected but not returned in an array (for cases where underlying columns are used for array-included methods). Also, if you have an attribute with the same name as a dynamic attribute that uses an array-included method, you can add a `attribute:` prefix to it in your attribute set to cause `toArray()` to use the native attribute rather than the dynamic one.
 
 This will allow us to drastically reduce the amount of data returned so that we may obtain just the data we need and nothing more:
 
