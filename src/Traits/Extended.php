@@ -718,8 +718,11 @@ trait Extended {
 	 * @param  mixed       $camelizeArrayKeys
 	 * @return array
 	 */
-	public static function collectionToArray(Collection $collection, $attributeSet = null, $camelizeArrayKeys = null)
+	public static function collectionToArray($collection, $attributeSet = null, $camelizeArrayKeys = null)
 	{
+		if ($camelizeArrayKeys === null)
+			$camelizeArrayKeys = config('form.camelize_array_keys');
+
 		$array = [];
 
 		foreach ($collection as $record)
@@ -727,7 +730,25 @@ trait Extended {
 			$array[] = $record->toArray($attributeSet, $camelizeArrayKeys);
 		}
 
-		return $array;
+		if (get_class($collection) == "Illuminate\Pagination\LengthAwarePaginator")
+		{
+			$collection = $collection->toArray();
+
+			if ($camelizeArrayKeys)
+			{
+				$collection['data'] = [];
+
+				$collection = Format::camelizeKeys($collection);
+			}
+
+			$collection['data'] = $array;
+
+			return $collection;
+		}
+		else
+		{
+			return $array;
+		}
 	}
 
 	/**
@@ -738,7 +759,7 @@ trait Extended {
 	 * @param  mixed       $camelizeArrayKeys
 	 * @return array
 	 */
-	public static function collectionToLimitedArray(Collection $collection, $attributeSet = 'standard', $camelizeArrayKeys = null)
+	public static function collectionToLimitedArray($collection, $attributeSet = 'standard', $camelizeArrayKeys = null)
 	{
 		return static::collectionToArray($collection, $attributeSet, $camelizeArrayKeys);
 	}
