@@ -5,9 +5,9 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.3.20
+		version 1.4.0
 
-		last updated January 31, 2018
+		last updated February 10, 2018
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;

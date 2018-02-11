@@ -87,6 +87,21 @@ trait Extended {
 	];
 
 	/**
+	 * The cached attribute sets for the model.
+	 *
+	 * @var    array
+	 */
+	protected static $cachedAttributeSets = [];
+
+
+	/**
+	 * The cached attribute sets for related models.
+	 *
+	 * @var    array
+	 */
+	protected static $cachedRelatedAttributeSets = [];
+
+	/**
 	 * The related data requested for related models' arrays / JSON objects.
 	 *
 	 * @var    mixed
@@ -228,11 +243,17 @@ trait Extended {
 	 */
 	public function toArray($attributeSet = null, $camelizeArrayKeys = null)
 	{
+		if ($camelizeArrayKeys === null)
+			$camelizeArrayKeys = config('form.camelize_array_keys');
+
 		$attributes = $this->attributesToArray($attributeSet, $camelizeArrayKeys);
 
 		$attributes = array_merge($attributes, $this->relationsToArray($camelizeArrayKeys));
 
-		$attributes = static::pruneAttributesBySet($attributes, $attributeSet, $camelizeArrayKeys);
+		if ($camelizeArrayKeys && isset($attributes['pivot']))
+		{
+			$attributes['pivot'] = Format::camelizeKeys($attributes['pivot']);
+		}
 
 		return $attributes;
 	}
@@ -380,7 +401,7 @@ trait Extended {
 			$attributes[$key] = $this->mutateAttributeForArray($key, null);
 		}
 
-		$attributeSet = static::getAttributeSet($attributeSet, false, true);
+		$attributeSet = static::getAttributeSet($attributeSet);
 
 		// additionally, we will append the "array-included methods" which allows for more advanced specification
 		$attributes = $this->addArrayIncludedMethods($attributes, $attributeSet, $camelizeArrayKeys);
@@ -401,7 +422,7 @@ trait Extended {
 		}
 
 		// prune the attributes that are not in the set
-		$attributes = static::pruneAttributesBySet($attributes, $attributeSet, $camelizeArrayKeys);
+		$attributes = static::pruneAttributesBySet($attributes, $attributeSet);
 
 		return $attributes;
 	}
@@ -425,34 +446,17 @@ trait Extended {
 	 * @param  mixed   $camelizeArrayKeys
 	 * @return array
 	 */
-	public static function pruneAttributesBySet($attributes, $attributeSet, $camelizeArrayKeys = null)
+	public static function pruneAttributesBySet($attributes, $attributeSet)
 	{
-		if ($camelizeArrayKeys === null)
-			$camelizeArrayKeys = config('form.camelize_array_keys');
-
 		if (!is_null($attributeSet))
 		{
-			if (!is_array($attributeSet))
-				$attributeSet = static::getAttributeSet($attributeSet);
+			$attributeSet = array_keys(static::getAttributeSet($attributeSet));
 
 			if (!empty($attributeSet))
 			{
-				if ($camelizeArrayKeys)
-				{
-					foreach ($attributeSet as &$attributeInSet)
-					{
-						if (substr($attributeInSet, 0, 10) == "attribute:")
-						{
-							$attributeInSet = substr($attributeInSet, 10);
-						}
-
-						$attributeInSet = camel_case($attributeInSet);
-					}
-				}
-
 				foreach ($attributes as $attribute => $value)
 				{
-					if (!in_array($attribute, $attributeSet))
+					if (!in_array(snake_case($attribute), $attributeSet))
 					{
 						unset($attributes[$attribute]);
 					}
@@ -485,7 +489,8 @@ trait Extended {
 
 		foreach ($this->getArrayableRelations($camelizeArrayKeys) as $key => $value)
 		{
-			if (!in_array(snake_case($key), $arrayIncludedMethodAttributes)) // ensure relationship is not being overridden by array-included methods
+			// ensure relationship is not being overridden by array-included methods
+			if (!in_array(snake_case($key), $arrayIncludedMethodAttributes))
 			{
 				// If the values implements the Arrayable interface we can just call this
 				// toArray method on the instances which will convert both models and
@@ -500,52 +505,37 @@ trait Extended {
 						$visibleAttributes = [];
 
 						if (method_exists($value, 'scopeLimitRelatedData'))
+						{
 							$value->limitRelatedData();
+						}
 
+						// get array of visible attributes
 						if (isset($relatedDataRequested[$key]))
 						{
-							$relatedDataRequestedForKey          = [];
-							$relatedDataRequestedForKeyFormatted = [];
+							$relatedDataRequestedForKey = [];
 
-							foreach ($relatedDataRequested[$key] as $field)
+							foreach ($relatedDataRequested[$key] as $attribute => $attributeConfig)
 							{
-								if (strtolower(substr($field, 0, 7)) != "select:")
+								if (!$attributeConfig->selectOnly)
 								{
-									$fieldFormatted = $field;
-
-									if (strtolower(substr($fieldFormatted, 0, 10)) == "attribute:")
-									{
-										$fieldFormatted = substr($fieldFormatted, 10);
-									}
-
-									$relatedDataRequestedForKey[]          = $field;
-									$relatedDataRequestedForKeyFormatted[] = $fieldFormatted;
+									$relatedDataRequestedForKey[$attribute] = $attributeConfig;
 								}
 							}
 
-							$visibleAttributes = $relatedDataRequestedForKeyFormatted;
+							$visibleAttributes = array_keys($relatedDataRequestedForKey);
 						}
 						else
 						{
-							foreach ($relatedDataRequested as $field)
+							foreach ($relatedDataRequested as $attribute => $attributeConfig)
 							{
-								if (is_string($field) && strtolower(substr($field, 0, 7)) != "select:")
+								if (!$attributeConfig->selectOnly)
 								{
-									$fieldFormatted = $field;
-
-									if (strtolower(substr($fieldFormatted, 0, 10)) == "attribute:")
-									{
-										$fieldFormatted = substr($fieldFormatted, 10);
-									}
-
-									$fieldArray = explode('.', $fieldFormatted);
-
-									if ($fieldArray[0] == $key && count($fieldArray) > 1)
-										$visibleAttributes[] = str_replace($key.'.', '', $fieldFormatted);
+									$visibleAttributes[] = $attribute;
 								}
 							}
 						}
 
+						// set visible and hidden arrays
 						if (!empty($visibleAttributes) && is_array($visibleAttributes) && !in_array('*', $visibleAttributes))
 						{
 							if ($collection)
@@ -625,15 +615,14 @@ trait Extended {
 		if ($camelizeArrayKeys === null)
 			$camelizeArrayKeys = config('form.camelize_array_keys');
 
-		if (!is_null($attributeSet) && !is_array($attributeSet))
-			$attributeSet = static::getAttributeSet($attributeSet, false, true);
+		$attributeSet = static::getAttributeSet($attributeSet);
 
 		$visible = $this->getVisible();
 		$hidden  = $this->getHidden();
 
 		foreach ($this->getArrayIncludedMethods() as $key => $includedMethod)
 		{
-			if (is_null($attributeSet) || (is_array($attributeSet) && in_array($key, $attributeSet)))
+			if (is_null($attributeSet) || (is_array($attributeSet) && isset($attributeSet[$key]) && !$attributeSet[$key]->ignoreMethod))
 			{
 				$keyFormatted = static::formatArrayKey($key, $camelizeArrayKeys);
 
@@ -663,7 +652,9 @@ trait Extended {
 				}
 
 				if ($add)
+				{
 					$attributes[$keyFormatted] = call_user_func_array([$this, $method['name']], $method['parameters']);
+				}
 			}
 		}
 
@@ -791,16 +782,6 @@ trait Extended {
 	}
 
 	/**
-	 * Get the field prefixes.
-	 *
-	 * @return array
-	 */
-	public static function getFieldPrefixes()
-	{
-		return ['select', 'attribute'];
-	}
-
-	/**
 	 * Get the JSON-included methods for the model.
 	 *
 	 * @param  mixed    $relatedData
@@ -814,66 +795,45 @@ trait Extended {
 
 		static::$relatedDataRequested[get_class($this)] = $relatedData;
 
-		if ($limitSelect)
+		$with = [];
+
+		foreach ($relatedData as $relation => $attributes)
 		{
-			$with = [];
-
-			$fieldPrefixes = static::getFieldPrefixes();
-
-			foreach ($relatedData as $relation => $fields)
+			if ($limitSelect)
 			{
-				$with[$relation] = function($relationQuery) use ($relation, $fields, $fieldPrefixes)
+				$with[$relation] = function($relationQuery) use ($relation, $attributes)
 				{
-					if (is_array($fields))
+					if (is_array($attributes))
 					{
 						// remove array-included methods and relationships from select statement
-						$model = $relationQuery->getModel();
-
+						$model  = $relationQuery->getModel();
 						$prefix = !is_null($model->getTable()) ? $model->getTable().'.' : '';
 
-						$arrayIncludedMethods = [];
-						if (method_exists($model, 'getArrayIncludedMethods'))
+						$relations = $model::getRelationsFromAttributeSets();
+
+						$formattedAttributes = [];
+
+						foreach ($attributes as $attribute => $attributeConfig)
 						{
-							$arrayIncludedMethods = array_keys($relationQuery->getModel()->getArrayIncludedMethods());
-						}
+							$isRelation = in_array($attribute, $relations) || in_array(camel_case($attribute), $relations);
 
-						$fieldsFormatted = $fields;
-
-						foreach ($fieldsFormatted as $f => &$field)
-						{
-							$attributePreferred = false;
-
-							// remove field prefixes
-							foreach ($fieldPrefixes as $fieldPrefix)
+							if (!$isRelation && (!$attributeConfig->hasMethod || in_array($attribute, $this->fillable)))
 							{
-								$length = (strlen($fieldPrefix) + 1);
-
-								if (strtolower(substr($field, 0, $length)) == $fieldPrefix . ":")
-								{
-									$field = substr($field, $length);
-
-									$attributePreferred = true;
-								}
-							}
-
-							// remove array included methods from select clause
-							if (!$attributePreferred && (in_array($field, $arrayIncludedMethods) || method_exists($model, $field) || method_exists($model, camel_case($field))))
-							{
-								unset($fieldsFormatted[$f]);
-							}
-							else // add table name prefix to prevent ambiguous selects made possible due to inner joins for many-to-many relationships
-							{
-								$field = $prefix.$field;
+								$formattedAttributes[] = $prefix.$attribute;
 							}
 						}
 
-						$relationQuery->select($fieldsFormatted);
+						$relationQuery->select($formattedAttributes);
 					}
 				};
 			}
-
-			$query->with($with);
+			else
+			{
+				$with[] = $relation;
+			}
 		}
+
+		$query->with($with);
 
 		return $query;
 	}
@@ -1092,7 +1052,7 @@ trait Extended {
 	 * @param  boolean  $saveRelational
 	 * @return void
 	 */
-	public function formatSave($input = null, $create = null, $saveRelational = false)
+	public function formatSave($input = null, $create = null)
 	{
 		if (is_null($input))
 			$input = Input::all();
@@ -1104,262 +1064,10 @@ trait Extended {
 		// format data for special types and special formats
 		$input = $this->formatValuesForDb($input, $create);
 
-		$this->fill($input)->save();
-
-		if ($saveRelational)
-		{
-			foreach ($input as $field => $value)
-			{
-				if (is_array($value))
-				{
-					$fieldCamelCase = camel_case($field);
-
-					if (isset($this->{$fieldCamelCase}) || $this->{$fieldCamelCase})
-						$this->saveRelationalData($value, $fieldCamelCase);
-				}
-			}
-		}
+		$this->update($input);
 
 		// execute save triggers for custom post-save logic in your model
 		$this->executeSaveTriggers($create);
-	}
-
-	/**
-	 * Save the input data to the model including the relational data if it is present.
-	 *
-	 * @param  mixed    $input
-	 * @param  mixed    $create
-	 * @return void
-	 */
-	public function formatSaveWithRelational($input = null, $create = null)
-	{
-		return $this->formatSave($input, $create, true);
-	}
-
-	/**
-	 * Save the relational input data to the model.
-	 *
-	 * @param  mixed    $input
-	 * @param  string   $modelMethod
-	 * @return void
-	 */
-	public function saveRelationalData($input, $modelMethod)
-	{
-		$idsSaved        = [];
-		$items           = $this->{$modelMethod};
-		$model           = get_class($this->{$modelMethod}()->getModel());
-		$formattedSuffix = Form::getFormattedFieldSuffix();
-		$pivotTimestamps = config('form.pivot_timestamps');
-
-		// create or update related items
-		foreach ($input as $index => $itemData)
-		{
-			if ($index != "pivot")
-			{
-				if (isset($itemData['id']) && $itemData['id'] > 0 && $itemData['id'] != "")
-					$create = false;
-				else
-					$create = true;
-
-				$found = false;
-				if (!$create)
-				{
-					foreach ($items as $item)
-					{
-						if ((int) $itemData['id'] == (int) $item->id)
-						{
-							$found = true;
-
-							// remove formatted fields from item to prevent errors in saving data
-							foreach ($item->toArray(null, false) as $field => $value)
-							{
-								if (substr($field, -(strlen($formattedSuffix))) == $formattedSuffix)
-									unset($item->{$field});
-							}
-
-							// format data for special types and special formats
-							$itemData = $item->formatValuesForTypes($itemData);
-							$itemData = $item->formatValuesForSpecialFormats($itemData);
-
-							// save data
-							$item->fill($itemData)->save();
-
-							$currentItem = $item;
-
-							if (!in_array((int) $item->id, $idsSaved))
-								$idsSaved[] = (int) $item->id;
-						}
-					}
-				}
-
-				// if model was not found, it may still exist in the database but not have a current relationship with item
-				if (!$found && !$create)
-				{
-					$item = $model::find($itemData['id']);
-
-					if ($item)
-					{
-						// format data for special types
-						$itemData = $item->formatValuesForTypes($itemData);
-
-						// save data
-						$item->fill($itemData)->save();
-
-						$currentItem = $item;
-
-						if (!in_array((int) $item->id, $idsSaved))
-							$idsSaved[] = (int) $item->id;
-					}
-					else
-					{
-						$create = true;
-					}
-				}
-
-				if ($create)
-				{
-					$item = new $model;
-
-					// attempt to add foreign key ID in case relationship doesn't require a pivot table
-					$itemData[$this->getForeignKey()] = $this->id;
-
-					// format data for special types
-					$itemData = $item->formatValuesForTypes($itemData);
-
-					$item->fill($itemData)->save();
-
-					$currentItem = $item;
-
-					if (!in_array((int) $item->id, $idsSaved))
-						$idsSaved[] = (int) $item->id;
-				}
-
-				// save pivot data
-				if (isset($itemData['pivot']))
-				{
-					$pivotTable = $this->{$modelMethod}()->getTable();
-					$pivotKeys  = [
-						$this->getForeignKey() => $this->id,
-						$item->getForeignKey() => $currentItem->id,
-					];
-
-					$pivotData = array_merge($itemData['pivot'], $pivotKeys);
-
-					// set updated timestamp
-					if ($pivotTimestamps)
-					{
-						$timestamp = date('Y-m-d H:i:s');
-						$pivotData['updated_at'] = $timestamp;
-					}
-
-					// attempt to select pivot record by both keys
-					$pivotItem = DB::table($pivotTable);
-					foreach ($pivotKeys as $key => $id)
-					{
-						$pivotItem->where($key, $id);
-					}
-
-					// if id exists, add it to where clause and unset it
-					if (isset($pivotData['id']) && (int) $pivotData['id'])
-					{
-						$pivotItem->where('id', $pivotData['id']);
-						unset($pivotData['id']);
-					}
-
-					// attempt to update and if it doesn't work, insert a new record
-					if (!$pivotItem->update($pivotData))
-					{
-						if ($pivotTimestamps)
-							$pivotData['created_at'] = $timestamp;
-
-						DB::table($pivotTable)->insert($pivotData);
-					}
-				}
-			} else {
-				// data is entirely pivot data; save pivot data
-
-				$item = new $model; //create dummy item to get foreign key
-
-				$pivotTable    = $this->{$modelMethod}()->getTable();
-				$pivotIdsSaved = [];
-
-				foreach ($itemData as $pivotId)
-				{
-					$pivotKeys  = [
-						$this->getForeignKey() => $this->id,
-						$item->getForeignKey() => $pivotId,
-					];
-
-					$pivotData = $pivotKeys;
-
-					// set updated timestamp
-					if ($pivotTimestamps)
-					{
-						$timestamp = date('Y-m-d H:i:s');
-						$pivotData['updated_at'] = $timestamp;
-					}
-
-					// attempt to select pivot record by both keys
-					$pivotItem = DB::table($pivotTable);
-					foreach ($pivotKeys as $key => $id)
-					{
-						$pivotItem->where($key, $id);
-					}
-
-					// if id exists, add it to where clause and unset it
-					if (isset($pivotData['id']) && (int) $pivotData['id'])
-					{
-						$pivotItem->where('id', $pivotData['id']);
-						unset($pivotData['id']);
-					}
-
-					// attempt to update and if it doesn't work, insert a new record
-					if (!$pivotItem->update($pivotData))
-					{
-						if ($pivotTimestamps)
-							$pivotData['created_at'] = $timestamp;
-
-						DB::table($pivotTable)->insert($pivotData);
-					}
-
-					if (!in_array((int) $pivotId, $pivotIdsSaved))
-						$pivotIdsSaved[] = (int) $pivotId;
-				}
-
-				if (empty($pivotIdsSaved))
-					DB::table($pivotTable)
-						->where($this->getForeignKey(), $this->id)
-						->delete();
-				else
-					DB::table($pivotTable)
-						->where($this->getForeignKey(), $this->id)
-						->whereNotIn($item->getForeignKey(), $pivotIdsSaved)
-						->delete();
-			}
-		}
-
-		// remove any items no longer present in input data
-		if ($index != "pivot")
-		{
-			foreach ($items as $item)
-			{
-				if (!in_array((int) $item->id, $idsSaved))
-				{
-					// check for pivot data and delete pivot item instead of item if it exists
-					if (isset($itemData['pivot']))
-					{
-						DB::table($pivotTable)
-							->where($this->getForeignKey(), $this->id)
-							->where($item->getForeignKey(), $item->id)
-							->delete();
-					}
-					else
-					{
-						$item->delete();
-					}
-				}
-			}
-		}
 	}
 
 	/**
@@ -2069,122 +1777,151 @@ trait Extended {
 	 *
 	 * @param  string   $key
 	 * @param  boolean  $related
-	 * @param  boolean  $removeSelectPrefixes
 	 * @param  boolean  $selectable
 	 * @return array
 	 */
-	public static function getAttributeSet($key = 'standard', $related = false, $removeSelectPrefixes = false, $selectable = false)
+	public static function getAttributeSet($key = 'standard', $related = false)
 	{
 		if (is_array($key)) // attribute set is already an array; return it
 			return $key;
 
-		$keySwitched = false;
-
-		if ($selectable && $key == "standard")
-		{
-			$key = "select";
-
-			$keySwitched = true;
-		}
-
 		if ($related)
-			$attributeSet = isset(static::$relatedAttributeSets[$key]) ? static::$relatedAttributeSets[$key] : [];
+			$attributeSetRaw = isset(static::$relatedAttributeSets[$key]) ? static::$relatedAttributeSets[$key] : [];
 		else
-			$attributeSet = isset(static::$attributeSets[$key]) ? static::$attributeSets[$key] : [];
+			$attributeSetRaw = isset(static::$attributeSets[$key]) ? static::$attributeSets[$key] : [];
 
-		if ($keySwitched && empty($attributeSet))
+		$selectable = $key == "select";
+
+		if ($key == "select" && empty($attributeSetRaw))
 		{
 			$key = "standard";
 
 			if ($related)
-				$attributeSet = isset(static::$relatedAttributeSets[$key]) ? static::$relatedAttributeSets[$key] : [];
+				$attributeSetRaw = isset(static::$relatedAttributeSets[$key]) ? static::$relatedAttributeSets[$key] : [];
 			else
-				$attributeSet = isset(static::$attributeSets[$key]) ? static::$attributeSets[$key] : [];
+				$attributeSetRaw = isset(static::$attributeSets[$key]) ? static::$attributeSets[$key] : [];
+
+			$selectable = true;
 		}
 
-		$model = new static;
+		$cached = $related ? isset(static::$cachedRelatedAttributeSets[$key]) : isset(static::$cachedAttributeSets[$key]);
 
-		foreach ($attributeSet as $attribute => $attributes)
+		if (!$cached)
 		{
-			if (is_string($attribute) && is_string($attributes))
+			$model = new static;
+
+			$attributeSet = [];
+
+			$attributeSetKeys = array_keys($attributeSetRaw);
+
+			$multipleSets = !empty($attributeSetKeys) && is_string($attributeSetKeys[0]);
+
+			if ($multipleSets)
 			{
-				if (strtolower(substr($attributes, 0, 4)) == "set:")
+				foreach ($attributeSetRaw as $attribute => $attributes)
 				{
-					$attributeSegments = explode('.', $attribute);
-
-					$modelUsed = $model;
-
-					foreach ($attributeSegments as $s => $attributeSegment)
+					if (is_string($attribute) && is_string($attributes))
 					{
-						if (method_exists($modelUsed, $attributeSegment))
+						if (substr($attributes, 0, 4) == "set:")
 						{
-							$relationship = $modelUsed->{$attributeSegment}();
+							$attributeSegments = explode('.', $attribute);
 
-							if ($related && is_callable([$relationship, 'getModel']))
+							$modelUsed = $model;
+
+							foreach ($attributeSegments as $s => $attributeSegment)
 							{
-								$class = get_class($relationship->getModel());
+								if (method_exists($modelUsed, $attributeSegment))
+								{
+									$relationship = $modelUsed->{$attributeSegment}();
 
-								$modelUsed = new $class;
+									if ($related && is_callable([$relationship, 'getModel']))
+									{
+										$class = get_class($relationship->getModel());
+
+										$modelUsed = new $class;
+									}
+								}
+							}
+
+							$set = substr($attributes, 4);
+
+							if (is_object($modelUsed) && method_exists($modelUsed, 'getAttributeSet'))
+								$attributeSetRaw[$attribute] = $modelUsed->getAttributeSet($set);
+						}
+						else
+						{
+							if (strtolower(substr($attributes, 0, 6)) == "class:" && method_exists($model, $attribute))
+							{
+								$class = explode(';', substr($attributes, 6));
+								$set   = isset($class[1]) ? $class[1] : "standard";
+
+								// add leading backslash to namespaced class if it doesn't already exist
+								$class = $class[0];
+								if (substr($class, 0, 1) != "\\")
+									$class = "\\".$class;
+
+								$model = new $class;
+
+								if (method_exists($model, 'getAttributeSet'))
+									$attributeSetRaw[$attribute] = $model->getAttributeSet($set);
 							}
 						}
 					}
-
-					$set = substr($attributes, 4);
-
-					if (is_object($modelUsed) && method_exists($modelUsed, 'getAttributeSet'))
-						$attributeSet[$attribute] = $modelUsed->getAttributeSet($set);
 				}
-				else
+
+				$attributeSet = $attributeSetRaw;
+			}
+			else
+			{
+				$attributeSet = [];
+
+				foreach ($attributeSetRaw as $attribute)
 				{
-					if (strtolower(substr($attributes, 0, 6)) == "class:" && method_exists($model, $attribute))
+					if (substr($attribute, 0, 4) == "set:")
 					{
-						$class = explode(';', substr($attributes, 6));
-						$set   = isset($class[1]) ? $class[1] : "standard";
+						$set = substr($attribute, 4);
 
-						// add leading backslash to namespaced class if it doesn't already exist
-						$class = $class[0];
-						if (substr($class, 0, 1) != "\\")
-							$class = "\\".$class;
-
-						$model = new $class;
-
-						if (method_exists($model, 'getAttributeSet'))
-							$attributeSet[$attribute] = $model->getAttributeSet($set);
+						if ($set != $key)
+						{
+							$attributeSet = array_merge($attributeSet, array_keys(static::getAttributeSet($set, $related)));
+						}
+					}
+					else
+					{
+						$attributeSet[] = $attribute;
 					}
 				}
 			}
-		}
 
-		if ($removeSelectPrefixes || $selectable)
-		{
-			$prefix = $selectable && !is_null($model->getTable()) ? $model->getTable().'.' : '';
+			$prefix = !is_null($model->getTable()) ? $model->getTable().'.' : '';
 
-			$arrayIncludedMethods = array_keys(static::$arrayIncludedMethods);
-			$relationships        = isset(static::$relatedAttributeSets[$key]) ? array_keys(static::$relatedAttributeSets[$key]) : [];
+			$relationships = isset(static::$relatedAttributeSets[$key]) ? array_keys(static::$relatedAttributeSets[$key]) : [];
 
-			$removed = false;
-
-			foreach ($attributeSet as $a => $attribute)
+			if ($multipleSets)
 			{
-				$attribute = str_replace('select:', '', $attribute);
+				$attributeSets = [];
 
-				if ($selectable && (in_array($attribute, $arrayIncludedMethods) || in_array($attribute, $relationships)))
+				foreach ($attributeSet as $attributeSetKey => $attributeSetListed)
 				{
-					unset($attributeSet[$a]);
-
-					$removed = true;
-				}
-				else
-				{
-					$attributeSet[$a] = $prefix.$attribute;
+					$attributeSets[$attributeSetKey] = static::formatAttributeSet($attributeSetListed);
 				}
 			}
+			else
+			{
+				$attributeSets = static::formatAttributeSet($attributeSet, $prefix);
+			}
 
-			if ($removed) // re-key array if any items were removed
-				$attributeSet = array_values($attributeSet);
+			if ($related)
+			{
+				static::$cachedRelatedAttributeSets[$key] = $attributeSets;
+			}
+			else
+			{
+				static::$cachedAttributeSets[$key] = $attributeSets;
+			}
 		}
 
-		return $attributeSet;
+		return $related ? static::$cachedRelatedAttributeSets[$key] : static::$cachedAttributeSets[$key];
 	}
 
 	/**
@@ -2194,9 +1931,87 @@ trait Extended {
 	 * @param  boolean  $related
 	 * @return array
 	 */
-	public static function getSelectableAttributeSet($key = 'standard', $related = false)
+	public static function getSelectableAttributeSet($key = 'select', $related = false)
 	{
-		return static::getAttributeSet($key, $related, true, true);
+		if ($key == "standard")
+		{
+			$key = "select";
+		}
+
+		$attributeSet = static::getAttributeSet($key, $related);
+
+		$formattedAttributeSet = [];
+
+		foreach ($attributeSet as $attribute => $attributeConfig)
+		{
+			if (!$attributeConfig->hasMethod)
+			{
+				$formattedAttributeSet[] = $attributeConfig->attribute;
+			}
+		}
+
+		return $formattedAttributeSet;
+	}
+
+	public static function getRelationsFromAttributeSets()
+	{
+		$relations = [];
+
+		foreach (static::$relatedAttributeSets as $attributeSet => $relationsInSet)
+		{
+			$relations = array_merge($relations, array_keys($relationsInSet));
+		}
+
+		return array_unique($relations);
+	}
+
+	/**
+	 * Format an attribute set.
+	 *
+	 * @param  array    $attributeSet
+	 * @param  mixed    $prefix
+	 * @return array
+	 */
+	public static function formatAttributeSet($attributeSet, $prefix = null)
+	{
+		if (is_array($attributeSet) && count($attributeSet) && is_object(end($attributeSet))) // return if already formatted
+			return $attributeSet;
+
+		if (is_null($prefix))
+			$prefix = "";
+
+		$arrayIncludedMethods = array_keys(static::$arrayIncludedMethods);
+
+		$attributeSetFormatted = [];
+
+		foreach ($attributeSet as $a => $attribute)
+		{
+			$selectOnly   = false;
+			$ignoreMethod = false;
+
+			if (substr($attribute, 0, 7) == "select:")
+			{
+				$attribute = substr($attribute, 7);
+
+				$selectOnly = true;
+			}
+
+			if (substr($attribute, 0, 10) == "attribute:")
+			{
+				$attribute = substr($attribute, 10);
+
+				$ignoreMethod = true;
+			}
+
+			$attributeSetFormatted[$attribute] = (object) [
+				'attribute'    => $prefix.$attribute,
+				'selectOnly'   => $selectOnly,
+				'hasMethod'    => in_array($attribute, $arrayIncludedMethods),
+				'ignoreMethod' => $ignoreMethod,
+			];
+		}
+
+		return $attributeSetFormatted;
 	}
 
 }

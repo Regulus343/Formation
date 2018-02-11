@@ -84,7 +84,7 @@ With this form, we can validate just the fields in the user array with `Form::is
 To install Formation, make sure `regulus/formation` has been added to Laravel 5's `composer.json` file.
 
 	"require": {
-		"regulus/formation": "1.3.*"
+		"regulus/formation": "1.4.*"
 	},
 
 Then run `php composer.phar update` from the command line. Composer will install the Formation package. Now, all you have to do is register the service provider and set up Formation's alias in `config/app.php`. Add this to the `providers` array:
@@ -697,6 +697,11 @@ You may add a `protected static $attributeSets` array to your model to define sp
 			'id',
 			'content',
 			'url', // this could even be a key listed in $arrayIncludedMethods for a getUrl() method
+		],
+
+		'update' => [
+			'set:standard', // include all attributes in "standard" set
+			'attribute:content', // set "content" attribute to ignore array-included method in favour of actual value from DB
 		],
 	];
 
