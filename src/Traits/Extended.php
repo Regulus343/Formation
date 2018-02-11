@@ -93,13 +93,19 @@ trait Extended {
 	 */
 	protected static $cachedAttributeSets = [];
 
-
 	/**
 	 * The cached attribute sets for related models.
 	 *
 	 * @var    array
 	 */
 	protected static $cachedRelatedAttributeSets = [];
+
+	/**
+	 * The cached relations from related attribute sets.
+	 *
+	 * @var    array
+	 */
+	protected static $cachedRelationsFromAttributeSets = [];
 
 	/**
 	 * The related data requested for related models' arrays / JSON objects.
@@ -809,15 +815,11 @@ trait Extended {
 						$model  = $relationQuery->getModel();
 						$prefix = !is_null($model->getTable()) ? $model->getTable().'.' : '';
 
-						$relations = $model::getRelationsFromAttributeSets();
-
 						$formattedAttributes = [];
 
 						foreach ($attributes as $attribute => $attributeConfig)
 						{
-							$isRelation = in_array($attribute, $relations) || in_array(camel_case($attribute), $relations);
-
-							if (!$isRelation && (!$attributeConfig->hasMethod || in_array($attribute, $this->fillable)))
+							if (!$attributeConfig->isRelation && (!$attributeConfig->hasMethod || in_array($attribute, $this->fillable)))
 							{
 								$formattedAttributes[] = $prefix.$attribute;
 							}
@@ -1804,12 +1806,13 @@ trait Extended {
 			$selectable = true;
 		}
 
-		$cached = $related ? isset(static::$cachedRelatedAttributeSets[$key]) : isset(static::$cachedAttributeSets[$key]);
+		$model = new static;
+		$class = get_class($model);
+
+		$cached = $related ? isset(static::$cachedRelatedAttributeSets[$class][$key]) : isset(static::$cachedAttributeSets[$class][$key]);
 
 		if (!$cached)
 		{
-			$model = new static;
-
 			$attributeSet = [];
 
 			$attributeSetKeys = array_keys($attributeSetRaw);
@@ -1895,8 +1898,6 @@ trait Extended {
 
 			$prefix = !is_null($model->getTable()) ? $model->getTable().'.' : '';
 
-			$relationships = isset(static::$relatedAttributeSets[$key]) ? array_keys(static::$relatedAttributeSets[$key]) : [];
-
 			if ($multipleSets)
 			{
 				$attributeSets = [];
@@ -1913,15 +1914,15 @@ trait Extended {
 
 			if ($related)
 			{
-				static::$cachedRelatedAttributeSets[$key] = $attributeSets;
+				static::$cachedRelatedAttributeSets[$class][$key] = $attributeSets;
 			}
 			else
 			{
-				static::$cachedAttributeSets[$key] = $attributeSets;
+				static::$cachedAttributeSets[$class][$key] = $attributeSets;
 			}
 		}
 
-		return $related ? static::$cachedRelatedAttributeSets[$key] : static::$cachedAttributeSets[$key];
+		return $related ? static::$cachedRelatedAttributeSets[$class][$key] : static::$cachedAttributeSets[$class][$key];
 	}
 
 	/**
@@ -1944,7 +1945,7 @@ trait Extended {
 
 		foreach ($attributeSet as $attribute => $attributeConfig)
 		{
-			if (!$attributeConfig->hasMethod)
+			if (!$attributeConfig->isRelation && !$attributeConfig->hasMethod)
 			{
 				$formattedAttributeSet[] = $attributeConfig->attribute;
 			}
@@ -1953,16 +1954,28 @@ trait Extended {
 		return $formattedAttributeSet;
 	}
 
+	/**
+	 * Get the relations from the related attribute sets.
+	 *
+	 * @return array
+	 */
 	public static function getRelationsFromAttributeSets()
 	{
-		$relations = [];
+		$class = static::class;
 
-		foreach (static::$relatedAttributeSets as $attributeSet => $relationsInSet)
+		if (!isset(static::$cachedRelationsFromAttributeSets[$class]))
 		{
-			$relations = array_merge($relations, array_keys($relationsInSet));
+			$relations = [];
+
+			foreach (static::$relatedAttributeSets as $attributeSet => $relationsInSet)
+			{
+				$relations = array_merge($relations, array_keys($relationsInSet));
+			}
+
+			static::$cachedRelationsFromAttributeSets[$class] = array_unique($relations);
 		}
 
-		return array_unique($relations);
+		return static::$cachedRelationsFromAttributeSets[$class];
 	}
 
 	/**
@@ -1984,10 +1997,13 @@ trait Extended {
 
 		$attributeSetFormatted = [];
 
+		$relations = static::getRelationsFromAttributeSets();
+
 		foreach ($attributeSet as $a => $attribute)
 		{
 			$selectOnly   = false;
 			$ignoreMethod = false;
+			$isRelation   = in_array($attribute, $relations) || in_array(camel_case($attribute), $relations);
 
 			if (substr($attribute, 0, 7) == "select:")
 			{
@@ -2006,6 +2022,7 @@ trait Extended {
 			$attributeSetFormatted[$attribute] = (object) [
 				'attribute'    => $prefix.$attribute,
 				'selectOnly'   => $selectOnly,
+				'isRelation'   => $isRelation,
 				'hasMethod'    => in_array($attribute, $arrayIncludedMethods),
 				'ignoreMethod' => $ignoreMethod,
 			];
