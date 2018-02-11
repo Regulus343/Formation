@@ -1,11 +1,12 @@
 <?php namespace Regulus\Formation\Traits;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Collection;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Str;
+
+use Regulus\Formation\Collection;
 
 use Regulus\Formation\Facade as Form;
 use Regulus\TetraText\Facade as Format;
@@ -503,7 +504,7 @@ trait Extended {
 				// collections to their proper array form and we'll set the values.
 				if ($value instanceof Arrayable || (is_object($value) && method_exists($value, 'toArray')))
 				{
-					$collection = get_class($value) == "Illuminate\Database\Eloquent\Collection";
+					$collection = in_array(get_class($value), ['Illuminate\Database\Eloquent\Collection', 'Regulus\Formation\Collection']);
 
 					// if "related data requested" is set, adjust visible and hidden arrays for related items
 					if (is_callable([$value, 'setVisible']) && !is_null($relatedDataRequested))
@@ -705,6 +706,16 @@ trait Extended {
 	public function getArrayIncludedMethods()
 	{
 		return static::$arrayIncludedMethods;
+	}
+
+	/**
+	 * Create a collection for the models.
+	 *
+	 * @return array
+	 */
+	public function newCollection(array $models = [])
+	{
+		return new Collection($models);
 	}
 
 	/**

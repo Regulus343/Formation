@@ -762,5 +762,7 @@ You may also specify an attribute set in the `toArray()` method, or use `toLimit
 ```php
 	return $post->toArray('standard');
 
-	return $post->toLimitedArray();
+	return $post->toLimitedArray(); // same as above, assumes "standard" by default
+
+	return Post::orderBy('id')->get()->toArray('standard'); // filter models in a collection with attribute set
 ```
