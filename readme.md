@@ -665,7 +665,7 @@ You may also specify an attribute set in the `toArray()` method, or use `toLimit
 
 Lastly, `Record::getAttributeSet('fillable')` will return the "id" attribute and anything listed in the model's `$fillable` array.
 
-## Transforming Paginators to Arrays
+**Transforming Paginators to Arrays:**
 
 The `Extended` trait uses all of Formation's extensions of model-related Laravel classes. This means that `toArray()` and `toLimitedArray()` are available for model instances themselves, collections of models, and paginators created from the model's `paginate()` method.
 
