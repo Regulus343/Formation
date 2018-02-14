@@ -66,6 +66,23 @@ class Builder extends Base {
 	/**
 	 * Paginate the given query.
 	 *
+	 * @param  int  $page
+	 * @param  string  $pageName
+	 * @return \Regulus\Formation\Builder
+	 */
+	public function setPage($page = null)
+	{
+		Paginator::currentPageResolver(function() use ($page)
+		{
+			return $page;
+		});
+
+		return $this;
+	}
+
+	/**
+	 * Paginate the given query.
+	 *
 	 * @param  int  $perPage
 	 * @param  array  $columns
 	 * @param  string  $pageName
