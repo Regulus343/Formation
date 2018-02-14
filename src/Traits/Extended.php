@@ -1568,8 +1568,6 @@ trait Extended {
 	public function selectAttributeSet($attributeSet)
 	{
 		$this->selectedAttributeSet = $attributeSet;
-
-		dump($attributeSet);
 	}
 
 	/**
