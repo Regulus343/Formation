@@ -1,7 +1,7 @@
 Formation
 =========
 
-**A powerful form creation and model data formatting package for Laravel 5.**
+**A powerful form building and model data transforming package for Laravel 5.**
 
 [![Latest Stable Version](https://poser.pugx.org/regulus/formation/v/stable.svg)](https://packagist.org/packages/regulus/formation) [![License](https://poser.pugx.org/regulus/formation/license.svg)](https://packagist.org/packages/regulus/formation)
 

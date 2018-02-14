@@ -1,6 +1,6 @@
 {
 	"name": "regulus/formation",
-	"description": "A powerful form creation and form data saving composer package for Laravel 5.",
+	"description": "A powerful form building and model data transforming package for Laravel 5.",
 	"license": "MIT",
 	"authors": [
 		{
