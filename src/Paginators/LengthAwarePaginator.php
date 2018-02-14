@@ -83,7 +83,7 @@ class LengthAwarePaginator extends Base implements Arrayable, ArrayAccess, Count
 		if (is_null($attributeSet))
 			$attributeSet = $this->getDefaultAttributeSet();
 
-		return $this->toArray($attributeSet, $camelizeArrayKeys);
+		return $this->toArray($attributeSet, $camelizeArrayKeys, $dataOnly);
 	}
 
 	/**
