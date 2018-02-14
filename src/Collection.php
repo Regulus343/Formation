@@ -12,13 +12,10 @@ use CachingIterator;
 use JsonSerializable;
 use IteratorAggregate;
 use Illuminate\Support\Debug\Dumper;
-use Illuminate\Support\Traits\Macroable;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\Support\Arrayable;
 
 class Collection extends Base implements ArrayAccess, Arrayable, Countable, IteratorAggregate, Jsonable, JsonSerializable {
-
-	use Macroable;
 
 	/**
 	 * The default attribute set.
