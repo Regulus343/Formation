@@ -127,15 +127,21 @@ return [
 
 	/*
 	|--------------------------------------------------------------------------
-	| Pivot Timestamps
+	| Paginator - Array Data Only & Default Records Per Page
 	|--------------------------------------------------------------------------
 	|
-	| Whether or not timestamps are present in the pivot tables. This is only
-	| used when Formation's Base model is used to extend Eloquent models (or
-	| when the Extended trait is used in models).
+	| Array Data Only: Whether to have paginators to return the formatted
+	| collection only by default(rather than a fully-arrayed paginator
+	| instance) when using toArray() and related methods on them when using the
+	| Base model or Extended trait.
+	|
+	|
 	|
 	*/
-	'pivot_timestamps' => true,
+	'paginator' => [
+		'array_data_only' => false,
+		'items_per_page'  => 25,
+	],
 
 	/*
 	|--------------------------------------------------------------------------

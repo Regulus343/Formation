@@ -2,33 +2,45 @@
 
 use Illuminate\Database\Eloquent\Collection as Base;
 
-class Collection extends Base {
+use stdClass;
+use Countable;
+use Exception;
+use ArrayAccess;
+use Traversable;
+use ArrayIterator;
+use CachingIterator;
+use JsonSerializable;
+use IteratorAggregate;
+use Illuminate\Support\Debug\Dumper;
+use Illuminate\Support\Traits\Macroable;
+use Illuminate\Contracts\Support\Jsonable;
+use Illuminate\Contracts\Support\Arrayable;
+
+class Collection extends Base implements ArrayAccess, Arrayable, Countable, IteratorAggregate, Jsonable, JsonSerializable {
+
+	use Macroable;
+
+	/**
+	 * The default attribute set.
+	 *
+	 * @var    mixed
+	 */
+	protected $defaultAttributeSet = "standard";
 
 	/**
 	 * Create an array from a collection with attribute set limiting and the option to camelize array keys.
 	 *
-	 * @param  Collection  $collection
-	 * @param  mixed       $attributeSet
-	 * @param  mixed       $camelizeArrayKeys
+	 * @param  mixed   $attributeSet
+	 * @param  mixed   $camelizeArrayKeys
 	 * @return array
 	 */
 	public function toArray($attributeSet = null, $camelizeArrayKeys = null)
 	{
-		$array = [];
-
-		foreach ($this as $record)
+		return array_map(function($value) use ($attributeSet, $camelizeArrayKeys)
 		{
-			if (method_exists($record, 'toLimitedArray'))
-			{
-				$array[] = $record->toArray($attributeSet, $camelizeArrayKeys);
-			}
-			else
-			{
-				$array[] = $record->toArray();
-			}
-		}
+			return $value instanceof Arrayable ? $value->toArray($attributeSet, $camelizeArrayKeys) : $value;
 
-		return $array;
+		}, $this->items);
 	}
 
 	/**
@@ -38,9 +50,33 @@ class Collection extends Base {
 	 * @param  mixed   $camelizeArrayKeys
 	 * @return array
 	 */
-	public function toLimitedArray($attributeSet = 'standard', $camelizeArrayKeys = null)
+	public function toLimitedArray($attributeSet = null, $camelizeArrayKeys = null)
 	{
+		if (is_null($attributeSet))
+			$attributeSet = $this->getDefaultAttributeSet();
+
 		return $this->toArray($attributeSet, $camelizeArrayKeys);
+	}
+
+	/**
+	 * Get the default attribute set.
+	 *
+	 * @return mixed
+	 */
+	public function getDefaultAttributeSet()
+	{
+		return $this->defaultAttributeSet;
+	}
+
+	/**
+	 * Set the default attribute set.
+	 *
+	 * @param  string  $attributeSet
+	 * @return mixed
+	 */
+	public function setDefaultAttributeSet($attributeSet)
+	{
+		$this->defaultAttributeSet = $attributeSet;
 	}
 
 }

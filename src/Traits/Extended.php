@@ -11,6 +11,8 @@ use Regulus\Formation\Collection;
 use Regulus\Formation\Facade as Form;
 use Regulus\TetraText\Facade as Format;
 
+use Regulus\Formation\Builder;
+
 trait Extended {
 
 	/**
@@ -116,6 +118,13 @@ trait Extended {
 	protected static $relatedDataRequested = null;
 
 	/**
+	 * The default attribute set.
+	 *
+	 * @var    mixed
+	 */
+	protected static $defaultAttributeSet = "standard";
+
+	/**
 	 * The static cached data for the model.
 	 *
 	 * @var    mixed
@@ -137,6 +146,20 @@ trait Extended {
 	protected $foreignKey = null;
 
 	/**
+	 * The number of models to return for pagination.
+	 *
+	 * @var    mixed
+	 */
+	protected $itemsPerPage = null;
+
+	/**
+	 * The default attribute set.
+	 *
+	 * @var    mixed
+	 */
+	protected $selectedAttributeSet = null;
+
+	/**
 	 * The cached data for the model.
 	 *
 	 * @var    mixed
@@ -152,6 +175,24 @@ trait Extended {
 	public function __construct(array $attributes = [])
 	{
 		parent::__construct($attributes);
+
+		$this->selectAttributeSet(static::$defaultAttributeSet);
+	}
+
+	/**
+	 * Create a new Eloquent query builder for the model.
+	 *
+	 * @param  \Illuminate\Database\Query\Builder  $query
+	 * @return \Illuminate\Database\Eloquent\Builder|static
+	 */
+	public function newEloquentBuilder($query)
+	{
+		if (is_null($this->itemsPerPage) && config('form.paginator.items_per_page'))
+		{
+			$this->setPerPage(config('form.paginator.items_per_page'));
+		}
+
+		return new Builder($query);
 	}
 
 	/**
@@ -250,13 +291,19 @@ trait Extended {
 	 */
 	public function toArray($attributeSet = null, $camelizeArrayKeys = null)
 	{
-		if ($camelizeArrayKeys === null)
+		if (is_null($camelizeArrayKeys))
 			$camelizeArrayKeys = config('form.camelize_array_keys');
 
+		// turn the attributes into an array
 		$attributes = $this->attributesToArray($attributeSet, $camelizeArrayKeys);
 
+		// convert related data to arrays and merge it in
 		$attributes = array_merge($attributes, $this->relationsToArray($camelizeArrayKeys));
 
+		// prune the attributes that are not in the set
+		$attributes = static::pruneAttributesBySet($attributes, $attributeSet);
+
+		// camelize pivot data if necessary
 		if ($camelizeArrayKeys && isset($attributes['pivot']))
 		{
 			$attributes['pivot'] = Format::camelizeKeys($attributes['pivot']);
@@ -272,8 +319,11 @@ trait Extended {
 	 * @param  mixed   $camelizeArrayKeys
 	 * @return array
 	 */
-	public function toLimitedArray($attributeSet = 'standard', $camelizeArrayKeys = null)
+	public function toLimitedArray($attributeSet = null, $camelizeArrayKeys = null)
 	{
+		if (is_null($attributeSet))
+			$attributeSet = $this->getSelectedAttributeSet();
+
 		return $this->toArray($attributeSet, $camelizeArrayKeys);
 	}
 
@@ -312,7 +362,7 @@ trait Extended {
 
 		$formattedValues = [];
 
-		if ($camelizeArrayKeys === null)
+		if (is_null($camelizeArrayKeys))
 			$camelizeArrayKeys = config('form.camelize_array_keys');
 
 		if ($camelizeArrayKeys)
@@ -428,9 +478,6 @@ trait Extended {
 				unset($attributes[$key]);
 		}
 
-		// prune the attributes that are not in the set
-		$attributes = static::pruneAttributesBySet($attributes, $attributeSet);
-
 		return $attributes;
 	}
 
@@ -482,7 +529,7 @@ trait Extended {
 	 */
 	public function relationsToArray($camelizeArrayKeys = null)
 	{
-		if ($camelizeArrayKeys === null)
+		if (is_null($camelizeArrayKeys))
 			$camelizeArrayKeys = config('form.camelize_array_keys');
 
 		$attributes = [];
@@ -563,14 +610,7 @@ trait Extended {
 
 					$attributeSet = isset($relatedDataRequestedForKey) ? $relatedDataRequestedForKey : null;
 
-					if ($collection)
-					{
-						$relation = static::collectionToArray($value, $attributeSet, $camelizeArrayKeys);
-					}
-					else
-					{
-						$relation = $value->toArray($attributeSet, $camelizeArrayKeys);
-					}
+					$relation = $value->toArray($attributeSet, $camelizeArrayKeys);
 				}
 
 				// If the value is null, we'll still go ahead and set it in this list of
@@ -619,7 +659,7 @@ trait Extended {
 	 */
 	public function addArrayIncludedMethods($attributes = [], $attributeSet = null, $camelizeArrayKeys = null)
 	{
-		if ($camelizeArrayKeys === null)
+		if (is_null($camelizeArrayKeys))
 			$camelizeArrayKeys = config('form.camelize_array_keys');
 
 		$attributeSet = static::getAttributeSet($attributeSet);
@@ -718,58 +758,9 @@ trait Extended {
 		return new Collection($models);
 	}
 
-	/**
-	 * Create an array from a collection with attribute set limiting and the option to camelize array keys.
-	 *
-	 * @param  Collection  $collection
-	 * @param  mixed       $attributeSet
-	 * @param  mixed       $camelizeArrayKeys
-	 * @return array
-	 */
-	public static function collectionToArray($collection, $attributeSet = null, $camelizeArrayKeys = null)
+	public function newBuilder(array $models = [])
 	{
-		if ($camelizeArrayKeys === null)
-			$camelizeArrayKeys = config('form.camelize_array_keys');
-
-		$array = [];
-
-		foreach ($collection as $record)
-		{
-			$array[] = $record->toArray($attributeSet, $camelizeArrayKeys);
-		}
-
-		if (get_class($collection) == "Illuminate\Pagination\LengthAwarePaginator")
-		{
-			$collection = $collection->toArray();
-
-			if ($camelizeArrayKeys)
-			{
-				$collection['data'] = [];
-
-				$collection = Format::camelizeKeys($collection);
-			}
-
-			$collection['data'] = $array;
-
-			return $collection;
-		}
-		else
-		{
-			return $array;
-		}
-	}
-
-	/**
-	 * Create a limited array from a collection with attribute set limiting and the option to camelize array keys.
-	 *
-	 * @param  Collection  $collection
-	 * @param  mixed       $attributeSet
-	 * @param  mixed       $camelizeArrayKeys
-	 * @return array
-	 */
-	public static function collectionToLimitedArray($collection, $attributeSet = 'standard', $camelizeArrayKeys = null)
-	{
-		return static::collectionToArray($collection, $attributeSet, $camelizeArrayKeys);
+		return new Collection($models);
 	}
 
 	/**
@@ -799,22 +790,64 @@ trait Extended {
 	}
 
 	/**
+	 * Select a particular attribute set of data.
+	 *
+	 * @param  mixed    $attributeSet
+	 * @param  boolean  $limitRelatedData
+	 * @return QueryBuilder
+	 */
+	public function scopeSelectAttributeSet($query, $attributeSet = 'select', $limitRelatedData = false)
+	{
+		$query->select(static::getSelectableAttributeSet($attributeSet));
+
+		$query->setDefaultAttributeSet($attributeSet);
+
+		if ($limitRelatedData)
+		{
+			$query->limitRelatedData($attributeSet);
+		}
+
+		return $query;
+	}
+
+	/**
+	 * Select a particular attribute set of data (alias for selectAttributeSet scope).
+	 *
+	 * @param  mixed    $attributeSet
+	 * @param  boolean  $limitRelatedData
+	 * @return QueryBuilder
+	 */
+	public function scopeSelectSet($query, $attributeSet = 'select', $limitRelatedData = false)
+	{
+		return $query->selectAttributeSet($attributeSet, $limitRelatedData);
+	}
+
+	/**
 	 * Get the JSON-included methods for the model.
 	 *
-	 * @param  mixed    $relatedData
+	 * @param  mixed    $relatedAttributeSet
 	 * @param  boolean  $limitSelect
 	 * @return QueryBuilder
 	 */
-	public function scopeLimitRelatedData($query, $relatedData = 'standard', $limitSelect = true)
+	public function scopeLimitRelatedData($query, $relatedAttributeSet = null, $limitSelect = true)
 	{
-		if (is_string($relatedData))
-			$relatedData = $this->getAttributeSet($relatedData, true);
+		if (is_null($relatedAttributeSet))
+		{
+			$relatedAttributeSet = $query->getDefaultAttributeSet();
+		}
+		else
+		{
+			$query->setDefaultAttributeSet($relatedAttributeSet);
+		}
 
-		static::$relatedDataRequested[get_class($this)] = $relatedData;
+		if (is_string($relatedAttributeSet))
+			$relatedAttributeSet = $this->getAttributeSet($relatedAttributeSet, true);
+
+		static::$relatedDataRequested[get_class($this)] = $relatedAttributeSet;
 
 		$with = [];
 
-		foreach ($relatedData as $relation => $attributes)
+		foreach ($relatedAttributeSet as $relation => $attributes)
 		{
 			if ($limitSelect)
 			{
@@ -1517,6 +1550,29 @@ trait Extended {
 	}
 
 	/**
+	 * Get the current attribute set.
+	 *
+	 * @return mixed
+	 */
+	public function getSelectedAttributeSet()
+	{
+		return $this->selectedAttributeSet;
+	}
+
+	/**
+	 * Set the current attribute set.
+	 *
+	 * @param  string  $attributeSet
+	 * @return mixed
+	 */
+	public function selectAttributeSet($attributeSet)
+	{
+		$this->selectedAttributeSet = $attributeSet;
+
+		dump($attributeSet);
+	}
+
+	/**
 	 * Get a cached value by key.
 	 *
 	 * @param  mixed    $key
@@ -1774,7 +1830,7 @@ trait Extended {
 	 */
 	public static function formatArrayKey($key, $camelizeArrayKeys = null)
 	{
-		if ($camelizeArrayKeys === null)
+		if (is_null($camelizeArrayKeys))
 			$camelizeArrayKeys = config('form.camelize_array_keys');
 
 		if ($camelizeArrayKeys)
@@ -1795,8 +1851,12 @@ trait Extended {
 	 */
 	public static function getAttributeSet($key = 'standard', $related = false)
 	{
-		if (is_array($key)) // attribute set is already an array; return it
+		// attribute set is already an array; return it
+		if (is_array($key))
 			return $key;
+
+		$model = new static;
+		$class = get_class($model);
 
 		if ($related)
 			$attributeSetRaw = isset(static::$relatedAttributeSets[$key]) ? static::$relatedAttributeSets[$key] : [];
@@ -1805,9 +1865,10 @@ trait Extended {
 
 		$selectable = $key == "select";
 
+		// if key is "select" and a "select" attribute set does not exist, return standard set
 		if ($key == "select" && empty($attributeSetRaw))
 		{
-			$key = "standard";
+			$key = static::$defaultAttributeSet;
 
 			if ($related)
 				$attributeSetRaw = isset(static::$relatedAttributeSets[$key]) ? static::$relatedAttributeSets[$key] : [];
@@ -1817,13 +1878,16 @@ trait Extended {
 			$selectable = true;
 		}
 
-		$model = new static;
-		$class = get_class($model);
-
 		$cached = $related ? isset(static::$cachedRelatedAttributeSets[$class][$key]) : isset(static::$cachedAttributeSets[$class][$key]);
 
 		if (!$cached)
 		{
+			// if key is "fillable" and a "fillable" attribute set does not exist, return model's fillable array (plus the "id" attribute)
+			if ($key == "fillable" && !$related)
+			{
+				$attributeSetRaw = array_merge(['id'], $model->getFillable());
+			}
+
 			$attributeSet = [];
 
 			$attributeSetKeys = array_keys($attributeSetRaw);
@@ -1867,7 +1931,7 @@ trait Extended {
 							if (strtolower(substr($attributes, 0, 6)) == "class:" && method_exists($model, $attribute))
 							{
 								$class = explode(';', substr($attributes, 6));
-								$set   = isset($class[1]) ? $class[1] : "standard";
+								$set   = isset($class[1]) ? $class[1] : static::$defaultAttributeSet;
 
 								// add leading backslash to namespaced class if it doesn't already exist
 								$class = $class[0];
@@ -1945,7 +2009,7 @@ trait Extended {
 	 */
 	public static function getSelectableAttributeSet($key = 'select', $related = false)
 	{
-		if ($key == "standard")
+		if ($key == static::$defaultAttributeSet)
 		{
 			$key = "select";
 		}
