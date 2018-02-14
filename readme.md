@@ -672,7 +672,7 @@ The `Extended` trait uses all of Formation's extensions of model-related Laravel
 ```php
 	return Post::orderBy('id')->paginate(25)->toArray('standard'); // return a paginator converted to an array
 
-	return Post::orderBy('id')->paginate(25)->collectionToArray('standard'); // return just the collection
+	return Post::orderBy('id')->setPage(3)->paginate(25)->collectionToArray('standard'); // return just the collection
 ```
 
 > **Note:** `toLimitedArray()` and `collectionToLimitedArray()` are also available for defaulting the attribute set to "standard".
