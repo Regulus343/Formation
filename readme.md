@@ -642,7 +642,7 @@ In our user model, we have the following array-included method and attribute set
 
 ```
 
-> **Note:** If you're just using the Extended trait directly rather than extending the Base model, you will have to instead place all of your transform configuration in an array because you can't override the static variables of the trait (this format also works for extending the Base model but isn't required in that case):
+> **Note:** If you're just using the Extended trait directly rather than extending the Base model, you will have to instead place all of your transform configuration in a single static array called `$transformConfig` because you can't override the static variables of the trait (this format also works for extending the Base model but isn't required in that case):
 
 ```php
 	/**
