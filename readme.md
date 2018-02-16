@@ -646,7 +646,7 @@ In our user model, we have the following array-included method and attribute set
 
 ```php
 	/**
-	 * The transform configuration for use when not extending the Base model.
+	 * The data transforming configuration.
 	 *
 	 * @var array
 	 */
