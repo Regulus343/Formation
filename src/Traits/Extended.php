@@ -2010,12 +2010,12 @@ trait Extended {
 
 				foreach ($attributeSet as $attributeSetKey => $attributeSetListed)
 				{
-					$attributeSets[$attributeSetKey] = static::formatAttributeSet($attributeSetListed);
+					$attributeSets[$attributeSetKey] = static::formatAttributeSet($attributeSetListed, null, $model);
 				}
 			}
 			else
 			{
-				$attributeSets = static::formatAttributeSet($attributeSet, $prefix);
+				$attributeSets = static::formatAttributeSet($attributeSet, $prefix, $model);
 			}
 
 			if ($related)
@@ -2051,7 +2051,7 @@ trait Extended {
 
 		foreach ($attributeSet as $attribute => $attributeConfig)
 		{
-			if (!$attributeConfig->isRelation && !$attributeConfig->hasMethod)
+			if (!$attributeConfig->isRelation && (!$attributeConfig->hasMethod || $attributeConfig->isFillable))
 			{
 				$formattedAttributeSet[] = $attributeConfig->attribute;
 			}
@@ -2089,15 +2089,19 @@ trait Extended {
 	 *
 	 * @param  array    $attributeSet
 	 * @param  mixed    $prefix
+	 * @param  mixed    $model
 	 * @return array
 	 */
-	public static function formatAttributeSet($attributeSet, $prefix = null)
+	public static function formatAttributeSet($attributeSet, $prefix = null, $model = null)
 	{
 		if (is_array($attributeSet) && count($attributeSet) && is_object(end($attributeSet))) // return if already formatted
 			return $attributeSet;
 
 		if (is_null($prefix))
 			$prefix = "";
+
+		if (is_null($model))
+			$model = new static;
 
 		$arrayIncludedMethods = array_keys(static::$arrayIncludedMethods);
 
@@ -2130,6 +2134,7 @@ trait Extended {
 				'selectOnly'   => $selectOnly,
 				'isRelation'   => $isRelation,
 				'hasMethod'    => in_array($attribute, $arrayIncludedMethods),
+				'isFillable'   => in_array($attribute, $model->fillable),
 				'ignoreMethod' => $ignoreMethod,
 			];
 		}
