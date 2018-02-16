@@ -192,6 +192,8 @@ trait Extended {
 			$this->setPerPage(config('form.paginator.items_per_page'));
 		}
 
+		$this->setTransformConfig();
+
 		return new Builder($query);
 	}
 
@@ -216,6 +218,32 @@ trait Extended {
 	public function getContentType()
 	{
 		return static::$contentType;
+	}
+
+	/**
+	 * Set the transform config when using the trait outside of the Base model.
+	 *
+	 * @return void
+	 */
+	public function setTransformConfig()
+	{
+		if (empty(static::$attributeSets) && isset(static::$transformConfig) && is_array(static::$transformConfig))
+		{
+			if (isset(static::$transformConfig['arrayIncludedMethods']))
+			{
+				static::$arrayIncludedMethods = static::$transformConfig['arrayIncludedMethods'];
+			}
+
+			if (isset(static::$transformConfig['attributeSets']))
+			{
+				static::$attributeSets = static::$transformConfig['attributeSets'];
+			}
+
+			if (isset(static::$transformConfig['relatedAttributeSets']))
+			{
+				static::$relatedAttributeSets = static::$transformConfig['relatedAttributeSets'];
+			}
+		}
 	}
 
 	/**
@@ -667,16 +695,21 @@ trait Extended {
 		$visible = $this->getVisible();
 		$hidden  = $this->getHidden();
 
-		foreach ($this->getArrayIncludedMethods() as $key => $includedMethod)
+		foreach ($this->getArrayIncludedMethods() as $key => $method)
 		{
 			if (is_null($attributeSet) || (is_array($attributeSet) && isset($attributeSet[$key]) && !$attributeSet[$key]->ignoreMethod))
 			{
 				$keyFormatted = static::formatArrayKey($key, $camelizeArrayKeys);
 
-				if (substr($includedMethod, -1) != ")")
-					$includedMethod .= "()";
+				if (is_string($method))
+				{
+					if (substr($method, -1) != ")")
+						$method .= "()";
 
-				$method = Format::getMethodFromString($includedMethod);
+					$method = Format::getMethodFromString($method);
+
+					static::$arrayIncludedMethods[$key] = $method;
+				}
 
 				$add = !count($visible) && !count($hidden);
 

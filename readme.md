@@ -581,6 +581,11 @@ protected static $arrayIncludedMethods = [
 You may add a `protected static $attributeSets` array to your model to define specific sets of attributes to be returned using `toArray()` or `toJson()`, which can be obtained using `getAttributeSet()` and the name (the key in your array) of the set you would like to retrieve. This allows you to define different sets of attributes for different purposes You may also reference sets within related content. Here is a full example. Let's suppose we have a model called `Post` which belongs to a `User` using an `author()` relationship and the model has the following attribute sets:
 
 ```php
+	/**
+	 * The attribute sets for the model.
+	 *
+	 * @var array
+	 */
 	protected static $attributeSets = [
 		'standard' => [
 			'id',
@@ -594,6 +599,11 @@ You may add a `protected static $attributeSets` array to your model to define sp
 		],
 	];
 
+	/**
+	 * The attribute sets for related models.
+	 *
+	 * @var array
+	 */
 	protected static $relatedAttributeSets = [
 		'standard' => [
 			'author'  => 'set:author', // this will use an attribute set from the model used for the "author" relationship
@@ -606,10 +616,11 @@ You may add a `protected static $attributeSets` array to your model to define sp
 In our user model, we have the following array-included method and attribute set defined:
 
 ```php
-	protected static $arrayIncludedMethods = [
-		'name' => 'getName',
-	];
-
+	/**
+	 * The methods to automatically include in a model's array / JSON object.
+	 *
+	 * @var array
+	 */
 	protected static $attributeSets = [
 		'author' => [
 			'id',
@@ -617,6 +628,43 @@ In our user model, we have the following array-included method and attribute set
 			'select:first_name', // this data is only being selected, and will be combined using the "getName" method defined above
 			'select:last_name', // this data is only being selected, and will be combined using the "getName" method defined above
 			'name',
+		],
+	];
+
+	/**
+	 * The attribute sets for the model.
+	 *
+	 * @var array
+	 */
+	protected static $arrayIncludedMethods = [
+		'name' => 'getName',
+	];
+
+```
+
+> **Note:** If you're just using the Extended trait directly rather than extending the Base model, you will have to instead place all of your transform configuration in an array because you can't override the static variables of the trait (this format also works for extending the Base model but isn't required in that case):
+
+```php
+	/**
+	 * The transform configuration for use when not extending the Base model.
+	 *
+	 * @var array
+	 */
+	protected static $transformConfig = [
+		'arrayIncludedMethods' => [
+			//
+		],
+
+		'attributeSets' => [
+			'standard' => [
+				//
+			],
+		],
+
+		'relatedAttributeSets' => [
+			'standard' => [
+				//
+			],
 		],
 	];
 ```

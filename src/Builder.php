@@ -102,7 +102,7 @@ class Builder extends Base {
 									: $this->model->newCollection();
 
 		$paginator = $this->paginator($results, $total, $perPage, $page, [
-			'path' => Paginator::resolveCurrentPath(),
+			'path'     => Paginator::resolveCurrentPath(),
 			'pageName' => $pageName,
 		]);
 
@@ -133,7 +133,7 @@ class Builder extends Base {
 		$this->skip(($page - 1) * $perPage)->take($perPage + 1);
 
 		$paginator = $this->simplePaginator($this->get($columns), $perPage, $page, [
-			'path' => Paginator::resolveCurrentPath(),
+			'path'     => Paginator::resolveCurrentPath(),
 			'pageName' => $pageName,
 		]);
 
