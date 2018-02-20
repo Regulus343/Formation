@@ -1440,6 +1440,7 @@ trait Extended {
 					break;
 
 				case "false-if-set":
+				case "false-if-true":
 
 					if ($valueTested)
 						$value = false;
@@ -1447,6 +1448,7 @@ trait Extended {
 					break;
 
 				case "true-if-set":
+				case "true-if-true":
 
 					if ($valueTested)
 						$value = true;
@@ -1454,6 +1456,7 @@ trait Extended {
 					break;
 
 				case "null-if-set":
+				case "null-if-true":
 
 					if ($valueTested)
 						$value = null;
@@ -1461,6 +1464,7 @@ trait Extended {
 					break;
 
 				case "false-if-not-set":
+				case "false-if-false":
 
 					if (!$valueTested)
 						$value = false;
@@ -1468,6 +1472,7 @@ trait Extended {
 					break;
 
 				case "true-if-not-set":
+				case "true-if-false":
 
 					if (!$valueTested)
 						$value = true;
@@ -1475,9 +1480,12 @@ trait Extended {
 					break;
 
 				case "null-if-not-set":
+				case "null-if-false":
 
 					if (!$valueTested)
 						$value = null;
+
+					break;
 
 					break;
 

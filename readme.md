@@ -750,7 +750,21 @@ You may add a `protected static $types` array to your model to allow data to be 
 
 **Formats:**
 
-You may add `protected static $formats` and `protected static $formatsForDb` arrays to your model for some additional automatic data formatting prior to populating forms or data saving. The following formats can be used:
+You may add `protected static $formats` and `protected static $formatsForDb` arrays to your model for some additional automatic data formatting prior to populating forms or data saving.
+
+```php
+	/**
+	 * The special formatted fields for the model for saving to the database.
+	 *
+	 * @var array
+	 */
+	protected static $formatsForDb = [
+		'media_type'   => 'null-if-false:media',
+		'published_at' => 'null-if-false:published',
+	];
+```
+
+The following formats can be used:
 
 - false-if-null
 - true-if-null
@@ -763,11 +777,17 @@ You may add `protected static $formats` and `protected static $formatsForDb` arr
 - true-if-not-blank
 - null-if-not-blank
 - false-if-set
+- false-if-true
 - true-if-set
+- false-if-true
 - null-if-set
+- null-if-true
 - false-if-not-set
+- false-if-false
 - true-if-not-set
+- true-if-false
 - null-if-not-set
+- null-if-false
 - json
 - json-or-null
 - trim
@@ -780,7 +800,7 @@ The formatting from `$types`, `$formats`, and `$formatsForDb` will occur automat
 
 **Formatting & Saving Data:**
 
-After you set up the formatting above, you can use `$record->formatSave()` and `Record::formatCreate()` to automatically format the data and save it. If you set up a `formatValuesForModel()` method in your model, you can add custom-formatting rules beyond what's available in the `$types`, `$formats`, and `$formatsForDb` arrays. Additionally, you can add extra logic post-save in a `executeSaveTriggers($create = false)` method (for saving related data in relationships or doing other things that require the record to exist first).
+After you set up the formatting above, you can use `$record->formatSave()` and `Record::formatCreate()` to automatically format the data and save it. If you set up a `formatValuesForModel()` method in your model, you can add custom-formatting rules beyond what's available in the `$types`, `$formats`, and `$formatsForDb` arrays. Additionally, you can add extra logic post-save in an `executeSaveTriggers($create = false)` method (for saving related data in relationships or doing other things that require the record to exist first).
 
 **Validation:**
 
