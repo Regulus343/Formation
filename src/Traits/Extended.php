@@ -1143,7 +1143,8 @@ trait Extended {
 		// format data for special types and special formats
 		$input = $this->formatValuesForDb($input, $create);
 
-		$this->update($input);
+		// save the data
+		$this->fill($input)->save();
 
 		// execute save triggers for custom post-save logic in your model
 		$this->executeSaveTriggers($create);
