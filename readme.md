@@ -650,7 +650,7 @@ In our user model, we have the following array-included method and attribute set
 	 *
 	 * @var array
 	 */
-	protected static $transformConfig = [
+	public static $transformConfig = [
 		'arrayIncludedMethods' => [
 			//
 		],
