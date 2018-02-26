@@ -474,6 +474,11 @@ trait Extended {
 			{
 				$attributes[$keyFormatted] = $this->serializeDate($attribute);
 			}
+
+			if ($camelizeArrayKeys && (is_array($attributes[$keyFormatted]) || is_object($attributes[$keyFormatted])))
+			{
+				$attributes[$keyFormatted] = Format::camelizeKeys($attributes[$keyFormatted]);
+			}
 		}
 
 		// Here we will grab all of the appended, calculated attributes to this model
@@ -1964,7 +1969,13 @@ trait Extended {
 							$set = substr($attributes, 4);
 
 							if (is_object($modelUsed) && method_exists($modelUsed, 'getAttributeSet'))
+							{
 								$attributeSetRaw[$attribute] = $modelUsed->getAttributeSet($set);
+							}
+							else
+							{
+								$attributeSetRaw[$attribute] = [];
+							}
 						}
 						else
 						{
@@ -1981,7 +1992,13 @@ trait Extended {
 								$model = new $class;
 
 								if (method_exists($model, 'getAttributeSet'))
+								{
 									$attributeSetRaw[$attribute] = $model->getAttributeSet($set);
+								}
+								else
+								{
+									$attributeSetRaw[$attribute] = [];
+								}
 							}
 						}
 					}
@@ -2118,34 +2135,37 @@ trait Extended {
 
 		$relations = static::getRelationsFromAttributeSets();
 
-		foreach ($attributeSet as $a => $attribute)
+		if (is_array($attributeSet))
 		{
-			$selectOnly   = false;
-			$ignoreMethod = false;
-			$isRelation   = in_array($attribute, $relations) || in_array(camel_case($attribute), $relations);
-
-			if (substr($attribute, 0, 7) == "select:")
+			foreach ($attributeSet as $a => $attribute)
 			{
-				$attribute = substr($attribute, 7);
+				$selectOnly   = false;
+				$ignoreMethod = false;
+				$isRelation   = in_array($attribute, $relations) || in_array(camel_case($attribute), $relations);
 
-				$selectOnly = true;
+				if (substr($attribute, 0, 7) == "select:")
+				{
+					$attribute = substr($attribute, 7);
+
+					$selectOnly = true;
+				}
+
+				if (substr($attribute, 0, 10) == "attribute:")
+				{
+					$attribute = substr($attribute, 10);
+
+					$ignoreMethod = true;
+				}
+
+				$attributeSetFormatted[$attribute] = (object) [
+					'attribute'    => $prefix.$attribute,
+					'selectOnly'   => $selectOnly,
+					'isRelation'   => $isRelation,
+					'hasMethod'    => in_array($attribute, $arrayIncludedMethods),
+					'isFillable'   => in_array($attribute, $model->fillable),
+					'ignoreMethod' => $ignoreMethod,
+				];
 			}
-
-			if (substr($attribute, 0, 10) == "attribute:")
-			{
-				$attribute = substr($attribute, 10);
-
-				$ignoreMethod = true;
-			}
-
-			$attributeSetFormatted[$attribute] = (object) [
-				'attribute'    => $prefix.$attribute,
-				'selectOnly'   => $selectOnly,
-				'isRelation'   => $isRelation,
-				'hasMethod'    => in_array($attribute, $arrayIncludedMethods),
-				'isFillable'   => in_array($attribute, $model->fillable),
-				'ignoreMethod' => $ignoreMethod,
-			];
 		}
 
 		return $attributeSetFormatted;
