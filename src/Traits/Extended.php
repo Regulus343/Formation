@@ -836,7 +836,12 @@ trait Extended {
 	 */
 	public function scopeSelectAttributeSet($query, $attributeSet = 'select', $limitRelatedData = false)
 	{
-		$query->select(static::getSelectableAttributeSet($attributeSet));
+		$selectableAttributes = static::getSelectableAttributeSet($attributeSet);
+
+		if (!empty($selectableAttributes))
+		{
+			$query->select($selectableAttributes);
+		}
 
 		$query->setDefaultAttributeSet($attributeSet);
 
@@ -907,7 +912,10 @@ trait Extended {
 							}
 						}
 
-						$relationQuery->select($formattedAttributes);
+						if (!empty($formattedAttributes))
+						{
+							$relationQuery->select($formattedAttributes);
+						}
 					}
 				};
 			}
