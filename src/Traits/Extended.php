@@ -537,13 +537,23 @@ trait Extended {
 	{
 		if (!is_null($attributeSet))
 		{
-			$attributeSet = array_keys(static::getAttributeSet($attributeSet));
+			$attributeSet = static::getAttributeSet($attributeSet);
+
+			$allowedAttributes = [];
+
+			foreach ($attributeSet as $attribute => $attributeConfig)
+			{
+				if (!$attributeConfig->selectOnly)
+				{
+					$allowedAttributes[] = $attribute;
+				}
+			}
 
 			if (!empty($attributeSet))
 			{
 				foreach ($attributes as $attribute => $value)
 				{
-					if (!in_array(snake_case($attribute), $attributeSet))
+					if (!in_array(snake_case($attribute), $allowedAttributes))
 					{
 						unset($attributes[$attribute]);
 					}
@@ -567,12 +577,9 @@ trait Extended {
 
 		$attributes = [];
 
-		$relatedDataRequested = [];
-
-		if (isset(static::$relatedDataRequested[get_class($this)]))
-			$relatedDataRequested = static::$relatedDataRequested[get_class($this)];
-
 		$arrayIncludedMethodAttributes = array_keys(static::$arrayIncludedMethods);
+
+		$class = get_class($this);
 
 		foreach ($this->getArrayableRelations($camelizeArrayKeys) as $key => $value)
 		{
@@ -584,7 +591,19 @@ trait Extended {
 				// collections to their proper array form and we'll set the values.
 				if ($value instanceof Arrayable || (is_object($value) && method_exists($value, 'toArray')))
 				{
-					$collection = in_array(get_class($value), ['Illuminate\Database\Eloquent\Collection', 'Regulus\Formation\Collection']);
+					$relationClass = get_class($value);
+
+					$collection = strpos($relationClass, 'Collection') !== false;
+
+					if ($collection && $value->count())
+						$relationClass = get_class($value[0]);
+
+					$relationModel = new $relationClass;
+
+					$relatedDataRequested = [];
+
+					if (isset(static::$relatedDataRequested[get_class($this)]))
+						$relatedDataRequested = static::$relatedDataRequested[get_class($this)];
 
 					// if "related data requested" is set, adjust visible and hidden arrays for related items
 					if (is_callable([$value, 'setVisible']) && !is_null($relatedDataRequested))
@@ -603,23 +622,27 @@ trait Extended {
 
 							foreach ($relatedDataRequested[$key] as $attribute => $attributeConfig)
 							{
-								if (!$attributeConfig->selectOnly)
+								// check if attribute is relation that loops back to root model (and ignore it if so)
+								$attributeIsRootModel = false;
+
+								if ($attributeConfig->isRelation && method_exists($relationModel, $attribute))
+								{
+									$relationModelClass = get_class($relationModel->{$attribute}()->getModel());
+
+									if ($relationModelClass == $class)
+									{
+										$attributeIsRootModel = true;
+									}
+								}
+
+								// ensure attribute wasn't intended for selection only
+								if (!$attributeConfig->selectOnly && !$attributeIsRootModel)
 								{
 									$relatedDataRequestedForKey[$attribute] = $attributeConfig;
 								}
 							}
 
 							$visibleAttributes = array_keys($relatedDataRequestedForKey);
-						}
-						else
-						{
-							foreach ($relatedDataRequested as $attribute => $attributeConfig)
-							{
-								if (!$attributeConfig->selectOnly)
-								{
-									$visibleAttributes[] = $attribute;
-								}
-							}
 						}
 
 						// set visible and hidden arrays
