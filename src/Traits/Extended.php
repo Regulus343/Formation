@@ -1843,27 +1843,12 @@ trait Extended {
 	 *
 	 * @param  string   $field
 	 * @param  string   $value
-	 * @param  mixed    $relations
 	 * @param  boolean  $returnQuery
 	 * @return object
 	 */
-	public static function findBy($field, $value, $relations = [], $returnQuery = false)
+	public static function findBy($field, $value, $returnQuery = false)
 	{
-		$item = new static;
-
-		if (is_null($relations) || is_bool($relations))
-		{
-			// if relations is boolean, assume it to be returnQuery instead
-			if (is_bool($relations))
-				$returnQuery = $relations;
-
-			$relations = [];
-		}
-
-		$item = $item->where($field, $value);
-
-		if ((is_array($relations) && !empty($relations)) || is_string($relations))
-			$item = $item->with($relations);
+		$item = static::where($field, $value);
 
 		if (!$returnQuery)
 			$item = $item->first();
@@ -1875,26 +1860,22 @@ trait Extended {
 	 * Get the model by its slug.
 	 *
 	 * @param  string   $slug
-	 * @param  mixed    $relations
 	 * @param  boolean  $returnQuery
 	 * @return object
 	 */
-	public static function findBySlug($slug, $relations = [], $returnQuery = false)
+	public static function findBySlug($slug, $returnQuery = false)
 	{
-		return static::findBy('slug', $slug, $relations, $returnQuery);
-	}
+		$item = static::where(function($query) use ($slug)
+		{
+			$query
+				->where('slug', $slug)
+				->orWhere(DB::raw('replace(slug, \'-\', \'\')'), str_replace('-', '', $slug));
+		});
 
-	/**
-	 * Get the model by its slug, stripped of dashes.
-	 *
-	 * @param  string   $slug
-	 * @param  mixed    $relations
-	 * @param  boolean  $returnQuery
-	 * @return object
-	 */
-	public static function findByDashlessSlug($slug, $relations = [], $returnQuery = false)
-	{
-		return static::findBy(DB::raw('replace(slug, \'-\', \'\')'), str_replace('-', '', $slug), $relations, $returnQuery);
+		if (!$returnQuery)
+			$item = $item->first();
+
+		return $item;
 	}
 
 	/**
