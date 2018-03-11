@@ -2089,7 +2089,7 @@ trait Extended {
 
 		foreach ($attributeSet as $attribute => $attributeConfig)
 		{
-			if (!$attributeConfig->isRelation && (!$attributeConfig->hasMethod || $attributeConfig->isFillable))
+			if (!$attributeConfig->isRelation && (!$attributeConfig->hasMethod || $attributeConfig->isFillable) && $attribute != "pivot")
 			{
 				$formattedAttributeSet[] = $attributeConfig->attribute;
 			}
