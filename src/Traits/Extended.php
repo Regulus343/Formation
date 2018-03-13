@@ -833,7 +833,7 @@ trait Extended {
 	 */
 	public static function setArrayIncludedMethod($attribute, $method)
 	{
-		static::$arrayIncludedMethods[$attribute] = $method;
+		static::$arrayIncludedMethods[snake_case($attribute)] = $method;
 	}
 
 	/**
