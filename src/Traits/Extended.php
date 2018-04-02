@@ -18,7 +18,7 @@ trait Extended {
 	/**
 	 * The special typed fields for the model.
 	 *
-	 * @var    array
+	 * @var array
 	 */
 	protected static $types = [
 		/*
@@ -30,7 +30,7 @@ trait Extended {
 	/**
 	 * The special formatted fields for the model.
 	 *
-	 * @var    array
+	 * @var array
 	 */
 	protected static $formats = [
 		/*
@@ -41,7 +41,7 @@ trait Extended {
 	/**
 	 * The special formatted fields for the model for saving to the database.
 	 *
-	 * @var    array
+	 * @var array
 	 */
 	protected static $formatsForDb = [
 		/*
@@ -52,7 +52,7 @@ trait Extended {
 	/**
 	 * The methods to automatically include in a model's array / JSON object.
 	 *
-	 * @var    array
+	 * @var array
 	 */
 	protected static $arrayIncludedMethods = [
 		/*
@@ -64,7 +64,7 @@ trait Extended {
 	/**
 	 * The attribute sets for the model.
 	 *
-	 * @var    array
+	 * @var array
 	 */
 	protected static $attributeSets = [
 		/*
@@ -79,7 +79,7 @@ trait Extended {
 	/**
 	 * The attribute sets for related models.
 	 *
-	 * @var    array
+	 * @var array
 	 */
 	protected static $relatedAttributeSets = [
 		/*
@@ -92,42 +92,42 @@ trait Extended {
 	/**
 	 * The cached attribute sets for the model.
 	 *
-	 * @var    array
+	 * @var array
 	 */
 	protected static $cachedAttributeSets = [];
 
 	/**
 	 * The cached attribute sets for related models.
 	 *
-	 * @var    array
+	 * @var array
 	 */
 	protected static $cachedRelatedAttributeSets = [];
 
 	/**
 	 * The cached relations from related attribute sets.
 	 *
-	 * @var    array
+	 * @var array
 	 */
 	protected static $cachedRelationsFromAttributeSets = [];
 
 	/**
 	 * The related data requested for related models' arrays / JSON objects.
 	 *
-	 * @var    mixed
+	 * @var mixed
 	 */
 	protected static $relatedDataRequested = null;
 
 	/**
 	 * The default attribute set.
 	 *
-	 * @var    mixed
+	 * @var mixed
 	 */
 	protected static $defaultAttributeSet = "standard";
 
 	/**
 	 * The static cached data for the model.
 	 *
-	 * @var    mixed
+	 * @var mixed
 	 */
 	protected static $staticCached;
 
@@ -141,28 +141,28 @@ trait Extended {
 	/**
 	 * The foreign key for the model.
 	 *
-	 * @var    mixed
+	 * @var mixed
 	 */
 	protected $foreignKey = null;
 
 	/**
 	 * The number of models to return for pagination.
 	 *
-	 * @var    mixed
+	 * @var mixed
 	 */
 	protected $itemsPerPage = null;
 
 	/**
 	 * The default attribute set.
 	 *
-	 * @var    mixed
+	 * @var mixed
 	 */
 	protected $selectedAttributeSet = null;
 
 	/**
 	 * The cached data for the model.
 	 *
-	 * @var    mixed
+	 * @var mixed
 	 */
 	protected $cached;
 
@@ -586,6 +586,7 @@ trait Extended {
 			// ensure relationship is not being overridden by array-included methods
 			if (!in_array(snake_case($key), $arrayIncludedMethodAttributes))
 			{
+
 				// If the values implements the Arrayable interface we can just call this
 				// toArray method on the instances which will convert both models and
 				// collections to their proper array form and we'll set the values.
@@ -618,8 +619,13 @@ trait Extended {
 						// get array of visible attributes
 						if (isset($relatedDataRequested[$key]))
 						{
-							$relatedDataRequestedForKey = [];
+							// if attribute set is string (relationship was polymorphic), get attribute set by key
+							if (is_string($relatedDataRequested[$key]))
+							{
+								$relatedDataRequested[$key] = $relationModel::getAttributeSet($relatedDataRequested[$key]);
+							}
 
+							$relatedDataRequestedForKey = [];
 							foreach ($relatedDataRequested[$key] as $attribute => $attributeConfig)
 							{
 								// check if attribute is relation that loops back to root model (and ignore it if so)
@@ -1955,6 +1961,8 @@ trait Extended {
 			{
 				foreach ($attributeSetRaw as $attribute => $attributes)
 				{
+					$polymorphic = false;
+
 					if (is_string($attribute) && is_string($attributes))
 					{
 						if (substr($attributes, 0, 4) == "set:")
@@ -1973,6 +1981,8 @@ trait Extended {
 									{
 										$class = get_class($relationship->getModel());
 
+										$polymorphic = get_class($relationship) == "Illuminate\Database\Eloquent\Relations\MorphTo";
+
 										$modelUsed = new $class;
 									}
 								}
@@ -1982,7 +1992,7 @@ trait Extended {
 
 							if (is_object($modelUsed) && method_exists($modelUsed, 'getAttributeSet'))
 							{
-								$attributeSetRaw[$attribute] = $modelUsed->getAttributeSet($set);
+								$attributeSetRaw[$attribute] = $polymorphic ? $set : $modelUsed->getAttributeSet($set);
 							}
 							else
 							{
@@ -2048,7 +2058,14 @@ trait Extended {
 
 				foreach ($attributeSet as $attributeSetKey => $attributeSetListed)
 				{
-					$attributeSets[$attributeSetKey] = static::formatAttributeSet($attributeSetListed, null, $model);
+					if (!is_string($attributeSetListed))
+					{
+						$attributeSets[$attributeSetKey] = static::formatAttributeSet($attributeSetListed, null, $model);
+					}
+					else
+					{
+						$attributeSets[$attributeSetKey] = $attributeSetListed;
+					}
 				}
 			}
 			else
