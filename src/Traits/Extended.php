@@ -935,7 +935,7 @@ trait Extended {
 
 						foreach ($attributes as $attribute => $attributeConfig)
 						{
-							if (!$attributeConfig->isRelation && (!$attributeConfig->hasMethod || in_array($attribute, $this->fillable)))
+							if (!$attributeConfig->isRelation && (!$attributeConfig->hasMethod || in_array($attribute, $model->getFillable())))
 							{
 								$formattedAttributes[] = $prefix.$attribute;
 							}
