@@ -5,9 +5,9 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.4.12
+		version 1.4.13
 
-		last updated April 19, 2018
+		last updated May 1, 2018
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -1030,7 +1030,7 @@ class Formation {
 	{
 		$token = !empty($this->csrfToken) ? $this->csrfToken : $this->session->token();
 
-		return $this->hidden('_token', ['value' => $this->csrfToken]);
+		return $this->hidden('_token', ['value' => $token]);
 	}
 
 	/**

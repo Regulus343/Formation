@@ -14,7 +14,7 @@ class FormationServiceProvider extends ServiceProvider {
 	/**
 	 * Bootstrap the application events.
 	 *
-	 * @return void
+	 * @return voi
 	 */
 	public function boot()
 	{
@@ -39,6 +39,8 @@ class FormationServiceProvider extends ServiceProvider {
 	 */
 	public function register()
 	{
+		require __DIR__.'/helpers.php';
+
 		$this->app->singleton('Regulus\Formation\Formation', function($app)
 		{
 			$session = isset($app['session.store']) ? $app['session.store'] : null;

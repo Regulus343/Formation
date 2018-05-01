@@ -18,9 +18,6 @@
 		"regulus/elemental": "0.5.*"
 	},
 	"autoload": {
-		"files": [
-			"src/helpers.php"
-		],
 		"psr-4": {
 			"Regulus\\Formation\\": "src/"
 		}
