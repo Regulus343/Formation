@@ -397,28 +397,31 @@ class Formation {
 	 */
 	private function addArrayToDefaults($array, $prefix = null, $defaultsArray = [])
 	{
-		if (is_null($prefix))
-			$prefix = "";
-
-		$rootPrefix = $prefix;
-
-		foreach ($array as $field => $value)
+		if (is_array($array) || is_object($array))
 		{
-			if ($rootPrefix != "")
-				$prefix = $rootPrefix.'.'.$field;
-			else
-				$prefix = $field;
+			if (is_null($prefix))
+				$prefix = "";
 
-			if (is_array($value))
+			$rootPrefix = $prefix;
+
+			foreach ($array as $field => $value)
 			{
-				$associative = array_keys($value) !== range(0, count($value) - 1);
-
-				if ($associative)
-					$defaultsArray = $this->addArrayToDefaults($value, $prefix, $defaultsArray);
+				if ($rootPrefix != "")
+					$prefix = $rootPrefix.'.'.$field;
 				else
+					$prefix = $field;
+
+				if (is_array($value))
+				{
+					$associative = array_keys($value) !== range(0, count($value) - 1);
+
+					if ($associative)
+						$defaultsArray = $this->addArrayToDefaults($value, $prefix, $defaultsArray);
+					else
+						$defaultsArray[$prefix] = $value;
+				} else {
 					$defaultsArray[$prefix] = $value;
-			} else {
-				$defaultsArray[$prefix] = $value;
+				}
 			}
 		}
 
