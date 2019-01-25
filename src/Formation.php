@@ -5,9 +5,9 @@
 		A powerful form creation and form data saving composer package for Laravel 5.
 
 		created by Cody Jassman
-		version 1.4.13
+		version 1.4.14
 
-		last updated May 1, 2018
+		last updated January 25, 2019
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -411,7 +411,7 @@ class Formation {
 				else
 					$prefix = $field;
 
-				if (is_array($value))
+				if (is_array($value) || is_object($array))
 				{
 					$associative = array_keys($value) !== range(0, count($value) - 1);
 
