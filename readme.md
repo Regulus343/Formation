@@ -1,7 +1,7 @@
 Formation
 =========
 
-**A powerful form building and model data transforming package for Laravel 5.**
+**A powerful form building and model data transforming package for Laravel 5 / 6 / 7.**
 
 [![Latest Stable Version](https://poser.pugx.org/regulus/formation/v/stable.svg)](https://packagist.org/packages/regulus/formation) [![License](https://poser.pugx.org/regulus/formation/license.svg)](https://packagist.org/packages/regulus/formation)
 
@@ -38,7 +38,7 @@ Formation consists of two separate but complementary systems, each useable indep
 To install Formation, make sure `regulus/formation` has been added to Laravel 5's `composer.json` file.
 
 	"require": {
-		"regulus/formation": "1.4.*"
+		"regulus/formation": "1.5.*"
 	},
 
 Then run `php composer.phar update` from the command line. Composer will install the Formation package. Now, all you have to do is register the service provider and set up Formation's alias in `config/app.php`. Add this to the `providers` array:
