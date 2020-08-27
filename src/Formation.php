@@ -2,22 +2,24 @@
 
 /*----------------------------------------------------------------------------------------------------------
 	Formation
-		A powerful form creation and form data saving composer package for Laravel 5.
+		A powerful form creation and form data saving composer package for Laravel 5 / 6 / 7.
 
 		created by Cody Jassman
 		version 1.5.0
 
-		last updated August 26, 2020
+		last updated August 27, 2020
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
 
-use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
+
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 use Regulus\TetraText\Facade as Format;
 
@@ -36,6 +38,13 @@ class Formation {
 	 * @var \Illuminate\Routing\UrlGenerator  $url
 	 */
 	protected $url;
+
+	/**
+	 * The current request.
+	 *
+	 * @var \Illuminate\Http\Request $request
+	 */
+	protected $request;
 
 	/**
 	 * The CSRF token used by the form builder.
@@ -177,7 +186,18 @@ class Formation {
 		if (!empty($oldInput))
 			return $oldInput;
 
-		return Input::all();
+		return $this->request->all();
+	}
+
+	/**
+	 * Sets the default values for the form.
+	 *
+	 * @param  \Illuminate\Http\Request  $newRequest
+	 * @return void
+	 */
+	public function setRequest($newRequest)
+	{
+		$this->request = $newRequest;
 	}
 
 	/**
@@ -315,7 +335,7 @@ class Formation {
 						if (method_exists($item, 'toArray'))
 							$item = $item->toArray(false);
 
-						$itemPrefix = $prefix.(snake_case($relation));
+						$itemPrefix = $prefix.(Str::snake($relation));
 
 						foreach ($item as $field => $value)
 						{
@@ -486,10 +506,10 @@ class Formation {
 
 		$oldInput = $this->old();
 
-		if (!$defaults && (Input::all() || !empty($oldInput)))
+		if (!$defaults && ($this->request->all() || !empty($oldInput)))
 		{
-			if (Input::all())
-				$values = Input::all();
+			if ($this->request->all())
+				$values = $this->request->all();
 			else
 				$values = $this->old();
 
@@ -719,7 +739,7 @@ class Formation {
 		}
 
 		if (is_null($input))
-			$input = Input::all();
+			$input = $this->request->all();
 
 		foreach ($rules as $name => $rulesItem)
 		{
@@ -912,7 +932,7 @@ class Formation {
 			], $additionalOptions);
 		}
 
-		$method = array_get($options, 'method', 'post');
+		$method = Arr::get($options, 'method', 'post');
 
 		// We need to extract the proper method from the attributes. If the method is
 		// something other than GET or POST we'll use POST since we will spoof the
@@ -937,9 +957,7 @@ class Formation {
 		// format the array of attributes. We will also add on the appendage which
 		// is used to spoof requests for this PUT, PATCH, etc. methods on forms.
 		$attributes = array_merge(
-
-			$attributes, array_except($options, $this->reserved)
-
+			$attributes, Arr::except($options, $this->reserved)
 		);
 
 		// Finally, we will concatenate all of the attributes into a single string so
@@ -1051,10 +1069,10 @@ class Formation {
 		if (!$this->reset)
 		{
 			if ($_POST || isset($_GET[$name]))
-				return Input::get($name);
+				return $this->request->get($name);
 
 			if ($this->old($name))
-				return $this->old($name);
+				return $this->request->old($name);
 		}
 
 		return $this->getDefaultsArray($name);
@@ -1079,7 +1097,7 @@ class Formation {
 		if (!$this->reset)
 		{
 			if ($_POST || isset($_GET[$name]))
-				$value = Input::get($name);
+				$value = $this->request->get($name);
 
 			if ($this->old($name))
 				$value = $this->old($name);
@@ -1102,9 +1120,9 @@ class Formation {
 	{
 		if (substr($name, -1) != "_") $name .= "_";
 
-		$hour     = Input::get($name.'hour');
-		$minutes  = Input::get($name.'minutes');
-		$meridiem = Input::get($name.'meridiem');
+		$hour     = $this->request->get($name.'hour');
+		$minutes  = $this->request->get($name.'minutes');
+		$meridiem = $this->request->get($name.'meridiem');
 
 		if ($hour == 12)
 			$hour = 0;
@@ -2265,9 +2283,8 @@ class Formation {
 		// If the "size" attribute was not specified, we will just look for the regular
 		// columns and rows attributes, using sane defaults if these do not exist on
 		// the attributes array. We'll then return this entire options array back.
-		$cols = array_get($options, 'cols', 50);
-
-		$rows = array_get($options, 'rows', 10);
+		$cols = Arr::get($options, 'cols', 50);
+		$rows = Arr::get($options, 'rows', 10);
 
 		return array_merge($options, compact('cols', 'rows'));
 	}
@@ -4106,11 +4123,8 @@ class Formation {
 	 */
 	protected function getModelValueAttribute($name)
 	{
-		if (is_object($this->model))
-			return object_get($this->model, $this->transformKey($name));
-
-		elseif (is_array($this->model))
-			return array_get($this->model, $this->transformKey($name));
+		if (is_array($this->model) || is_object($this->model))
+			return Arr::get($this->model, $this->transformKey($name));
 	}
 
 	/**

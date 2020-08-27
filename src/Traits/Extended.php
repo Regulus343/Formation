@@ -3,7 +3,6 @@
 use Illuminate\Database\Eloquent\Model;
 
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Str;
 
 use Regulus\Formation\Collection;
@@ -207,7 +206,7 @@ trait Extended {
 		if (!is_null($this->foreignKey))
 			return $this->foreignKey;
 		else
-			return snake_case(class_basename($this)).'_id';
+			return Str::snake(class_basename($this)).'_id';
 	}
 
 	/**
@@ -254,7 +253,7 @@ trait Extended {
 	 */
 	public function getAttribute($key)
 	{
-		$snakedKey = snake_case($key);
+		$snakedKey = Str::snake($key);
 
 		$checkSnakedKey = $snakedKey != $key;
 
@@ -276,7 +275,7 @@ trait Extended {
 	 */
 	public function setAttribute($key, $value)
 	{
-		$key = snake_case($key);
+		$key = Str::snake($key);
 
 		// First we will check for the presence of a mutator for the set operation
 		// which simply lets the developers tweak the attribute as it is set on
@@ -373,7 +372,7 @@ trait Extended {
 			{
 				foreach ($values as $key => $value)
 				{
-					if (!in_array(snake_case($key), $visibleAttributes))
+					if (!in_array(Str::snake($key), $visibleAttributes))
 					{
 						unset($values[$key]);
 					}
@@ -397,7 +396,7 @@ trait Extended {
 		{
 			foreach ($values as $key => $value)
 			{
-				$formattedValues[camel_case($key)] = $value;
+				$formattedValues[Str::camel($key)] = $value;
 			}
 		}
 		else
@@ -553,7 +552,7 @@ trait Extended {
 			{
 				foreach ($attributes as $attribute => $value)
 				{
-					if (!in_array(snake_case($attribute), $allowedAttributes))
+					if (!in_array(Str::snake($attribute), $allowedAttributes))
 					{
 						unset($attributes[$attribute]);
 					}
@@ -584,7 +583,7 @@ trait Extended {
 		foreach ($this->getArrayableRelations($camelizeArrayKeys) as $key => $value)
 		{
 			// ensure relationship is not being overridden by array-included methods
-			if (!in_array(snake_case($key), $arrayIncludedMethodAttributes))
+			if (!in_array(Str::snake($key), $arrayIncludedMethodAttributes))
 			{
 
 				// If the values implements the Arrayable interface we can just call this
@@ -839,7 +838,7 @@ trait Extended {
 	 */
 	public static function setArrayIncludedMethod($attribute, $method)
 	{
-		static::$arrayIncludedMethods[snake_case($attribute)] = $method;
+		static::$arrayIncludedMethods[Str::snake($attribute)] = $method;
 	}
 
 	/**
@@ -983,7 +982,7 @@ trait Extended {
 			$record = static::find($record);
 
 		if (is_null($input))
-			$input = Input::all();
+			$input = request()->all();
 
 		return [];
 	}
@@ -1014,7 +1013,7 @@ trait Extended {
 	public static function setValidationRulesForNew($input = null, $action = null)
 	{
 		if (is_null($input))
-			$input = Input::all();
+			$input = request()->all();
 
 		Form::setValidationRules(static::validationRules(null, $input, $action), $input);
 	}
@@ -1029,7 +1028,7 @@ trait Extended {
 	public function setValidationRules($input = null, $action = null)
 	{
 		if (is_null($input))
-			$input = Input::all();
+			$input = request()->all();
 
 		Form::setValidationRules(static::validationRules($this, $input, $action), $input);
 	}
@@ -1176,7 +1175,7 @@ trait Extended {
 	public function formatSave($input = null, $create = null)
 	{
 		if (is_null($input))
-			$input = Input::all();
+			$input = request()->all();
 
 		// if create is not specified, use ID to determine whether creating or updating record
 		if (is_null($create))
@@ -1897,9 +1896,9 @@ trait Extended {
 			$camelizeArrayKeys = config('form.camelize_array_keys');
 
 		if ($camelizeArrayKeys)
-			$key = camel_case($key);
+			$key = Str::camel($key);
 		else
-			$key = snake_case($key);
+			$key = Str::snake($key);
 
 		return $key;
 	}
@@ -2170,7 +2169,7 @@ trait Extended {
 			{
 				$selectOnly   = false;
 				$ignoreMethod = false;
-				$isRelation   = in_array($attribute, $relations) || in_array(camel_case($attribute), $relations);
+				$isRelation   = in_array($attribute, $relations) || in_array(Str::camel($attribute), $relations);
 
 				if (substr($attribute, 0, 7) == "select:")
 				{
