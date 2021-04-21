@@ -21,7 +21,7 @@ trait BuildsQueries {
 	{
 		$record = $this->take(1)->get($columns)->first();
 
-		if (method_exists($record, 'selectAttributeSet'))
+		if (!is_null($record) && method_exists($record, 'selectAttributeSet'))
 		{
 			$record->selectAttributeSet($this->getDefaultAttributeSet());
 		}
