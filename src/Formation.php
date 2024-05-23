@@ -2,12 +2,13 @@
 
 /*----------------------------------------------------------------------------------------------------------
 	Formation
-		A powerful form creation and form data saving composer package for Laravel 5 / 6 / 7.
+		A powerful form creation and form data saving composer package for Laravel 11 (supported since
+		Laravel 5).
 
 		created by Cody Jassman
-		version 1.5.0
+		version 1.6.0
 
-		last updated August 27, 2020
+		last updated May 23, 2024
 ----------------------------------------------------------------------------------------------------------*/
 
 use Illuminate\Routing\UrlGenerator;
@@ -163,15 +164,13 @@ class Formation {
 	 * Create a new Formation instance.
 	 *
 	 * @param  \Illuminate\Routing\UrlGenerator  $url
-	 * @param  \Illuminate\Session\Store         $session
-	 * @param  string  $csrfToken
 	 * @return void
 	 */
-	public function __construct(UrlGenerator $url, $session, $csrfToken)
+	public function __construct(UrlGenerator $url)
 	{
 		$this->url       = $url;
-		$this->session   = $session;
-		$this->csrfToken = $csrfToken;
+		$this->session   = session();
+		$this->csrfToken = csrf_token();
 	}
 
 	/**
@@ -2048,7 +2047,7 @@ class Formation {
 
 			$attributes['id'] = $this->id($name, $attributes);
 
-			if ($name == $this->spoofer || $name == "_token")
+			if ($name == $this->spoofer || $name == "_token" || $attributes['id'] == "field-")
 				unset($attributes['id']);
 
 			if (is_null($attributes['value']) && $type != "password")

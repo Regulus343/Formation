@@ -14,9 +14,9 @@ class FormationServiceProvider extends ServiceProvider {
 	/**
 	 * Bootstrap the application events.
 	 *
-	 * @return voi
+	 * @return void
 	 */
-	public function boot()
+	public function boot(): void
 	{
 		$this->publishes([
 			__DIR__.'/config/form.php'  => config_path('form.php'),
@@ -37,7 +37,7 @@ class FormationServiceProvider extends ServiceProvider {
 	 *
 	 * @return void
 	 */
-	public function register()
+	public function register(): void
 	{
 		require __DIR__.'/helpers.php';
 

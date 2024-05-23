@@ -1,7 +1,7 @@
 Formation
 =========
 
-**A powerful form building and model data transforming package for Laravel 5 / 6 / 7 / 8.**
+**A powerful form building and model data transforming package for Laravel 11 (with supported versions since Laravel 5).**
 
 [![Latest Stable Version](https://poser.pugx.org/regulus/formation/v/stable.svg)](https://packagist.org/packages/regulus/formation) [![License](https://poser.pugx.org/regulus/formation/license.svg)](https://packagist.org/packages/regulus/formation)
 
@@ -35,23 +35,21 @@ Formation consists of two separate but complementary systems, each useable indep
 <a name="installation"></a>
 ## Installation
 
-To install Formation, make sure `regulus/formation` has been added to Laravel 5's `composer.json` file.
+To install Formation, run `composer require regulus/formation` or add `regulus/formation` to Laravel's `composer.json` file:
 
 	"require": {
-		"regulus/formation": "1.5.*"
+		"regulus/formation": "1.6.*"
 	},
 
-Then run `php composer.phar update` from the command line. Composer will install the Formation package. Now, all you have to do is register the service provider and set up Formation's alias in `config/app.php`. Add this to the `providers` array:
+Then run `php composer.phar update` from the command line. Composer will install the Formation package. Now, all you have to do is register the service provider and set up Formation's alias in `config/app.php`. Add this to the array in `bootstrap/providers.php`:
 
 	Regulus\Formation\FormationServiceProvider::class,
 
-And add this to the `aliases` array:
+And add this line to `register()` in `app/Providers/AliasServiceProvider.php`:
 
-	'Form' => Regulus\Formation\Facade::class,
+	$loader->alias('Form', \Regulus\Formation\Facade::class);
 
-You may use 'Formation', or another alias, but 'Form' is recommended for the sake of simplicity. Formation is now ready to go.
-
-Now, publish the config file, `form.php`, as well as the views and JS file, from the command line:
+Formation is now ready to go. Now, just publish the config file, `form.php`, as well as the views and JS file if you need them, from the command line:
 
 	php artisan vendor:publish
 
